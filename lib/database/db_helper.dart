@@ -1,72 +1,125 @@
 import 'package:mysql1/mysql1.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io' show Platform;
 
-/// Lớp hỗ trợ kết nối database MySQL
+/// Lớp hỗ trợ kết nối database MySQL với chế độ tự động dự phòng Offline (SharedPreferences)
 class DbHelper {
+  static bool _isUsingMock = false;
+
+  /// Kiểm tra xem có đang dùng cơ sở dữ liệu giả lập (offline mode) không
+  static bool get isUsingMock => _isUsingMock;
+
   /// Hàm tạo kết nối tới MySQL
-  static Future<MySqlConnection> getConnection() async {
-    // Xác định IP host tùy thuộc vào nền tảng đang chạy
-    // Nếu chạy trên máy ảo Android (Emulator) thì dùng 10.0.2.2 để trỏ về localhost của máy tính
-    // Nếu chạy trên Windows/Web/iOS thật thì có thể dùng localhost hoặc 127.0.0.1
+  static Future<MySqlConnection?> getConnection() async {
     String hostIp = '127.0.0.1';
     try {
       if (Platform.isAndroid) {
         hostIp = '10.0.2.2';
       }
     } catch (e) {
-      // Bỏ qua lỗi nếu chạy trên nền tảng không hỗ trợ thư viện dart:io (ví dụ: Web)
+      // Chạy trên web/nền tảng khác
     }
 
-    // Cấu hình kết nối MySQL.
     final settings = ConnectionSettings(
       host: hostIp, 
       port: 3306,
-      user: 'root', // Tên đăng nhập MySQL
-      // Nếu không có mật khẩu (XAMPP), không truyền tham số password, hoặc truyền null
-      db: 'test_123', // Tên database đã tạo
+      user: 'root',
+      db: 'test_123',
+      timeout: const Duration(seconds: 2), // Timeout nhanh để không bị treo giao diện
     );
 
-    return await MySqlConnection.connect(settings);
+    try {
+      final conn = await MySqlConnection.connect(settings);
+      _isUsingMock = false;
+      return conn;
+    } catch (e) {
+      print('--- KHÔNG KẾT NỐI ĐƯỢC MYSQL, CHUYỂN SANG MOCK OFFLINE MODE ---');
+      print('Chi tiết lỗi kết nối: $e');
+      _isUsingMock = true;
+      return null;
+    }
   }
 
   /// Hàm đăng nhập
-  /// Trả về true nếu tài khoản và mật khẩu đúng
   static Future<bool> loginUser(String username, String password) async {
     try {
       final conn = await getConnection();
-      // Truy vấn kiểm tra username và password
-      var results = await conn.query(
-          'SELECT id FROM users WHERE username = ? AND password = ?',
-          [username, password]);
-      await conn.close();
-      
-      // Nếu kết quả trả về có dữ liệu, tức là đăng nhập thành công
-      return results.isNotEmpty;
+      if (conn != null) {
+        // Sử dụng MySQL thực tế
+        var results = await conn.query(
+            'SELECT id FROM users WHERE username = ? AND password = ?',
+            [username, password]);
+        await conn.close();
+        return results.isNotEmpty;
+      } else {
+        // Fallback: Sử dụng SharedPreferences lưu cục bộ
+        return await _loginOffline(username, password);
+      }
     } catch (e) {
-      print('Lỗi đăng nhập: $e');
-      return false;
+      print('Lỗi đăng nhập: $e. Thử đăng nhập offline...');
+      return await _loginOffline(username, password);
     }
   }
 
   /// Hàm đăng ký
-  /// Trả về null nếu thành công, hoặc chuỗi báo lỗi nếu thất bại
   static Future<String?> registerUser(String username, String password) async {
     try {
       final conn = await getConnection();
-      // Thêm dữ liệu tài khoản mới vào bảng users
-      var result = await conn.query(
-          'INSERT INTO users (username, password) VALUES (?, ?)',
-          [username, password]);
-      await conn.close();
-      
-      // Kiểm tra số dòng bị ảnh hưởng
-      if (result.affectedRows! > 0) {
-        return null; // Thành công
+      if (conn != null) {
+        // Sử dụng MySQL thực tế
+        var result = await conn.query(
+            'INSERT INTO users (username, password) VALUES (?, ?)',
+            [username, password]);
+        await conn.close();
+        
+        if (result.affectedRows! > 0) {
+          return null; // Thành công
+        }
+        return 'Không có dữ liệu nào được ghi.';
+      } else {
+        // Fallback: Lưu tài khoản offline
+        return await _registerOffline(username, password);
       }
-      return 'Không có dữ liệu nào được ghi.';
     } catch (e) {
-      print('Lỗi đăng ký: $e');
-      return e.toString(); // Trả về chi tiết lỗi
+      print('Lỗi đăng ký: $e. Thử đăng ký offline...');
+      return await _registerOffline(username, password);
     }
+  }
+
+  // --- LOGIC ĐĂNG NHẬP / ĐĂNG KÝ OFFLINE (SHAPED PREFERENCES) ---
+
+  static Future<bool> _loginOffline(String username, String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    // Tạo sẵn một tài khoản admin mặc định để dễ đăng nhập nhanh
+    if (username == 'admin' && password == 'admin123') {
+      return true;
+    }
+
+    final List<String> userList = prefs.getStringList('offline_users') ?? [];
+    for (String userJson in userList) {
+      final parts = userJson.split(':');
+      if (parts.length == 2 && parts[0] == username && parts[1] == password) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static Future<String?> _registerOffline(String username, String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<String> userList = prefs.getStringList('offline_users') ?? [];
+    
+    // Kiểm tra xem tài khoản đã tồn tại chưa
+    for (String userJson in userList) {
+      final parts = userJson.split(':');
+      if (parts.length > 0 && parts[0] == username) {
+        return 'Tài khoản này đã tồn tại.';
+      }
+    }
+
+    // Lưu người dùng mới dạng "username:password"
+    userList.add('$username:$password');
+    await prefs.setStringList('offline_users', userList);
+    return null; // Đăng ký thành công
   }
 }

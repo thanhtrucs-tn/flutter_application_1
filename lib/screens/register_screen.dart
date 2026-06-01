@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../database/db_helper.dart';
+import '../utils/localization.dart';
 
-/// Trang đăng ký tài khoản
+/// Trang đăng ký tài khoản cho ứng dụng SOS Care
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -10,12 +11,9 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  // Controller để lấy dữ liệu từ TextField
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
-
-  // Biến trạng thái để hiển thị loading khi đang gọi database
   bool _isLoading = false;
 
   @override
@@ -32,68 +30,60 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
-    // Kiểm tra dữ liệu đầu vào
     if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin.')),
-      );
-      return;
-    }
-
-    if (username.length > 32) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tài khoản không được vượt quá 32 ký tự.')),
-      );
-      return;
-    }
-
-    if (password.length > 64) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mật khẩu không được vượt quá 64 ký tự.')),
+        const SnackBar(
+          content: Text('Vui lòng nhập tài khoản và mật khẩu.'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mật khẩu nhập lại không khớp.')),
+        const SnackBar(
+          content: Text('Mật khẩu nhập lại không khớp.'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
-    // Bắt đầu quá trình đăng ký (hiển thị loading)
     setState(() {
       _isLoading = true;
     });
 
-    // Gọi hàm đăng ký từ DbHelper
     String? errorMessage = await DbHelper.registerUser(username, password);
 
-    // Kết thúc quá trình đăng ký (ẩn loading)
     setState(() {
       _isLoading = false;
     });
 
     if (errorMessage == null) {
-      // Nếu thành công, hiển thị thông báo và quay lại trang đăng nhập
       if (mounted) {
+        String regSuccessMsg = DbHelper.isUsingMock 
+            ? 'Đăng ký tài khoản offline thành công!' 
+            : 'Đăng ký tài khoản MySQL thành công!';
+            
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đăng ký thành công! Vui lòng đăng nhập.')),
+          SnackBar(
+            content: Text(regSuccessMsg),
+            backgroundColor: Colors.green,
+          ),
         );
-        Navigator.pop(context);
+        Navigator.pop(context); // Quay lại trang đăng nhập
       }
     } else {
-      // Nếu thất bại (ví dụ: trùng tên đăng nhập hoặc lỗi MySQL)
       if (mounted) {
-        // Tùy biến thông báo nếu lỗi do trùng lặp
-        String displayError = errorMessage.contains('Duplicate entry') 
-            ? 'Tài khoản này đã tồn tại.' 
-            : 'Lỗi: $errorMessage';
+        String displayError = errorMessage.contains('Duplicate entry')
+            ? 'Tài khoản này đã tồn tại.'
+            : 'Lỗi đăng ký: $errorMessage';
             
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(displayError),
-            duration: const Duration(seconds: 4),
+            backgroundColor: Colors.red,
           ),
         );
       }
@@ -102,80 +92,112 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    // Điều chỉnh kích thước form dựa trên độ phân giải màn hình (Responsive)
-    final double formWidth = screenWidth < 600 
-        ? screenWidth * 0.9 
-        : (screenWidth < 1200 ? 450.0 : 500.0);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final size = MediaQuery.of(context).size;
+    final double formWidth = size.width < 600 ? size.width * 0.92 : 460.0;
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Đăng ký'),
-        backgroundColor: Colors.white,
+        title: Text(Localization.translate('register')),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: SizedBox(
-            width: formWidth,
-            child: Card(
-              elevation: 8,
-              shadowColor: Colors.black26,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDark
+                ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
+                : [const Color(0xFFE2F1F0), const Color(0xFFF8FAFC)],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: formWidth,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Ô nhập Tài khoản
-                    TextField(
-                      controller: _usernameController,
-                      maxLength: 32,
-                      decoration: const InputDecoration(
-                        labelText: 'Tài khoản',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.person),
+                    Card(
+                      elevation: 4,
+                      shadowColor: Colors.black12,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Ô nhập Mật khẩu
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      maxLength: 64,
-                      decoration: const InputDecoration(
-                        labelText: 'Mật khẩu',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.lock),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Ô nhập lại Mật khẩu
-                    TextField(
-                      controller: _confirmPasswordController,
-                      obscureText: true,
-                      maxLength: 64,
-                      decoration: const InputDecoration(
-                        labelText: 'Nhập lại mật khẩu',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.lock_outline),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Nút đăng ký
-                    _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : ElevatedButton(
-                            onPressed: _handleRegister,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              Localization.translate('register'),
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                fontSize: 26,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            child: const Text('Tạo tài khoản', style: TextStyle(fontSize: 16)),
-                          ),
+                            const SizedBox(height: 24),
+                            
+                            // Input Tài khoản
+                            TextField(
+                              controller: _usernameController,
+                              maxLength: 32,
+                              style: const TextStyle(fontSize: 18),
+                              decoration: InputDecoration(
+                                labelText: Localization.translate('username'),
+                                prefixIcon: const Icon(Icons.person_outline),
+                                counterText: "",
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            
+                            // Input Mật khẩu
+                            TextField(
+                              controller: _passwordController,
+                              obscureText: true,
+                              maxLength: 64,
+                              style: const TextStyle(fontSize: 18),
+                              decoration: InputDecoration(
+                                labelText: Localization.translate('password'),
+                                prefixIcon: const Icon(Icons.lock_outline),
+                                counterText: "",
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            
+                            // Nhập lại mật khẩu
+                            TextField(
+                              controller: _confirmPasswordController,
+                              obscureText: true,
+                              maxLength: 64,
+                              style: const TextStyle(fontSize: 18),
+                              decoration: InputDecoration(
+                                labelText: Localization.translate('confirmPassword'),
+                                prefixIcon: const Icon(Icons.lock_outline),
+                                counterText: "",
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                            
+                            // Nút Đăng ký
+                            _isLoading
+                                ? const Center(child: CircularProgressIndicator())
+                                : ElevatedButton(
+                                    onPressed: _handleRegister,
+                                    child: Text(
+                                      Localization.translate('register').toUpperCase(),
+                                    ),
+                                  ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

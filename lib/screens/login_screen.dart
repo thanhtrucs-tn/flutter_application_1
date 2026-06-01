@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/db_helper.dart';
+import '../utils/localization.dart';
+import '../utils/app_state.dart';
 import 'home_screen.dart';
 import 'register_screen.dart';
 
-/// Trang đăng nhập
+/// Trang đăng nhập cho ứng dụng SOS Care
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -13,20 +15,18 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Controller để lấy dữ liệu từ TextField
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  
-  // Trạng thái ghi nhớ đăng nhập
   bool _rememberMe = false;
-  // Biến hiển thị loading
   bool _isLoading = false;
+  bool _dbStatusChecked = false;
+  bool _isDbOnline = false;
 
   @override
   void initState() {
     super.initState();
-    // Tải dữ liệu tài khoản đã lưu (nếu có) khi màn hình khởi tạo
     _loadSavedCredentials();
+    _checkDatabaseStatus();
   }
 
   @override
@@ -36,14 +36,25 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  /// Hàm đọc dữ liệu tài khoản từ bộ nhớ cục bộ
+  /// Kiểm tra trạng thái Database thực tế để hiển thị Badge cho lập trình viên
+  Future<void> _checkDatabaseStatus() async {
+    final conn = await DbHelper.getConnection();
+    setState(() {
+      _isDbOnline = conn != null;
+      _dbStatusChecked = true;
+    });
+    if (conn != null) {
+      await conn.close();
+    }
+  }
+
+  /// Tải dữ liệu ghi nhớ đăng nhập
   Future<void> _loadSavedCredentials() async {
     final prefs = await SharedPreferences.getInstance();
     final savedUsername = prefs.getString('saved_username') ?? '';
     final savedPassword = prefs.getString('saved_password') ?? '';
     final isRemembered = prefs.getBool('remember_me') ?? false;
 
-    // Nếu người dùng đã chọn "Ghi nhớ đăng nhập" từ lần trước, điền sẵn thông tin
     if (isRemembered) {
       setState(() {
         _usernameController.text = savedUsername;
@@ -53,31 +64,31 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  /// Hàm lưu hoặc xóa dữ liệu tài khoản tùy thuộc vào trạng thái Checkbox
+  /// Lưu hoặc xóa dữ liệu ghi nhớ
   Future<void> _saveOrClearCredentials(String username, String password) async {
     final prefs = await SharedPreferences.getInstance();
     if (_rememberMe) {
-      // Lưu lại thông tin nếu tích chọn ghi nhớ
       await prefs.setString('saved_username', username);
       await prefs.setString('saved_password', password);
       await prefs.setBool('remember_me', true);
     } else {
-      // Xóa thông tin nếu không tích chọn
       await prefs.remove('saved_username');
       await prefs.remove('saved_password');
       await prefs.setBool('remember_me', false);
     }
   }
 
-  /// Xử lý logic khi người dùng nhấn nút đăng nhập
+  /// Xử lý logic đăng nhập
   Future<void> _handleLogin() async {
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
 
-    // Kiểm tra đầu vào
     if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập tài khoản và mật khẩu.')),
+        SnackBar(
+          content: Text(Localization.translate('Vui lòng nhập đầy đủ thông tin.')),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -86,7 +97,6 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    // Gọi hàm kiểm tra thông tin từ database MySQL
     bool success = await DbHelper.loginUser(username, password);
 
     setState(() {
@@ -94,21 +104,34 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     if (success) {
-      // Lưu hoặc xóa thông tin autofill
       await _saveOrClearCredentials(username, password);
       
-      // Đăng nhập thành công, chuyển hướng vào màn hình chính
+      // Hiển thị thông báo trạng thái kết nối database
+      String statusMsg = DbHelper.isUsingMock 
+          ? "Đăng nhập offline thành công (Mock DB)" 
+          : "Đăng nhập MySQL thành công!";
+      
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(statusMsg),
+            backgroundColor: DbHelper.isUsingMock ? Colors.amber.shade800 : Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       }
     } else {
-      // Đăng nhập thất bại, thông báo cho người dùng
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sai tài khoản hoặc mật khẩu.')),
+          const SnackBar(
+            content: Text('Sai tài khoản hoặc mật khẩu (Mặc định dùng admin / admin123)'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -116,113 +139,212 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    // Điều chỉnh kích thước form dựa trên độ phân giải màn hình (Responsive)
-    final double formWidth = screenWidth < 600 
-        ? screenWidth * 0.9 
-        : (screenWidth < 1200 ? 450.0 : 500.0);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final size = MediaQuery.of(context).size;
+    final double formWidth = size.width < 600 ? size.width * 0.92 : 460.0;
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text('Đăng nhập'),
-        backgroundColor: Colors.white,
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: SizedBox(
-            width: formWidth,
-            child: Card(
-              elevation: 8,
-              shadowColor: Colors.black26,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDark
+                ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
+                : [const Color(0xFFE2F1F0), const Color(0xFFF8FAFC)],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
+              child: SizedBox(
+                width: formWidth,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Tài khoản
-                    TextField(
-                      controller: _usernameController,
-                      maxLength: 32,
-                      decoration: const InputDecoration(
-                        labelText: 'Tài khoản',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.person),
+                    // Logo y tế SOS Care
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: theme.primaryColor.withOpacity(0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.health_and_safety,
+                          size: 72,
+                          color: theme.primaryColor,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Mật khẩu
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      maxLength: 64,
-                      decoration: const InputDecoration(
-                        labelText: 'Mật khẩu',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.lock),
+                    Text(
+                      Localization.translate('appName'),
+                      style: theme.textTheme.displayLarge?.copyWith(
+                        color: theme.primaryColor,
+                        fontSize: 34,
+                        fontWeight: FontWeight.w900,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
-                    // Ghi nhớ đăng nhập
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: _rememberMe,
-                          onChanged: (value) {
-                            setState(() {
-                              _rememberMe = value ?? false;
-                            });
-                          },
-                        ),
-                        const Text('Ghi nhớ đăng nhập'),
-                      ],
+                    Text(
+                      'Hệ thống giám sát khẩn cấp cho người cao tuổi',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontSize: 15,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 16),
-                    // Nút đăng nhập
-                    _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : ElevatedButton(
-                            onPressed: _handleLogin,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                    const SizedBox(height: 32),
+                    
+                    // Form đăng nhập đặt trong Card sang trọng
+                    Card(
+                      elevation: 4,
+                      shadowColor: Colors.black12,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              Localization.translate('login'),
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                fontSize: 26,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            child: const Text('Đăng nhập', style: TextStyle(fontSize: 16)),
-                          ),
-                    const SizedBox(height: 24),
-                    // Divider
-                    Row(
-                      children: const [
-                        Expanded(child: Divider()),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: Text('HOẶC'),
+                            const SizedBox(height: 24),
+                            
+                            // Input Tài khoản
+                            TextField(
+                              controller: _usernameController,
+                              style: const TextStyle(fontSize: 18),
+                              decoration: InputDecoration(
+                                labelText: Localization.translate('username'),
+                                prefixIcon: const Icon(Icons.person_outline),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            
+                            // Input Mật khẩu
+                            TextField(
+                              controller: _passwordController,
+                              obscureText: true,
+                              style: const TextStyle(fontSize: 18),
+                              decoration: InputDecoration(
+                                labelText: Localization.translate('password'),
+                                prefixIcon: const Icon(Icons.lock_outline),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            
+                            // Ghi nhớ đăng nhập
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: _rememberMe,
+                                  activeColor: theme.primaryColor,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _rememberMe = value ?? false;
+                                    });
+                                  },
+                                ),
+                                Text(
+                                  Localization.translate('rememberMe'),
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            
+                            // Nút đăng nhập
+                            _isLoading
+                                ? const Center(child: CircularProgressIndicator())
+                                : ElevatedButton(
+                                    onPressed: _handleLogin,
+                                    child: Text(
+                                      Localization.translate('login').toUpperCase(),
+                                    ),
+                                  ),
+                          ],
                         ),
-                        Expanded(child: Divider()),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    // Nút đăng kí
+                    const SizedBox(height: 24),
+                    
+                    // Chuyển sang màn đăng ký
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('Chưa có tài khoản?'),
+                        Text(
+                          Localization.translate('noAccount'),
+                          style: TextStyle(fontSize: 16, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                        ),
                         TextButton(
                           onPressed: () {
-                            // Chuyển sang trang đăng kí
                             Navigator.push(
                               context,
                               MaterialPageRoute(builder: (context) => const RegisterScreen()),
                             );
                           },
-                          child: const Text('Đăng ký ngay'),
+                          child: Text(
+                            Localization.translate('registerNow'),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: theme.primaryColor,
+                            ),
+                          ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+                    
+                    // Trạng thái cơ sở dữ liệu MySQL badge
+                    if (_dbStatusChecked)
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _isDbOnline 
+                                ? Colors.green.withOpacity(0.1) 
+                                : Colors.amber.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: _isDbOnline ? Colors.green.shade400 : Colors.amber.shade700,
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _isDbOnline ? Icons.cloud_done : Icons.cloud_off,
+                                size: 14,
+                                color: _isDbOnline ? Colors.green : Colors.amber.shade700,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _isDbOnline 
+                                    ? 'MySQL Server: Connected' 
+                                    : 'Offline Mode: Local Mock DB Active',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: _isDbOnline ? Colors.green.shade700 : Colors.amber.shade800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
