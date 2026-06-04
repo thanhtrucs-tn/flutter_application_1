@@ -3,7 +3,11 @@ import '../utils/app_state.dart';
 import '../utils/localization.dart';
 import '../models/elderly_model.dart';
 import '../models/alert_model.dart';
+import '../models/address_model.dart';
+import '../services/address_service.dart';
 import '../widgets/custom_map.dart';
+import '../widgets/address_badge.dart';
+import '../widgets/full_screen_map_modal.dart';
 import '../widgets/add_relative_dialog.dart';
 import 'detail_screen.dart';
 import 'alert_detail_screen.dart';
@@ -22,6 +26,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // Người thân hiện đang được chọn để định vị trên bản đồ ở trang chủ
   int _selectedElderlyId = 1;
 
+  // Service reverse geocoding + cache
+  final AddressService _addressService = AddressService();
+
+  // State cho address của người thân đang chọn
+  Address? _currentAddress;
+  bool _isLoadingAddress = false;
+  int? _lastFetchedElderlyId;
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +51,53 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Thêm người thân mới — mở dialog nhập liệu.
   void _addRelativePressed() {
     AddRelativeDialog.show(context);
+  }
+
+  /// Lấy địa chỉ từ tọa độ GPS thông qua Nominatim (có cache)
+  Future<void> _fetchAddressFor(ElderlyModel elderly) async {
+    if (_lastFetchedElderlyId == elderly.id &&
+        _currentAddress != null &&
+        !_isLoadingAddress) {
+      return; // Đã fetch cho người này rồi
+    }
+
+    setState(() {
+      _isLoadingAddress = true;
+      _lastFetchedElderlyId = elderly.id;
+    });
+
+    final address = await _addressService.getAddress(
+      elderly.latitude,
+      elderly.longitude,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _currentAddress = address;
+      _isLoadingAddress = false;
+    });
+  }
+
+  /// Mở modal fullscreen map khi người dùng tap vào zone map
+  Future<void> _openFullScreenMap(ElderlyModel elderly) async {
+    // Đảm bảo đã fetch address trước khi mở modal
+    if (_currentAddress == null && !_isLoadingAddress) {
+      await _fetchAddressFor(elderly);
+    }
+    if (!mounted) return;
+
+    await FullScreenMapModal.show(
+      context: context,
+      lat: elderly.latitude,
+      lng: elderly.longitude,
+      safeZoneLat: elderly.safeZoneLat,
+      safeZoneLng: elderly.safeZoneLng,
+      safeZoneRadius: elderly.safeZoneRadius,
+      relativeName: elderly.name,
+      safetyStatus: elderly.status,
+      address: _currentAddress,
+    );
   }
 
   @override
@@ -99,6 +158,14 @@ class _HomeScreenState extends State<HomeScreen> {
             selectedElderly = relatives.first;
             _selectedElderlyId = selectedElderly.id;
           }
+        }
+
+        // Fetch địa chỉ reverse geocoding cho người thân đang chọn (async, không block UI)
+        if (selectedElderly != null) {
+          // Schedule sau frame để không gọi setState trong build phase
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _fetchAddressFor(selectedElderly!);
+          });
         }
 
         return Scaffold(
@@ -241,29 +308,53 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // 3. Bản đồ vị trí ở trang chủ (Định vị người cao tuổi đang chọn)
                 if (selectedElderly != null) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        '🗺️ BẢN ĐỒ ĐỊNH VỊ NHANH',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                      ),
-                      Text(
-                        'Đang theo dõi: ${selectedElderly.name}',
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.teal),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  CustomMap(
-                    lat: selectedElderly.latitude,
-                    lng: selectedElderly.longitude,
-                    safeZoneLat: selectedElderly.safeZoneLat,
-                    safeZoneLng: selectedElderly.safeZoneLng,
-                    safeZoneRadius: selectedElderly.safeZoneRadius,
-                    safetyStatus: selectedElderly.status,
-                    height: 280,
-                    relativeName: selectedElderly.name,
+                  Builder(
+                    builder: (context) {
+                      // Local non-null binding cho Dart type inference
+                      final elderly = selectedElderly!;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                '🗺️ BẢN ĐỒ ĐỊNH VỊ NHANH',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                              Text(
+                                'Đang theo dõi: ${elderly.name}',
+                                style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.teal),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          CustomMap(
+                            lat: elderly.latitude,
+                            lng: elderly.longitude,
+                            safeZoneLat: elderly.safeZoneLat,
+                            safeZoneLng: elderly.safeZoneLng,
+                            safeZoneRadius: elderly.safeZoneRadius,
+                            safetyStatus: elderly.status,
+                            height: 280,
+                            relativeName: elderly.name,
+                            onZoneTap: () => _openFullScreenMap(elderly),
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Badge hiển thị địa chỉ chi tiết bên dưới map
+                          AddressBadge.fromAddress(
+                            address: _currentAddress,
+                            isLoading: _isLoadingAddress,
+                            relativeName: elderly.name,
+                            onTap: () => _openFullScreenMap(elderly),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 20),
                 ],

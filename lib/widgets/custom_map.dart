@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
-/// Bản đồ vệ tinh thực tế sử dụng Google Maps với chế độ vệ tinh
+/// Bản đồ vệ tinh MIỄN PHÍ dùng OpenStreetMap/Esri (thay thế Google Maps)
+/// - Không cần API key
+/// - Hỗ trợ vệ tinh, marker, circle, polyline, zoom controls
 class CustomMap extends StatefulWidget {
   final double lat;
   final double lng;
@@ -12,6 +15,7 @@ class CustomMap extends StatefulWidget {
   final bool isSOSMode; // Chế độ dẫn đường cứu hộ khẩn cấp
   final double height;
   final String relativeName;
+  final VoidCallback? onZoneTap; // Callback khi người dùng tap vào zone map (không phải marker)
 
   const CustomMap({
     super.key,
@@ -24,6 +28,7 @@ class CustomMap extends StatefulWidget {
     this.isSOSMode = false,
     this.height = 250.0,
     required this.relativeName,
+    this.onZoneTap,
   });
 
   @override
@@ -31,22 +36,14 @@ class CustomMap extends StatefulWidget {
 }
 
 class _CustomMapState extends State<CustomMap> {
-  late GoogleMapController _mapController;
-  final Set<Marker> _markers = {};
-  final Set<Circle> _circles = {};
-  final Set<Polyline> _polylines = {};
-
-  // Trạng thái thu phóng & di chuyển bản đồ
-  double _zoom = 15.0; // Zoom level mặc định cho bản đồ vệ tinh
-  LatLng _mapCenter = const LatLng(0, 0);
-  bool _mapReady = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _mapCenter = LatLng(widget.lat, widget.lng);
-    _updateMarkersAndCircles();
-  }
+  final MapController _mapController = MapController();
+  double _zoom = 16.0;
+  // Tile vệ tinh miễn phí từ Esri ArcGIS World Imagery - không cần API key
+  // Tham khảo: https://wiki.openstreetmap.org/wiki/Esri
+  static const String _satelliteTileUrl =
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+  static const String _satelliteAttribution =
+      'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics';
 
   @override
   void dispose() {
@@ -54,100 +51,43 @@ class _CustomMapState extends State<CustomMap> {
     super.dispose();
   }
 
-  void _updateMarkersAndCircles() {
-    // Xóa markers và circles cũ
-    _markers.clear();
-    _circles.clear();
-    _polylines.clear();
+  Color _getStatusColor() {
+    switch (widget.safetyStatus) {
+      case 'critical':
+        return Colors.red;
+      case 'warning':
+        return Colors.orange;
+      default:
+        return Colors.green;
+    }
+  }
 
-    // Thêm marker cho vị trí người cao tuổi
-    final targetPosition = LatLng(widget.lat, widget.lng);
-    _markers.add(
-      Marker(
-        markerId: const MarkerId('target'),
-        position: targetPosition,
-        icon: BitmapDescriptor.defaultMarkerWithHue(
-          widget.safetyStatus == 'critical'
-              ? BitmapDescriptor.hueRed
-              : (widget.safetyStatus == 'warning'
-                  ? BitmapDescriptor.hueOrange
-                  : BitmapDescriptor.hueGreen),
-        ),
-        infoWindow: InfoWindow(
-          title: widget.relativeName,
-          snippet: widget.safetyStatus == 'critical'
-              ? 'TRẠNG THÁI: NGUY HIỂM'
-              : (widget.safetyStatus == 'warning'
-                  ? 'TRẠNG THÁI: CẢNH BÁO'
-                  : 'TRẠNG THÁI: AN TOÀN'),
-        ),
-      ),
-    );
-
-    // Thêm marker cho vị trí nhà (vùng an toàn trung tâm)
-    final homePosition = LatLng(widget.safeZoneLat, widget.safeZoneLng);
-    _markers.add(
-      Marker(
-        markerId: const MarkerId('home'),
-        position: homePosition,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-        infoWindow: const InfoWindow(
-          title: 'Nhà',
-          snippet: 'Vùng an toàn trung tâm',
-        ),
-      ),
-    );
-
-    // Vẽ círculo vùng an toàn
-    _circles.add(
-      Circle(
-        circleId: const CircleId('safe_zone'),
-        center: homePosition,
-        radius: widget.safeZoneRadius,
-        fillColor: Colors.orange.withOpacity(0.2),
-        strokeColor: Colors.orange,
-        strokeWidth: 2,
-      ),
-    );
-
-    // Nếu ở chế độ SOS, vẽ đường dẫn đường từ nhà tới người cao tuổi
-    if (widget.isSOSMode) {
-      _polylines.add(
-        Polyline(
-          polylineId: const PolylineId('sos_route'),
-          color: Colors.red,
-          width: 5,
-          points: [
-            homePosition,
-            targetPosition,
-          ],
-          // Thêm hiệu ứng đứt đoạn cho SOS
-          patterns: [
-            PatternItem.dash(20),
-            PatternItem.gap(10),
-          ],
-        ),
-      );
+  String _getStatusSnippet() {
+    switch (widget.safetyStatus) {
+      case 'critical':
+        return 'TRẠNG THÁI: NGUY HIỂM';
+      case 'warning':
+        return 'TRẠNG THÁI: CẢNH BÁO';
+      default:
+        return 'TRẠNG THÁI: AN TOÀN';
     }
   }
 
   /// Reset bản đồ về tâm vị trí người cao tuổi
   void _recenterMap() {
-    if (_mapReady) {
-      _mapController.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(widget.lat, widget.lng),
-            zoom: _zoom,
-          ),
-        ),
-      );
-    }
+    _mapController.move(LatLng(widget.lat, widget.lng), _zoom);
+  }
+
+  void _updateCameraPosition() {
+    _mapController.move(LatLng(widget.lat, widget.lng), _zoom);
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final targetPos = LatLng(widget.lat, widget.lng);
+    final homePos = LatLng(widget.safeZoneLat, widget.safeZoneLng);
+    final statusColor = _getStatusColor();
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
@@ -157,34 +97,93 @@ class _CustomMapState extends State<CustomMap> {
         color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
         child: Stack(
           children: [
-            // Bản đồ vệ tinh thực tế từ Google Maps
-            _mapReady
-                ? GoogleMap(
-                    onMapCreated: (controller) {
-                      _mapController = controller;
-                      _mapReady = true;
-                    },
-                    initialCameraPosition: CameraPosition(
-                      target: _mapCenter,
-                      zoom: _zoom,
+            // Bản đồ vệ tinh từ Esri - hoàn toàn miễn phí
+            FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: targetPos,
+                initialZoom: _zoom,
+                minZoom: 1,
+                maxZoom: 19,
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                ),
+                onTap: (tapPosition, point) {
+                  // Bắt tap vào zone map (không phải marker) - mở modal fullscreen
+                  if (widget.onZoneTap != null) {
+                    widget.onZoneTap!();
+                  }
+                },
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: _satelliteTileUrl,
+                  userAgentPackageName: 'com.example.flutter_application_1',
+                  maxNativeZoom: 19,
+                  tileProvider: NetworkTileProvider(),
+                ),
+                // Vùng an toàn - vẽ trước marker để marker nổi bật
+                CircleLayer(
+                  circles: [
+                    CircleMarker(
+                      point: homePos,
+                      // flutter_map dùng đơn vị mét cho radius
+                      radius: widget.safeZoneRadius,
+                      useRadiusInMeter: true,
+                      color: Colors.orange.withValues(alpha: 0.2),
+                      borderColor: Colors.orange,
+                      borderStrokeWidth: 2,
                     ),
-                    mapType: MapType.satellite, // SỬ DỤNG CHẾ ĐỘ VỆ TINH
-                    myLocationEnabled: false,
-                    myLocationButtonEnabled: false,
-                    zoomControlsEnabled: false,
-                    compassEnabled: true,
-                    markers: _markers,
-                    circles: _circles,
-                    polylines: _polylines,
-                    onTap: (_) {
-                      // Tắt thông tin chi tiết khi tapping trên bản đồ
-                    },
-                  )
-                : const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.teal),
-                    ),
+                  ],
+                ),
+                // Đường dẫn SOS (nếu bật)
+                if (widget.isSOSMode)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: [homePos, targetPos],
+                        color: Colors.red,
+                        strokeWidth: 4,
+                        pattern: StrokePattern.dashed(
+                          segments: const [20, 10],
+                        ),
+                      ),
+                    ],
                   ),
+                // Markers cho người cao tuổi và nhà
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: targetPos,
+                      width: 50,
+                      height: 50,
+                      child: _buildPinMarker(
+                        color: statusColor,
+                        label: widget.relativeName,
+                        snippet: _getStatusSnippet(),
+                      ),
+                    ),
+                    Marker(
+                      point: homePos,
+                      width: 50,
+                      height: 50,
+                      child: _buildPinMarker(
+                        color: Colors.blue,
+                        label: 'Nhà',
+                        snippet: 'Vùng an toàn trung tâm',
+                        showPulse: false,
+                      ),
+                    ),
+                  ],
+                ),
+                // Attribution bắt buộc theo policy của Esri
+                RichAttributionWidget(
+                  attributions: [
+                    TextSourceAttribution(_satelliteAttribution),
+                  ],
+                ),
+              ],
+            ),
 
             // Các nút điều khiển bản đồ ở góc phải
             Positioned(
@@ -192,50 +191,49 @@ class _CustomMapState extends State<CustomMap> {
               bottom: 12,
               child: Column(
                 children: [
-                  // Nút Reset/Recenter
                   _buildMapControl(
                     icon: Icons.my_location,
                     onPressed: _recenterMap,
                   ),
                   const SizedBox(height: 8),
-                  // Nút Zoom In
                   _buildMapControl(
                     icon: Icons.add,
                     onPressed: () {
                       setState(() {
-                        _zoom = (_zoom + 2).clamp(0, 20);
-                        _updateCameraPosition();
+                        _zoom = (_zoom + 2).clamp(1, 19);
                       });
+                      _updateCameraPosition();
                     },
                   ),
                   const SizedBox(height: 8),
-                  // Nút Zoom Out
                   _buildMapControl(
                     icon: Icons.remove,
                     onPressed: () {
                       setState(() {
-                        _zoom = (_zoom - 2).clamp(0, 20);
-                        _updateCameraPosition();
+                        _zoom = (_zoom - 2).clamp(1, 19);
                       });
+                      _updateCameraPosition();
                     },
                   ),
                 ],
               ),
             ),
 
-            // Nhãn hiển thị bản đồ định vị
+            // Nhãn hiển thị chế độ bản đồ
             Positioned(
               left: 12,
               top: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: (widget.isSOSMode ? Colors.red : Colors.teal).withOpacity(0.9),
+                  color:
+                      (widget.isSOSMode ? Colors.red : Colors.teal).withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(
-                  widget.isSOSMode ? 'SOS NAVIGATION' : 'BẢN ĐỒ VỆ TINH',
-                  style: const TextStyle(
+                child: const Text(
+                  'BẢN ĐỒ VỆ TINH (FREE)',
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -243,26 +241,90 @@ class _CustomMapState extends State<CustomMap> {
                 ),
               ),
             ),
+
+            // Hint: Tap vào map để mở rộng
+            if (widget.onZoneTap != null)
+              Positioned(
+                left: 12,
+                bottom: 12,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.open_in_full, color: Colors.white, size: 12),
+                      SizedBox(width: 4),
+                      Text(
+                        'Nhấn để phóng to',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  void _updateCameraPosition() {
-    if (_mapReady) {
-      _mapController.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(widget.lat, widget.lng),
-            zoom: _zoom,
+  Widget _buildPinMarker({
+    required Color color,
+    required String label,
+    required String snippet,
+    bool showPulse = true,
+  }) {
+    return Tooltip(
+      message: '$label — $snippet',
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Vòng tròn pulse cho vị trí người cao tuổi
+          if (showPulse)
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.25),
+                shape: BoxShape.circle,
+              ),
+            ),
+          // Pin chính
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.person, color: Colors.white, size: 16),
           ),
-        ),
-      );
-    }
+        ],
+      ),
+    );
   }
 
-  Widget _buildMapControl({required IconData icon, required VoidCallback onPressed}) {
+  Widget _buildMapControl({
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: 40,
@@ -280,7 +342,7 @@ class _CustomMapState extends State<CustomMap> {
       ),
       child: IconButton(
         icon: Icon(icon, size: 20),
-        color: isDark ? Colors.white : Colors.black.withOpacity(0.85),
+        color: isDark ? Colors.white : Colors.black.withValues(alpha: 0.85),
         onPressed: onPressed,
         padding: EdgeInsets.zero,
       ),

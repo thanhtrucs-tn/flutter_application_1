@@ -33,7 +33,11 @@ dependencies:
   mysql1: ^0.20.0
   shared_preferences: ^2.3.2
   http: ^1.2.2
-  google_maps_flutter: ^2.5.0
+  # Bản đồ MIỄN PHÍ - không cần API key (thay thế Google Maps)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  # Reverse geocoding qua Nominatim (OpenStreetMap) + cache
+  geocoding: ^3.0.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
