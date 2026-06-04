@@ -4,6 +4,7 @@ import '../utils/localization.dart';
 import '../models/elderly_model.dart';
 import '../models/alert_model.dart';
 import '../widgets/custom_map.dart';
+import '../widgets/add_relative_dialog.dart';
 import 'detail_screen.dart';
 import 'alert_detail_screen.dart';
 import 'settings_screen.dart';
@@ -35,15 +36,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Thêm người thân mới
+  /// Thêm người thân mới — mở dialog nhập liệu.
   void _addRelativePressed() {
-    // Show a snackbar for now - in a real app this would navigate to add relative screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Tính năng thêm người thân đang được phát triển'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    AddRelativeDialog.show(context);
   }
 
   @override

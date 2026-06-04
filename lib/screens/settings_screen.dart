@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
 import '../models/app_settings.dart';
-import '../models/elderly_model.dart';
+import '../widgets/add_relative_dialog.dart';
 
 /// Màn hình Cài đặt quản lý cấu hình và mô phỏng sự cố lập trình viên
 class SettingsScreen extends StatefulWidget {
@@ -13,90 +13,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // Controller để nhập thêm người thân mới
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _deviceController = TextEditingController();
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _deviceController.dispose();
-    super.dispose();
-  }
-
-  /// Hiển thị Dialog thêm người cao tuổi mới
-  void _showAddRelativeDialog(AppState state) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(Localization.translate('add')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Tên người cao tuổi'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _deviceController,
-                decoration: const InputDecoration(labelText: 'Mã/Tên thiết bị đeo ESP32'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(Localization.translate('cancel')),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final name = _nameController.text.trim();
-                final device = _deviceController.text.trim();
-                if (name.isNotEmpty && device.isNotEmpty) {
-                  final newId = state.relatives.length + 1;
-                  final newElderly = ElderlyModel(
-                    id: newId,
-                    name: name,
-                    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
-                    battery: 100,
-                    lastUpdated: DateTime.now(),
-                    status: 'safe',
-                    latitude: 10.762622,
-                    longitude: 106.660172,
-                    heartRate: 72,
-                    spo2: 98,
-                    isOffline: false,
-                    wearableDevice: device,
-                    isFallen: false,
-                    safeZoneRadius: 300.0,
-                    safeZoneLat: 10.762622,
-                    safeZoneLng: 106.660172,
-                    emergencyContacts: ['0900000000'],
-                  );
-                  state.addElderly(newElderly);
-                  
-                  _nameController.clear();
-                  _deviceController.clear();
-                  Navigator.pop(context);
-                  
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Đã thêm người thân mới: $name thành công!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              },
-              child: Text(Localization.translate('save')),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final state = AppState();
@@ -189,7 +105,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     IconButton(
                       icon: const Icon(Icons.person_add_alt_1, color: Colors.teal),
                       tooltip: 'Thêm người thân',
-                      onPressed: () => _showAddRelativeDialog(state),
+                      onPressed: () => AddRelativeDialog.show(context),
                     ),
                   ],
                 ),

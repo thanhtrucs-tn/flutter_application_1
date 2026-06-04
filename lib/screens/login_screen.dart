@@ -130,20 +130,26 @@ class _LoginScreenState extends State<LoginScreen> {
         statusMsg = "Đăng nhập MySQL thành công!";
       }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(statusMsg),
-            backgroundColor: (kIsWeb || DbHelper.isUsingMock) ? Colors.amber.shade800 : Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+      if (!mounted) return;
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      }
+      // Lưu tham chiếu ScaffoldMessenger TRƯỚC khi navigate
+      // tránh lỗi "Looking up a deactivated widget's ancestor" vì
+      // Navigator.pushReplacement sẽ dispose LoginScreen ngay lập tức.
+      final messenger = ScaffoldMessenger.of(context);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+
+      // Hiển thị snackbar trên messenger đã capture (an toàn sau navigate)
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(statusMsg),
+          backgroundColor: (kIsWeb || DbHelper.isUsingMock) ? Colors.amber.shade800 : Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
