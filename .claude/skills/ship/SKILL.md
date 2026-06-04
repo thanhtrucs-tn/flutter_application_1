@@ -69,8 +69,8 @@ Step 4:  Run tests        → Auto-detect test runner, run, check results
 Step 5:  Review           → Two-pass checklist review (critical + informational)
 Step 6:  Version bump     → Auto-detect version file, bump patch/minor
 Step 7:  Changelog        → Auto-generate from commits + diff
-Step 8:  Journal          → Write technical journal via /ck:journal
-Step 9:  Docs update      → Update project docs via /ck:docs update (official only)
+Step 8:  Journal          → Write technical journal via journal
+Step 9:  Docs update      → Update project docs via docs update (official only)
 Step 10: Commit           → Conventional commit with version/changelog
 Step 11: Push             → git push -u origin <branch>
 Step 12: Create PR        → gh pr create with structured body + linked issues
@@ -91,9 +91,9 @@ Step 12: Create PR        → gh pr create with structured body + linked issues
 
 ## Quick Start
 
-User says `/ck:ship` → run full pipeline → output PR URL.
-User says `/ck:ship beta` → ship to dev branch with lighter pipeline.
-User says `/ck:ship official` → ship to main with full docs + journal.
+User says `ship` → run full pipeline → output PR URL.
+User says `ship beta` → ship to dev branch with lighter pipeline.
+User says `ship official` → ship to main with full docs + journal.
 
 ## Output Format
 
@@ -124,6 +124,6 @@ User says `/ck:ship official` → ship to main with full docs + journal.
 
 ## Workflow Position
 
-**Typically follows:** `/ck:code-review` (ship after review passes)
-**Typically precedes:** `/ck:journal` (document after shipping)
-**Related:** `/ck:code-review` (review before shipping), `/ck:test` (test before shipping)
+**Typically follows:** `code-review` (ship after review passes)
+**Typically precedes:** `journal` (document after shipping)
+**Related:** `code-review` (review before shipping), `test` (test before shipping)

@@ -4,11 +4,11 @@ Metadata determines when Claude activates the skill. Poor metadata = wrong activ
 
 ## Name Field
 
-**Format:** use either `skill-name` or `namespace:skill-name` (for example `ck:plan`), all lowercase
+**Format:** use either `skill-name` or `namespace:skill-name` (for example `plan`), all lowercase
 
 **Good Examples:**
 - `pdf-editor` - clear domain
-- `ck:bigquery-analyst` - namespaced variant
+- `bigquery-analyst` - namespaced variant
 - `frontend-webapp-builder` - specific function
 
 **Bad Examples:**

@@ -114,7 +114,7 @@ You can use Anthropic's pre-built skills, and upload custom skills, via the Clau
 
 # Creating a Basic Skill
 
-Skills are simple to create - just a folder with a `SKILL.md` file containing YAML frontmatter and instructions. Use the `/ck:skill-creator` skill to scaffold a new one, or copy any existing skill (e.g., `show-off/`) as a starting point:
+Skills are simple to create - just a folder with a `SKILL.md` file containing YAML frontmatter and instructions. Use the `skill-creator` skill to scaffold a new one, or copy any existing skill (e.g., `show-off/`) as a starting point:
 
 ```markdown
 ---

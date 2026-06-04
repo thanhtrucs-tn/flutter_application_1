@@ -48,10 +48,10 @@
 #### 6. Visual Explanations
 When explaining complex code, protocols, or architecture:
 - **When to use:** User asks "explain", "how does X work", "visualize", or topic has 3+ interacting components
-- Use the `preview` skill with `--explain <topic>` to generate visual explanation with ASCII + Mermaid
-- Use `preview` with `--diagram <topic>` for architecture and data flow diagrams
-- Use `preview` with `--slides <topic>` for step-by-step walkthroughs
-- Use `preview` with `--ascii <topic>` for terminal-friendly output only
+- Use `preview --explain <topic>` to generate visual explanation with ASCII + Mermaid
+- Use `preview --diagram <topic>` for architecture and data flow diagrams
+- Use `preview --slides <topic>` for step-by-step walkthroughs
+- Use `preview --ascii <topic>` for terminal-friendly output only
 - **HTML mode** (add `--html` for self-contained HTML pages, opens directly in browser):
   - `preview --html --explain <topic>` — publication-quality HTML explanation
   - `preview --html --diagram <topic>` — interactive HTML diagram with zoom controls
@@ -60,6 +60,6 @@ When explaining complex code, protocols, or architecture:
   - `preview --html --plan-review` — plan vs codebase comparison
   - `preview --html --recap [timeframe]` — project context snapshot
 - **Plan context:** Visuals save to plan folder from `## Plan Context` hook injection; if none, uses `plans/visuals/`
-- **Markdown mode:** Auto-opens in browser via `markdown-novel-viewer` with Mermaid rendering
+- **Markdown mode:** Auto-opens in browser via markdown-novel-viewer with Mermaid rendering
 - **HTML mode:** Opens directly in browser — self-contained, no server needed
 - See `development-rules.md` → "Visual Aids" section for additional guidance

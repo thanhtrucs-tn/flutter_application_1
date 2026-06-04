@@ -4,7 +4,7 @@
 
 1. Scan the codebase and calculate the number of files with LOC in each directory (skip credentials, cache or external modules directories, such as `.claude`, `.opencode`, `.git`, `tests`, `node_modules`, `__pycache__`, `secrets`, etc.)
 2. Target directories **that actually exist** - adapt to project structure, don't hardcode paths
-3. Activate `ck:scout` skill to explore the code base and return detailed summary reports to the main agent
+3. Activate `scout` skill to explore the code base and return detailed summary reports to the main agent
 4. Merge scout reports into context summary
 
 ## Phase 2: Documentation Creation (docs-manager Agent)

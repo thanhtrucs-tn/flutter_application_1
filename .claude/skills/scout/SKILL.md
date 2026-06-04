@@ -71,7 +71,7 @@ Load appropriate reference based on decision tree:
 - Each subagent must return a detailed summary report to a main agent
 
 ### 5. Collect Results
-**IMPORTANT:** Invoke "/ck:project-organization" skill to organize the outputs.
+**IMPORTANT:** Invoke "project-organization" skill to organize the outputs.
 
 - Timeout: 3 minutes per agent (skip non-responders)
 - `TaskUpdate` completed tasks; log timed-out agents in report (skip if Task tools unavailable)
@@ -99,5 +99,5 @@ Load appropriate reference based on decision tree:
 
 ## Workflow Position
 
-**Typically precedes:** `/ck:debug` (debug after scouting), `/ck:fix` (fix after locating code), `/ck:code-review` (scout edge cases before review)
-**Related:** `/ck:debug` (investigate after scouting), `/ck:brainstorm` (explore after scouting)
+**Typically precedes:** `debug` (debug after scouting), `fix` (fix after locating code), `code-review` (scout edge cases before review)
+**Related:** `debug` (investigate after scouting), `brainstorm` (explore after scouting)

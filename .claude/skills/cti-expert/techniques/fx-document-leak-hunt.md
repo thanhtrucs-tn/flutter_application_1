@@ -70,7 +70,7 @@ AND (confidential OR internal OR restricted OR draft OR "not for distribution")
 | 1 | WebSearch(mega-dork) | Default dispatch — Google-proxied, safest |
 | 2 | WebFetch(bing.com/search?q=...) | Fallback on T1 rate-limit; Bing indexes doc-hosts well |
 | 3 | WebFetch(html.duckduckgo.com/html/?q=...) | Third-tier fallback |
-| 4 | agent-browser | Paywall-preview screenshot capture (metadata only) |
+| 4 | agent-browser or chrome-profile | Paywall-preview screenshot capture (metadata only) |
 
 Full cascade semantics: [`fx-dork-sweep.md`](fx-dork-sweep.md) §Tools & Fallbacks.
 

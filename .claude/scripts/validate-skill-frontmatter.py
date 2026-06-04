@@ -2,7 +2,7 @@
 """
 Schema loading, category constants, and frontmatter validation for SKILL.md files.
 
-Validates frontmatter dicts against claude/schemas/skill-schema.json.
+Validates frontmatter dicts against .claude/schemas/skill-schema.json.
 Designed to be imported by scan_skills.py or called standalone.
 """
 
@@ -41,12 +41,13 @@ CATEGORY_NAMES = {
 # Exact name→category mappings for high-signal CK skills (avoids falling into "other")
 EXACT_CATEGORY_MAP: dict[str, str] = {
     "ask": "utilities", "bootstrap": "utilities", "brainstorm": "utilities",
-    "ck-autoresearch": "utilities", "ck-debug": "utilities", "ck-loop": "utilities",
-    "ck-predict": "utilities", "ck-scenario": "utilities", "code-review": "utilities",
+    "autoresearch": "utilities", "code-review": "utilities",
+    "debug": "utilities", "loop": "utilities",
+    "predict": "utilities", "scenario": "utilities", "code-review": "utilities",
     "coding-level": "utilities", "context-engineering": "utilities", "cook": "utilities",
     "copywriting": "utilities", "debug": "utilities", "docs": "utilities",
     "fix": "utilities", "journal": "utilities", "markdown-novel-viewer": "utilities",
-    "mermaidjs-v11": "utilities", "plan": "utilities", "ck-plan": "utilities",
+    "mermaidjs-v11": "utilities", "plan": "utilities", "plan": "utilities",
     "preview": "utilities", "problem-solving": "utilities",
     "project-management": "utilities", "project-organization": "utilities",
     "research": "utilities", "retro": "utilities", "sequential-thinking": "utilities",
@@ -60,14 +61,15 @@ EXACT_CATEGORY_MAP: dict[str, str] = {
     "shader": "frontend", "stitch": "frontend", "web-design-guidelines": "frontend",
     "tanstack": "frameworks",
     "deploy": "infrastructure",
-    "agent-browser": "multimedia", "web-testing": "multimedia",
-    "ck-security": "security", "cti-expert": "security", "security-scan": "security",
+    "agent-browser": "multimedia", "chrome-profile": "dev-tools", "web-testing": "multimedia",
+    "security": "security", "cti-expert": "security", "security-scan": "security",
 }
 
 # Category enum for fast validation without jsonschema dep
 VALID_CATEGORIES = frozenset(CATEGORY_NAMES.keys())
 VALID_MATURITIES = frozenset(["experimental", "beta", "stable"])
-REQUIRES_RELATED_RE = re.compile(r"^[a-z0-9][a-z0-9:-]*$")
+SKILL_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+REQUIRES_RELATED_RE = SKILL_NAME_RE
 
 
 def load_schema() -> dict[str, Any]:
@@ -101,6 +103,10 @@ def validate_frontmatter(frontmatter: dict[str, Any], skill_path: str = "") -> l
         errors.append(f"{prefix}missing required field 'name'")
     elif not isinstance(name, str) or not (1 <= len(name) <= 100):
         errors.append(f"{prefix}'name' must be 1-100 chars, got {len(str(name))}")
+    elif not SKILL_NAME_RE.match(name):
+        errors.append(
+            f"{prefix}'name' must be portable kebab-case (^[a-z0-9][a-z0-9-]*$), got '{name}'"
+        )
 
     description = frontmatter.get("description")
     if not description:
@@ -184,7 +190,7 @@ def validate_frontmatter(frontmatter: dict[str, Any], skill_path: str = "") -> l
 
     user_invocable = frontmatter.get("user-invocable")
     if user_invocable is not True:
-        errors.append(f"{prefix}'user-invocable' must be true for shipped ClaudeKit skills")
+        errors.append(f"{prefix}'user-invocable' must be true for shipped skills")
 
     disable_model_invocation = frontmatter.get("disable-model-invocation")
     if disable_model_invocation is not None:
@@ -192,7 +198,7 @@ def validate_frontmatter(frontmatter: dict[str, Any], skill_path: str = "") -> l
             errors.append(f"{prefix}'disable-model-invocation' must be a boolean")
         elif disable_model_invocation:
             errors.append(
-                f"{prefix}'disable-model-invocation' must be false for shipped ClaudeKit skills"
+                f"{prefix}'disable-model-invocation' must be false for shipped skills"
             )
 
     # ── Array fields ─────────────────────────────────────────────────────────
@@ -215,7 +221,7 @@ def validate_frontmatter(frontmatter: dict[str, Any], skill_path: str = "") -> l
         for item in value:
             if not isinstance(item, str) or not REQUIRES_RELATED_RE.match(item):
                 errors.append(
-                    f"{prefix}'{field}' items must match ^[a-z0-9][a-z0-9:-]*$, got '{item}'"
+                    f"{prefix}'{field}' items must match ^[a-z0-9][a-z0-9-]*$, got '{item}'"
                 )
 
     # ── Metadata block ────────────────────────────────────────────────────────
@@ -256,8 +262,8 @@ def validate_skill_file(skill_path: Path, frontmatter: dict[str, Any]) -> bool:
 
 def main() -> None:
     """Standalone validator: scan all SKILL.md files and report issues."""
-    repo_root = Path(__file__).resolve().parents[2]
-    base_path = repo_root / "claude" / "skills"
+    claude_root = Path(__file__).resolve().parents[1]
+    base_path = claude_root / "skills"
     if not base_path.exists():
         raise SystemExit(f"Error: {base_path} not found")
 
@@ -276,7 +282,7 @@ def main() -> None:
             continue
         content = skill_file.read_text(encoding="utf-8")
         fm = extract_frontmatter(content)
-        rel = skill_file.relative_to(repo_root)
+        rel = skill_file.relative_to(claude_root)
         is_valid = validate_skill_file(rel, fm)
         total += 1
         if not is_valid:

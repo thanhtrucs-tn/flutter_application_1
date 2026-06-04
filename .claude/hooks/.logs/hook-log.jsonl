@@ -1,0 +1,20 @@
+{"ts":"2026-06-03T15:24:57.599Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"","note":"empty-input","dur":0,"status":"skip","exit":0,"error":""}
+{"ts":"2026-06-03T15:24:57.714Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"","note":"","dur":0,"status":"crash","exit":0,"error":"Unexpected token 'o', \"not valid json{{{\" is not valid JSON"}
+{"ts":"2026-06-03T15:24:57.835Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"","note":"missing-team-name","dur":1,"status":"skip","exit":0,"error":""}
+{"ts":"2026-06-03T15:24:57.953Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"1","note":"completion-logged","dur":2,"status":"ok","exit":0,"error":""}
+{"ts":"2026-06-03T15:24:58.071Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"2","note":"completion-logged","dur":2,"status":"ok","exit":0,"error":""}
+{"ts":"2026-06-03T15:24:58.183Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"2","note":"completion-logged","dur":2,"status":"ok","exit":0,"error":""}
+{"ts":"2026-06-03T15:24:58.285Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"1","note":"completion-logged","dur":4,"status":"ok","exit":0,"error":""}
+{"ts":"2026-06-03T15:24:58.400Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"1","note":"completion-logged","dur":2,"status":"ok","exit":0,"error":""}
+{"ts":"2026-06-03T15:24:58.504Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"1","note":"completion-logged","dur":2,"status":"ok","exit":0,"error":""}
+{"ts":"2026-06-03T15:24:58.613Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"1","note":"completion-logged","dur":3,"status":"ok","exit":0,"error":""}
+{"ts":"2026-06-03T15:26:15.880Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"","note":"empty-input","dur":0,"status":"skip","exit":0,"error":""}
+{"ts":"2026-06-03T15:26:15.996Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"","note":"","dur":0,"status":"crash","exit":0,"error":"Unexpected token 'o', \"not valid json{{{\" is not valid JSON"}
+{"ts":"2026-06-03T15:26:16.110Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"","note":"missing-team-name","dur":1,"status":"skip","exit":0,"error":""}
+{"ts":"2026-06-03T15:26:16.229Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"1","note":"completion-logged","dur":19,"status":"ok","exit":0,"error":""}
+{"ts":"2026-06-03T15:26:16.370Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"2","note":"completion-logged","dur":29,"status":"ok","exit":0,"error":""}
+{"ts":"2026-06-03T15:26:16.493Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"2","note":"completion-logged","dur":17,"status":"ok","exit":0,"error":""}
+{"ts":"2026-06-03T15:26:16.603Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"1","note":"completion-logged","dur":10,"status":"ok","exit":0,"error":""}
+{"ts":"2026-06-03T15:26:16.731Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"1","note":"completion-logged","dur":10,"status":"ok","exit":0,"error":""}
+{"ts":"2026-06-03T15:26:16.836Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"1","note":"completion-logged","dur":3,"status":"ok","exit":0,"error":""}
+{"ts":"2026-06-03T15:26:16.954Z","hook":"task-completed-handler","event":"TaskCompleted","tool":"","target":"1","note":"completion-logged","dur":17,"status":"ok","exit":0,"error":""}

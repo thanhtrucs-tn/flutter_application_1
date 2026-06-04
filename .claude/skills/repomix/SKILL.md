@@ -66,6 +66,7 @@ repomix --include "src/**/*.ts" --remove-comments -o output.md
 - Git-aware processing (respects .gitignore)
 - Token counting for LLM context management
 - Security checks for sensitive information
+- Monorepo-aware skill generation via `--skill-generate`, including dependency files under package/app directories
 
 ### Remote Repository Support
 Process remote repositories without cloning:
@@ -159,6 +160,8 @@ repomix --init  # creates repomix.config.json
 ## Token Management
 
 Repomix automatically counts tokens for individual files, total repository, and per-format output.
+
+Current Repomix releases use a faster pure-JavaScript tokenization path and parallelize more of the pack pipeline. Still treat token count as a review gate: check the generated summary before sharing context, narrow includes for large monorepos, and prefer package-scoped packs when only one workspace matters.
 
 Typical LLM context limits:
 - Claude Sonnet 4.5: ~200K tokens

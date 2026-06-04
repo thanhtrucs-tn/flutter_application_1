@@ -34,6 +34,7 @@ if ($env:NON_INTERACTIVE -eq "1") {
 # ============================================================================
 $Script:INSTALLED_CRITICAL = [System.Collections.ArrayList]::new()
 $Script:INSTALLED_OPTIONAL = [System.Collections.ArrayList]::new()
+$Script:FAILED_CRITICAL = [System.Collections.ArrayList]::new()
 $Script:FAILED_OPTIONAL = [System.Collections.ArrayList]::new()
 $Script:SKIPPED_ADMIN = [System.Collections.ArrayList]::new()
 $Script:FINAL_EXIT_CODE = 0
@@ -60,6 +61,7 @@ function Track-Failure {
         [string]$Reason
     )
     if ($Category -eq "critical") {
+        [void]$Script:FAILED_CRITICAL.Add("${Name}: ${Reason}")
         $Script:FINAL_EXIT_CODE = 1
     } else {
         [void]$Script:FAILED_OPTIONAL.Add("${Name}: ${Reason}")
@@ -449,6 +451,46 @@ function Install-WithPackageManager {
     return $false
 }
 
+# Install rsvg-convert on Windows.
+# winget and Scoop do not currently ship a librsvg/rsvg-convert package, so do
+# not print dead package-manager commands.
+function Install-RsvgConvert {
+    $displayName = "librsvg (rsvg-convert)"
+
+    if (Test-Command "rsvg-convert") {
+        Write-Success "$displayName already installed"
+        Track-Success -Category "optional" -Name "librsvg"
+        return $true
+    }
+
+    if (Test-Command "choco") {
+        if ($WithAdmin -and (Test-Administrator)) {
+            Write-Info "Installing $displayName via chocolatey..."
+            choco install rsvg-convert -y 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Success "$displayName installed via chocolatey"
+                Track-Success -Category "optional" -Name $displayName
+                return $true
+            }
+
+            Write-Warning "$displayName chocolatey install failed"
+            Track-Failure -Category "optional" -Name $displayName -Reason "chocolatey install failed"
+            return $false
+        }
+
+        Write-Warning "$displayName requires Chocolatey with admin privileges"
+        Write-Info "Run from an elevated PowerShell: choco install rsvg-convert -y"
+        Track-Failure -Category "optional" -Name $displayName -Reason "requires Chocolatey admin install"
+        return $false
+    }
+
+    Write-Warning "$displayName is not available via winget or Scoop."
+    Write-Info "Install with Chocolatey: choco install rsvg-convert -y"
+    Write-Info "Or install MSYS2 and add its mingw64 bin directory to PATH: pacman -S mingw-w64-x86_64-librsvg"
+    Track-Failure -Category "optional" -Name $displayName -Reason "not available via winget/scoop"
+    return $false
+}
+
 # Get user input with support for redirected stdin
 function Get-UserInput {
     param(
@@ -577,19 +619,8 @@ function Install-SystemDeps {
             -Category "optional"
     }
 
-    # librsvg (rsvg-convert) — required for tech-graph skill
-    if (Test-Command "rsvg-convert") {
-        Write-Success "librsvg (rsvg-convert) already installed"
-        Track-Success -Category "optional" -Name "librsvg"
-    } else {
-        $null = Install-WithPackageManager `
-            -DisplayName "librsvg (rsvg-convert)" `
-            -WingetId "GNOME.librsvg" `
-            -ChocoName "rsvg-convert" `
-            -ScoopName "librsvg" `
-            -ManualUrl "https://gitlab.gnome.org/GNOME/librsvg" `
-            -Category "optional"
-    }
+    # librsvg (rsvg-convert) — required only for tech-graph PNG export.
+    $null = Install-RsvgConvert
 
     # Docker (optional)
     if (Test-Command "docker") {
@@ -1071,11 +1102,35 @@ function Split-FailureItem {
     }
 }
 
+function Test-SystemFailureItem {
+    param([string]$Item)
+
+    $failure = Split-FailureItem -Item $Item
+    $name = $failure.Name.ToLowerInvariant()
+    return (
+        $name -eq "ffmpeg" -or
+        $name -eq "imagemagick" -or
+        $name -eq "librsvg" -or
+        $name -like "*rsvg-convert*"
+    )
+}
+
+function Get-SystemFailureItems {
+    return @($Script:FAILED_OPTIONAL | Where-Object { Test-SystemFailureItem -Item $_ })
+}
+
+function Get-PythonFailureItems {
+    return @($Script:FAILED_OPTIONAL | Where-Object { -not (Test-SystemFailureItem -Item $_) })
+}
+
 function Get-RemediationCommands {
     $hasSudoSkipped = $Script:SKIPPED_ADMIN.Count -gt 0
-    $hasPythonFailed = $Script:FAILED_OPTIONAL.Count -gt 0
+    $systemFailures = @(Get-SystemFailureItems)
+    $pythonFailures = @(Get-PythonFailureItems)
+    $hasSystemFailed = $systemFailures.Count -gt 0
+    $hasPythonFailed = $pythonFailures.Count -gt 0
 
-    if (-not $hasSudoSkipped -and -not $hasPythonFailed) {
+    if (-not $hasSudoSkipped -and -not $hasSystemFailed -and -not $hasPythonFailed) {
         return
     }
 
@@ -1098,12 +1153,31 @@ function Get-RemediationCommands {
         Write-Host ""
     }
 
+    if ($hasSystemFailed) {
+        Write-Host "# System packages:"
+        foreach ($item in $systemFailures) {
+            $failure = Split-FailureItem -Item $item
+            $name = $failure.Name
+            switch -Regex ($name) {
+                "^FFmpeg$" { Write-Host "winget install Gyan.FFmpeg" }
+                "^ImageMagick$" { Write-Host "winget install ImageMagick.ImageMagick" }
+                "rsvg-convert|librsvg" {
+                    Write-Host "# rsvg-convert is not available via winget or Scoop"
+                    Write-Host "# Option A (admin): choco install rsvg-convert -y"
+                    Write-Host "# Option B (MSYS2): pacman -S mingw-w64-x86_64-librsvg"
+                }
+                default { Write-Host "# ${name}: see documentation" }
+            }
+        }
+        Write-Host ""
+    }
+
     if ($hasPythonFailed) {
         Write-Host "# Python packages (may require build tools):"
         Write-Host "# Install Visual Studio Build Tools: https://visualstudio.microsoft.com/visual-cpp-build-tools/"
         Write-Host ".\.claude\skills\.venv\Scripts\Activate.ps1"
 
-        foreach ($item in $Script:FAILED_OPTIONAL) {
+        foreach ($item in $pythonFailures) {
             $failure = Split-FailureItem -Item $item
             $pkg = $failure.Package
             if ([string]::IsNullOrWhiteSpace($pkg)) {
@@ -1142,6 +1216,20 @@ function Write-FinalReport {
             $name = ($item -split ':')[0]
             $reason = ($item -split ':')[1]
             Write-Host "  [~] $name ($reason)" -ForegroundColor Yellow
+        }
+        Write-Host ""
+    }
+
+    if ($Script:FAILED_CRITICAL.Count -gt 0) {
+        Write-Host "Critical Failures ($($Script:FAILED_CRITICAL.Count)):" -ForegroundColor Red
+        foreach ($item in $Script:FAILED_CRITICAL) {
+            $failure = Split-FailureItem -Item $item
+            $name = $failure.Name
+            $reason = $failure.Reason
+            if ([string]::IsNullOrWhiteSpace($reason)) {
+                $reason = $failure.Package
+            }
+            Write-Host "  [X] $name ($reason)" -ForegroundColor Red
         }
         Write-Host ""
     }
@@ -1189,7 +1277,7 @@ function Write-ErrorSummary {
     $summary = @{
         exit_code = $Script:FINAL_EXIT_CODE
         timestamp = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
-        critical_failures = @()
+        critical_failures = @($Script:FAILED_CRITICAL)
         optional_failures = @($Script:FAILED_OPTIONAL)
         skipped = @($Script:SKIPPED_ADMIN)
         remediation = @{

@@ -16,7 +16,7 @@ Conclude when functionality scope is clear.
 
 ## Step 2: Research
 
-Activate `/ck:docs-seeker` and `/ck:research` skills. Research:
+Activate `docs-seeker` and `research` skills. Research:
 
 - Best practices & industry standards
 - Existing CLI tools (`npx`, `bunx`, `pipx`) for reuse

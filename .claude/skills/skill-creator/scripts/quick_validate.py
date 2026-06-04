@@ -44,7 +44,7 @@ def validate_skill(skill_path):
     if name_match:
         name = name_match.group(1).strip().strip('"').strip("'")
 
-        # Support namespaced identifiers: ck:skill-name (single namespace segment)
+        # Support namespaced identifiers: skill-name (single namespace segment)
         if name.count(':') > 1:
             return False, (
                 f"Name '{name}' is invalid. Use either 'skill-name' or "

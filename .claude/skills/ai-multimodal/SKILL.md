@@ -120,7 +120,7 @@ Load for detailed guidance:
 
 ## Outputs
 
-**IMPORTANT:** Invoke "/ck:project-organization" skill to organize the outputs.
+**IMPORTANT:** Invoke "project-organization" skill to organize the outputs.
 
 ## Resources
 

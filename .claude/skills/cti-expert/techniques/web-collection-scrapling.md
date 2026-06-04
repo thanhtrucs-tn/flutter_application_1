@@ -94,7 +94,7 @@ DEFAULT BEHAVIOR when a URL is fetched during investigation:
 | Static content (HTML with data) | Fetcher | No |
 | 403/bot-block response | StealthyFetcher | Headless (stealth) |
 | JS-heavy/SPA detected | DynamicFetcher | Headless (full render) |
-| Screenshot needed | agent-browser (Playwright) | Full browser |
+| Screenshot needed | agent-browser or project-native Playwright | Full browser |
 
 ---
 
@@ -147,7 +147,7 @@ Scrapling enhances these investigation modules:
 ## 8. Full Fallback Cascade
 
 ```
-agent-browser (Playwright) → DynamicFetcher → StealthyFetcher → Fetcher → WebFetch → WebSearch → curl
+agent-browser or project-native Playwright → DynamicFetcher → StealthyFetcher → Fetcher → WebFetch → WebSearch → curl
 ```
 
 ---

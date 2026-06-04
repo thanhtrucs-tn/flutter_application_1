@@ -96,9 +96,9 @@ Invoke tiers sequentially. Escalate only on failure signal. Add 2s delay between
 # Transition: Tier 4
 ```
 
-**Tier 4 — agent-browser (last resort):**
+**Tier 4 — agent-browser or project browser (last resort):**
 ```
-# Tool: agent-browser (Playwright)
+# Tool: agent-browser when no real Chrome login state is needed; chrome-profile only for real user Chrome cookies
 # Mode: headless=false, user-data-dir=persistent for cookie warmth
 # Invocation: navigate to https://www.google.com/search?q={URLENC}
 # Evidence: mandatory screenshot at results page

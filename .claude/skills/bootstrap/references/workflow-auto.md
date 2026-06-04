@@ -22,20 +22,20 @@ No user gate — auto-select best option.
 
 1. Use `ui-ux-designer` + `researcher` subagents in parallel:
    - Research style, trends, fonts (predict Google Fonts name, NOT just Inter/Poppins), colors, spacing, positions
-   - Describe assets for `ck:ai-multimodal` skill generation
+   - Describe assets for `ai-multimodal` skill generation
 2. `ui-ux-designer` creates:
    - Design guidelines at `./docs/design-guidelines.md`
    - Wireframes in HTML at `./docs/wireframe/`
-3. If no logo provided: generate with `ck:ai-multimodal` skill
-4. Screenshot wireframes with `ck:agent-browser` → save to `./docs/wireframes/`
+3. If no logo provided: generate with `ai-multimodal` skill
+4. Screenshot wireframes with `agent-browser` → save to `./docs/wireframes/`
 
 **Gate:** Ask user to approve design. Repeat if rejected.
 
-**Image tools:** `ck:ai-multimodal` for generation/analysis, `imagemagick` for crop/resize, background removal tool as needed.
+**Image tools:** `ai-multimodal` for generation/analysis, `imagemagick` for crop/resize, background removal tool as needed.
 
 ## Step 4: Planning
 
-Activate **ck:plan** skill: `/ck:plan --auto <requirements>`
+Activate **plan** skill: `plan --auto <requirements>`
 - Planning skill auto-detects complexity and picks appropriate mode
 - Creates plan directory using `## Naming` pattern
 - Overview at `plan.md` (<80 lines) + `phase-XX-*.md` files
@@ -46,7 +46,7 @@ No user gate after planning in explicit auto mode — proceed to implementation.
 
 Load `references/shared-phases.md` for remaining phases.
 
-Activate **ck:cook** skill: `/ck:cook --auto <plan-path>`
+Activate **cook** skill: `cook --auto <plan-path>`
 - Skips cook review gates because `--auto` was explicitly requested
 - Auto-approves if score≥9.5 and 0 critical issues
 - Continues through all phases without stopping

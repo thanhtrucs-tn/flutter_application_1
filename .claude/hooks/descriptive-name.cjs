@@ -13,9 +13,10 @@ try {
   try {
   const timer = createHookTimer('descriptive-name', { event: 'PreToolUse', tool: 'Write' });
   let injectedPrompt = `## File naming guidance:
-- Skip this guidance if you are creating markdown or plain text files
-- Prefer kebab-case for JS/TS/Python/shell (.js, .ts, .py, .sh) with descriptive names
-- Respect language conventions: C#/Java/Kotlin/Swift use PascalCase (.cs, .java, .kt, .swift), Go/Rust use snake_case (.go, .rs)
+- Prefer kebab-case for JS/TS/shell (.js, .ts, .sh) with descriptive names
+- For Markdown/plain text reports and plans, use the ## Naming path and include workflow + scope in the filename
+- Avoid generic report names like red-team-review.md, review.md, report.md, or notes.md
+- Respect language conventions: Python/Go/Rust use snake_case (.py, .go, .rs); C#/Java/Kotlin/Swift use PascalCase (.cs, .java, .kt, .swift)
 - Other languages: follow their ecosystem's standard naming convention
 - Goal: self-documenting names for LLM tools (Grep, Glob, Search)`
 

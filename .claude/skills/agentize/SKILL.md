@@ -17,16 +17,16 @@ Convert a codebase (or a scoped feature/module inside it) into an AI agent-frien
 
 - **CLI** — publishable on npm, credential-aware, scriptable
 - **MCP server** — stdio + SSE + Streamable HTTP, deployable on Cloudflare/Docker
-- **Companion skill** — a `/ck:*` skill discoverable on the Claude Plugins Marketplace
+- **Companion skill** — a portable skill discoverable by Claude, IDEs, and other AI tools
 
 Principles: understand before wrap | agent-centric tool design | one source of truth (shared core, thin adapters) | credentials at every layer | ship with docs, tests, and CI.
 
-Scope: converting existing code into CLI and/or MCP. Not for: building a server from scratch (use `/ck:mcp-builder`), raw npm scaffolding, or publishing without an agent-use story.
+Scope: converting existing code into CLI and/or MCP. Not for: building a server from scratch (use `mcp-builder`), raw npm scaffolding, or publishing without an agent-use story.
 
 ## Usage
 
 ```text
-/ck:agentize [feature-or-module] [--both|--mcp|--cli] [--auto|--ask]
+agentize [feature-or-module] [--both|--mcp|--cli] [--auto|--ask]
 ```
 
 Output modes (what to build):
@@ -60,7 +60,7 @@ Hard gates:
 
 ### 0. Track (MANDATORY)
 
-Invoke `/ck:project-management` **before** touching code. This skill owns plan/task lifecycle; `agentize` is a consumer.
+Invoke `project-management` **before** touching code. This skill owns plan/task lifecycle; `agentize` is a consumer.
 
 Purpose:
 - Create a dated plan directory under `plans/` (naming from hook injection: `{date}-{issue}-{slug}`).
@@ -78,7 +78,7 @@ Do not proceed until the plan directory exists and tasks are registered. If `pro
 
 ### 1. Scout (MANDATORY)
 
-Invoke `/ck:scout` to understand the target codebase. Without this, everything downstream is guessed.
+Invoke `scout` to understand the target codebase. Without this, everything downstream is guessed.
 
 Collect:
 - **Entry points** — public functions, classes, exported APIs, existing CLIs
@@ -224,7 +224,7 @@ Deployment targets (see `references/deployment-guide.md`):
 
 Run these in order. Do not skip.
 
-1. **Tests** — invoke `/ck:test` to generate:
+1. **Tests** — invoke `test` to generate:
    - Unit tests for every `core/` capability (happy path + 2 error paths minimum)
    - CLI integration tests (argv in, stdout+exitCode out)
    - MCP tests: tool list matches spec, each tool call round-trips, auth rejects bad tokens, each transport boots
@@ -233,14 +233,14 @@ Run these in order. Do not skip.
    - `ci.yml` — test + typecheck + lint on push/PR, Node LTS matrix, OS matrix for CLI
    - `release.yml` — tag-triggered: build, publish CLI to npm (with provenance), build+push Docker image to GHCR, deploy MCP to Cloudflare on `main`
    - Cache pnpm/npm store
-3. **Docs** — invoke `/ck:docs` to generate:
+3. **Docs** — invoke `docs` to generate:
    - Root `README.md` — what, install, quick CLI + MCP examples, auth setup, links
    - `docs/cli.md` — every command, every flag, exit codes, credentials
    - `docs/mcp.md` — every tool, JSON Schema, transports, deploy recipes, auth
    - `docs/architecture.md` — core/adapter boundary, extension points
    - `docs/contributing.md` — repo layout, dev loop, release flow
-4. **Companion skill** — invoke `/ck:skill-creator` to generate:
-   - Skill at `claude/skills/<tool-name>/SKILL.md` with:
+4. **Companion skill** — invoke `skill-creator` to generate:
+   - Skill at `.claude/skills/<tool-name>/SKILL.md` with:
      - Pushy description listing trigger phrases
      - 3–5 common workflows (install, auth, top-3 tasks)
      - References to CLI commands and MCP tools with concrete examples
@@ -257,7 +257,7 @@ Hand off:
 - Monorepo (or single package) ready to publish
 - `docs/` complete
 - Green CI
-- Skill staged at `claude/skills/<tool-name>/`
+- Skill staged at `.claude/skills/<tool-name>/`
 - Decision record at `plans/reports/agentize-decisions-<slug>.md`
 - Release checklist at `plans/<plan-dir>/release-checklist.md`
 
@@ -268,9 +268,9 @@ Agentization ready.
   • Repo: <path>
   • CLI pkg: <name>  (publish: pnpm -C packages/cli publish)
   • MCP pkg: <name>  (deploy: see docs/mcp.md)
-  • Skill:   claude/skills/<tool-name>/  (publish to marketplace: see docs/skill.md)
+  • Skill:   .claude/skills/<tool-name>/  (publish to marketplace: see docs/skill.md)
   • Plan:    plans/<plan-dir>/plan.md
-Next: /ck:cook <plan-path> to execute any remaining implementation.
+Next: cook <plan-path> to execute any remaining implementation.
 ```
 
 ## Error Recovery

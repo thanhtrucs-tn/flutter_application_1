@@ -15,15 +15,15 @@ metadata:
 
 Background HTTP server rendering markdown files with calm, book-like reading experience.
 
-**Note:** HTML generation mode (`/ck:preview --html ...`) produces self-contained HTML files that open directly in the browser — they do not use this server.
+**Note:** HTML generation mode (`preview --html ...`) produces self-contained HTML files that open directly in the browser — they do not use this server.
 
 ## ⚠️ Installation Required
 
 **This skill requires npm dependencies.** Run one of the following:
 
 ```bash
-# Option 1: Install via ClaudeKit CLI (recommended)
-ck init  # Runs install.sh which handles all skills
+# Option 1: Install via the bundle installer (recommended)
+.claude/skills/install.sh  # Handles shared skill dependencies
 
 # Option 2: Manual installation
 cd .claude/skills/markdown-novel-viewer
@@ -65,12 +65,12 @@ node .claude/skills/markdown-novel-viewer/scripts/server.cjs --stop
 
 ## Skill Invocation
 
-Use `/ck:preview` for quick access:
+Use `preview` for quick access:
 
 ```bash
-/ck:preview plans/my-plan/plan.md    # View markdown file
-/ck:preview plans/                   # Browse directory
-/ck:preview --stop                   # Stop server
+preview plans/my-plan/plan.md    # View markdown file
+preview plans/                   # Browse directory
+preview --stop                   # Stop server
 ```
 
 ## Features

@@ -36,7 +36,7 @@ T6 = TaskCreate(subject="Code review",           activeForm="Reviewing code",   
 
 ### Step 2: Scout Codebase
 `TaskUpdate(T2, status="in_progress")`
-Use `ck:scout` agent or parallel `Explore` subagents to find issue locations.
+Use `scout` agent or parallel `Explore` subagents to find issue locations.
 
 See `references/parallel-exploration.md` for patterns.
 

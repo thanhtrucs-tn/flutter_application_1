@@ -49,16 +49,16 @@ const PLAN_AWARE_AGENTS = new Set([
 ]);
 
 /**
- * Build ck plan CLI reference for plan-aware agents (~50 tokens)
- * Provides deterministic plan status commands instead of manual markdown editing
+ * Build optional plan helper reference for plan-aware agents (~50 tokens).
+ * Provides deterministic plan status guidance without requiring one specific CLI.
  */
 function buildPlanCliSection(agentType) {
   if (!PLAN_AWARE_AGENTS.has(agentType)) return [];
   return [
     ``,
-    `## Plan CLI (deterministic updates)`,
-    `\`ck plan check <id>\` = completed | \`ck plan check <id> --start\` = in-progress | \`ck plan uncheck <id>\` = revert`,
-    `Fallback: if \`ck\` unavailable, edit plan.md Status column directly.`
+    `## Plan Updates`,
+    `If a plan CLI is available, use its check/start/uncheck commands for deterministic updates.`,
+    `Fallback: edit plan.md Status column directly.`
   ];
 }
 
@@ -184,7 +184,9 @@ async function main() {
     // Naming templates (computed directly for reliable injection)
     lines.push(``);
     lines.push(`## Naming`);
-    lines.push(`- Report: ${path.join(reportsPath, `${agentType}-${namePattern}.md`)}`);
+    lines.push(`- Report: ${path.join(reportsPath, `${agentType}-${namePattern}-report.md`)}`);
+    lines.push(`- For workflow reports, insert a descriptive purpose before -report, e.g. ${agentType}-${namePattern}-red-team-plan-review-report.md`);
+    lines.push(`- Avoid generic report names like red-team-review.md, review.md, report.md, or notes.md`);
     lines.push(`- Plan dir: ${path.join(plansPath, namePattern)}/`);
 
     // Plan CLI commands for plan-aware agents (Issue #540)

@@ -304,6 +304,18 @@ describe('context-builder.cjs', () => {
       });
       assert.ok(Array.isArray(lines), 'Should return array');
       assert.ok(lines.some(l => l.includes('Naming')), 'Should include Naming');
+      assert.ok(
+        lines.some(l => l.includes('/reports/{type}-{date}-{slug}-report.md')),
+        'Should include descriptive report filename template'
+      );
+      assert.ok(
+        lines.some(l => l.includes('from-code-reviewer-to-planner-red-team-plan-review')),
+        'Should include a concrete descriptive report type example'
+      );
+      assert.ok(
+        lines.some(l => l.includes('red-team-review.md') && l.includes('Avoid generic report names')),
+        'Should warn against generic red-team report names'
+      );
     });
 
   });

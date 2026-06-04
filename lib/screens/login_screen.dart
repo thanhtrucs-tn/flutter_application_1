@@ -1,8 +1,9 @@
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/db_helper.dart';
+import '../services/auth_api_service.dart';
 import '../utils/localization.dart';
-import '../utils/app_state.dart';
 import 'home_screen.dart';
 import 'register_screen.dart';
 
@@ -11,16 +12,16 @@ class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();                            
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  bool _rememberMe = false;
-  bool _isLoading = false;
-  bool _dbStatusChecked = false;
-  bool _isDbOnline = false;
+  final TextEditingController _usernameController = TextEditingController();        //  Điều khiển input tài khoản
+  final TextEditingController _passwordController = TextEditingController();      //  Điều khiển input mật khẩu
+  bool _rememberMe = false;                                                 //  Trạng thái ghi nhớ đăng nhập
+  bool _isLoading = false;                                             //  Trạng thái đang xử lý đăng nhập
+  bool _dbStatusChecked = false;                                     //  Đã kiểm tra trạng thái database chưa
+  bool _isDbOnline = false;                                          //  Trạng thái kết nối database thực tế (MySQL online hay Mock offline)
 
   @override
   void initState() {
@@ -38,6 +39,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Kiểm tra trạng thái Database thực tế để hiển thị Badge cho lập trình viên
   Future<void> _checkDatabaseStatus() async {
+    if (kIsWeb) {
+      // Trên web (Chrome): Gọi backend health check trước
+      // Nếu backend sẵn sàng → dùng API gọi MySQL
+      // Nếu không → fallback localStorage
+      final backendOk = await AuthApiService.healthCheck();
+      DbHelper.backendAvailable = backendOk;
+      setState(() {
+        _isDbOnline = backendOk;
+        _dbStatusChecked = true;
+      });
+      return;
+    }
+    // Trên Windows/MySQL: thử kết nối trực tiếp
     final conn = await DbHelper.getConnection();
     setState(() {
       _isDbOnline = conn != null;
@@ -105,17 +119,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (success) {
       await _saveOrClearCredentials(username, password);
-      
+
       // Hiển thị thông báo trạng thái kết nối database
-      String statusMsg = DbHelper.isUsingMock 
-          ? "Đăng nhập offline thành công (Mock DB)" 
-          : "Đăng nhập MySQL thành công!";
-      
+      String statusMsg;
+      if (kIsWeb) {
+        statusMsg = "Đăng nhập thành công trên Chrome (Web - Offline Mode)";
+      } else if (DbHelper.isUsingMock) {
+        statusMsg = "Đăng nhập offline thành công (Mock DB)";
+      } else {
+        statusMsg = "Đăng nhập MySQL thành công!";
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(statusMsg),
-            backgroundColor: DbHelper.isUsingMock ? Colors.amber.shade800 : Colors.green,
+            backgroundColor: (kIsWeb || DbHelper.isUsingMock) ? Colors.amber.shade800 : Colors.green,
             duration: const Duration(seconds: 2),
           ),
         );
@@ -306,19 +325,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Trạng thái cơ sở dữ liệu MySQL badge
                     if (_dbStatusChecked)
                       Center(
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: _isDbOnline 
-                                ? Colors.green.withOpacity(0.1) 
-                                : Colors.amber.withOpacity(0.1),
+                            color: _getPlatformBadgeColor().withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: _isDbOnline ? Colors.green.shade400 : Colors.amber.shade700,
+                              color: _getPlatformBadgeColor(),
                               width: 1,
                             ),
                           ),
@@ -326,22 +343,34 @@ class _LoginScreenState extends State<LoginScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                _isDbOnline ? Icons.cloud_done : Icons.cloud_off,
+                                _getPlatformBadgeIcon(),
                                 size: 14,
-                                color: _isDbOnline ? Colors.green : Colors.amber.shade700,
+                                color: _getPlatformBadgeColor(),
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                _isDbOnline 
-                                    ? 'MySQL Server: Connected' 
-                                    : 'Offline Mode: Local Mock DB Active',
+                                _getPlatformBadgeText(),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: _isDbOnline ? Colors.green.shade700 : Colors.amber.shade800,
+                                  color: _getPlatformBadgeColor(),
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 8),
+
+                    // Gợi ý tài khoản mặc định cho chế độ Offline (Web/Windows không có MySQL)
+                    if (_dbStatusChecked && !_isDbOnline)
+                      Center(
+                        child: Text(
+                          'Tài khoản mặc định: admin / admin123',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+                            fontStyle: FontStyle.italic,
                           ),
                         ),
                       ),
@@ -353,5 +382,44 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  /// Màu sắc của badge trạng thái theo nền tảng
+  Color _getPlatformBadgeColor() {
+    if (kIsWeb) {
+      return _isDbOnline ? Colors.green.shade700 : Colors.blue.shade700;
+    }
+    if (defaultTargetPlatform == TargetPlatform.windows) {
+      return _isDbOnline ? Colors.green.shade700 : Colors.deepPurple;
+    }
+    return _isDbOnline ? Colors.green.shade700 : Colors.amber.shade800;
+  }
+
+  /// Icon của badge trạng thái theo nền tảng
+  IconData _getPlatformBadgeIcon() {
+    if (kIsWeb) {
+      return _isDbOnline ? Icons.cloud_done : Icons.public;
+    }
+    if (defaultTargetPlatform == TargetPlatform.windows) {
+      return _isDbOnline ? Icons.cloud_done : Icons.desktop_windows;
+    }
+    return _isDbOnline ? Icons.cloud_done : Icons.cloud_off;
+  }
+
+  /// Văn bản của badge trạng thái theo nền tảng
+  String _getPlatformBadgeText() {
+    if (kIsWeb) {
+      return _isDbOnline
+          ? 'Chrome (Web): MySQL Synced via API'
+          : 'Chrome (Web): Local Account Ready';
+    }
+    if (defaultTargetPlatform == TargetPlatform.windows) {
+      return _isDbOnline
+          ? 'Windows: MySQL Connected'
+          : 'Windows: Offline Mock DB Active';
+    }
+    return _isDbOnline
+        ? 'MySQL Server: Connected'
+        : 'Offline Mode: Local Mock DB Active';
   }
 }

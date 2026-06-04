@@ -41,6 +41,8 @@ The official MCP TypeScript SDK provides:
 - Zod schema integration for runtime input validation
 - Type-safe tool handler implementations
 
+Current TypeScript SDK releases export package typings, include `ResourceSchema.size`, reject null/infinite requested TTLs, and let servers/clients advertise protocol extensions in the capability object. If an example depends on any of those surfaces, pin `@modelcontextprotocol/sdk` to a version that includes them and avoid hand-written compatibility shims.
+
 See the MCP SDK documentation in the references for complete details.
 
 ## Server Naming Convention

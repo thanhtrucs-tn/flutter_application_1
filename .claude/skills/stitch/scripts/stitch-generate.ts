@@ -156,7 +156,7 @@ async function main() {
     const remaining = quota.limit - quota.count;
     if (remaining < creditsNeeded) {
       console.error(`[X] Not enough credits: need ${creditsNeeded}, have ${remaining}/${quota.limit}.`);
-      console.error("[i] Use ck:ui-ux-pro-max as fallback, or wait until midnight UTC.");
+      console.error("[i] Use ui-ux-pro-max as fallback, or wait until midnight UTC.");
       process.exit(2);
     }
     console.error(`[i] Credits: ${remaining}/${quota.limit} remaining (this run costs ${creditsNeeded})`);
@@ -229,7 +229,7 @@ async function main() {
       const q = loadQuota();
       q.count = q.limit;
       saveQuota(q);
-      console.error("[X] Daily quota exceeded (local tracker synced). Try tomorrow or use ck:ui-ux-pro-max.");
+      console.error("[X] Daily quota exceeded (local tracker synced). Try tomorrow or use ui-ux-pro-max.");
     } else if (err.code === "AUTH_FAILED") {
       console.error("[X] Authentication failed. Check STITCH_API_KEY env var.");
     } else {

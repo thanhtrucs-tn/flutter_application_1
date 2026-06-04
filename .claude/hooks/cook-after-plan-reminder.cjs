@@ -44,10 +44,10 @@ try {
     console.log('Planning complete. Stop here and ask the user which next step they want: implement, validate, red-team, revise, or end.');
     if (planPath) {
       const planMdPath = path.join(planPath, 'plan.md');
-      console.log(`Optional implementation command after user approval: /ck:cook ${planMdPath}`);
+      console.log(`Optional implementation command after user approval: cook ${planMdPath}`);
     } else {
       // Fallback when plan path unavailable
-      console.log('Optional implementation command after user approval: /ck:cook {full-absolute-path-to-plan.md}');
+      console.log('Optional implementation command after user approval: cook {full-absolute-path-to-plan.md}');
     }
     console.log('Add --auto only if the user explicitly asks for autonomous implementation.');
 

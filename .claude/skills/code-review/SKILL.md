@@ -1,10 +1,10 @@
 ---
-name: adversarial-code-review
-description: "Review code quality with adversarial rigor. Supports input modes: pending changes, PR number, commit hash, codebase scan. Always-on red-team analysis finds security holes, false assumptions, and failure modes."
+name: code-review
+description: "Review code quality with evidence-based rigor. Supports input modes: pending changes, PR number, commit hash, and codebase scan. Focuses on bugs, regressions, maintainability, reliability, and verification gaps."
 user-invocable: true
 when_to_use: "Invoke to review diffs, PRs, commits, or full codebases."
 category: utilities
-keywords: [review, quality, red-team, security]
+keywords: [review, quality, verification, reliability]
 argument-hint: "[#PR | COMMIT | --pending | codebase [parallel]]"
 metadata:
   author: claudekit
@@ -13,7 +13,7 @@ metadata:
 
 # Code Review
 
-Adversarial code review with technical rigor, evidence-based claims, and verification over performative responses. Every review includes red-team analysis that actively tries to break the code.
+Production-readiness code review with technical rigor, evidence-based claims, and verification over performative responses. Reviews focus on production risks, regression paths, and whether the implementation matches the requested change.
 
 ## Input Modes
 
@@ -54,12 +54,11 @@ Verify before implementing. Ask before assuming. Evidence before claims.
 | Practice | When | Reference |
 |----------|------|-----------|
 | **Spec compliance** | After implementing from plan/spec, BEFORE quality review | `references/spec-compliance-review.md` |
-| **Adversarial review** | Always-on Stage 3 — actively tries to break the code | `references/adversarial-review.md` |
 | Receiving feedback | Unclear feedback, external reviewers, needs prioritization | `references/code-review-reception.md` |
 | Requesting review | After tasks, before merge, stuck on problem | `references/requesting-code-review.md` |
 | Verification gates | Before any completion claim, commit, PR | `references/verification-before-completion.md` |
 | Edge case scouting | After implementation, before review | `references/edge-case-scouting.md` |
-| **Checklist review** | Pre-landing, `/ck:ship` pipeline, security audit | `references/checklist-workflow.md` |
+| **Checklist review** | Pre-landing, `ship` pipeline, security audit | `references/checklist-workflow.md` |
 | **Task-managed reviews** | Multi-file features (3+ files), parallel reviewers, fix cycles | `references/task-management-reviews.md` |
 
 ## Quick Decision Tree
@@ -81,15 +80,14 @@ SITUATION?
 │   │   └─ PASS? → Stage 2 │ FAIL? → Fix → Re-review Stage 1
 │   ├─ Stage 2: Code quality review (code-reviewer subagent)
 │   │   └─ Scout edge cases → Review standards, performance
-│   └─ Stage 3: Adversarial review (references/adversarial-review.md) [ALWAYS-ON]
-│       └─ Red-team the code → Adjudicate → Accept/Reject findings
-├─ Completed work (no plan) → Scout → Code quality → Adversarial review
-├─ Pre-landing / ship → Load checklists → Two-pass review → Adversarial review
-├─ Multi-file feature (3+ files) → Create review pipeline tasks (scout→review→adversarial→fix→verify)
+│   └─ Verification gate → Run required tests/builds before claims
+├─ Completed work (no plan) → Scout → Code quality → Verification
+├─ Pre-landing / ship → Load checklists → Two-pass review → Verification
+├─ Multi-file feature (3+ files) → Create review pipeline tasks (scout→review→fix→verify)
 └─ About to claim status → RUN verification command FIRST
 ```
 
-### Three-Stage Review Protocol
+### Review Protocol
 
 **Stage 1 — Spec Compliance** (load `references/spec-compliance-review.md`)
 - Does code match what was requested?
@@ -100,12 +98,11 @@ SITUATION?
 - Only runs AFTER spec compliance passes
 - Standards, security, performance, edge cases
 
-**Stage 3 — Adversarial Review** (load `references/adversarial-review.md`)
-- Runs AFTER Stage 2 passes, subject to scope gate (skip if <=2 files, <=30 lines, no security files)
-- Spawn adversarial reviewer with context anchoring (runtime, framework, context files)
-- Find: security holes, false assumptions, resource exhaustion, race conditions, supply chain, observability gaps
-- Output: Accept (must fix) / Reject (false positive) / Defer (GitHub issue) verdicts per finding
-- Critical findings block merge; re-reviews use fix-diff-only optimization
+**Final Verification**
+- Runs AFTER Stage 2 passes
+- Re-run the relevant tests, build, lint, or manual reproduction
+- Verify accepted findings are fixed and no new regression is introduced
+- Critical findings block merge until fixed and re-verified
 
 ## Receiving Feedback
 
@@ -131,7 +128,7 @@ No performative agreement. Verify before implementing. Push back if wrong.
 **When:** After implementation, before requesting code-reviewer
 
 **Process:**
-1. Invoke `/ck:scout` with edge-case-focused prompt
+1. Invoke `scout` with edge-case-focused prompt
 2. Scout analyzes: affected files, data flows, error paths, boundary conditions
 3. Review scout findings for potential issues
 4. Address critical gaps before code review
@@ -144,13 +141,12 @@ No performative agreement. Verify before implementing. Push back if wrong.
 
 **Fallback:** Task tools (`TaskCreate`/`TaskUpdate`/`TaskGet`/`TaskList`) are CLI-only — unavailable in VSCode extension. If they error, use `TodoWrite` for tracking and run pipeline sequentially. Review quality is identical.
 
-**Pipeline:** scout → review → adversarial → fix → verify (each a Task with dependency chain)
+**Pipeline:** scout → review → fix → verify (each a Task with dependency chain)
 
 ```
 TaskCreate: "Scout edge cases"         → pending
 TaskCreate: "Review implementation"    → pending, blockedBy: [scout]
-TaskCreate: "Adversarial review"       → pending, blockedBy: [review]
-TaskCreate: "Fix critical issues"      → pending, blockedBy: [adversarial]
+TaskCreate: "Fix critical issues"      → pending, blockedBy: [review]
 TaskCreate: "Verify fixes pass"        → pending, blockedBy: [fix]
 ```
 
@@ -178,32 +174,31 @@ TaskCreate: "Verify fixes pass"        → pending, blockedBy: [fix]
 
 ## Integration with Workflows
 
-- **Subagent-Driven:** Scout → Review → Adversarial → Verify before next task
-- **Pull Requests:** Scout → Code quality → Adversarial → Merge
+- **Subagent-Driven:** Scout → Review → Verify before next task
+- **Pull Requests:** Scout → Code quality → Verify → Merge
 - **Task Pipeline:** Create review tasks with dependencies → auto-unblock through chain
-- **Cook Handoff:** Cook completes phase → review pipeline tasks (incl. adversarial) → all complete → cook proceeds
-- **PR Review:** `/code-review #123` → fetch diff → full 3-stage review on PR changes
-- **Commit Review:** `/code-review abc1234` → review specific commit with full pipeline
+- **Cook Handoff:** Cook completes phase → review pipeline tasks → all complete → cook proceeds
+- **PR Review:** `code-review #123` → fetch diff → full review pipeline on PR changes
+- **Commit Review:** `code-review abc1234` → review specific commit with full pipeline
 
 ## Codebase Analysis Subcommands
 
 | Subcommand | Reference | Purpose |
 |------------|-----------|---------|
-| `/ck:code-review codebase` | `references/codebase-scan-workflow.md` | Scan & analyze the codebase |
-| `/ck:code-review codebase parallel` | `references/parallel-review-workflow.md` | Ultrathink edge cases, then parallel verify |
+| `code-review codebase` | `references/codebase-scan-workflow.md` | Scan & analyze the codebase |
+| `code-review codebase parallel` | `references/parallel-review-workflow.md` | Ultrathink edge cases, then parallel verify |
 
 ## Bottom Line
 
 1. Resolve input mode first — know WHAT you're reviewing
 2. Technical rigor over social performance
 3. Scout edge cases before review
-4. Adversarial review on EVERY review — no exceptions
-5. Evidence before claims
+4. Evidence before claims
 
-Verify. Scout. Red-team. Question. Then implement. Evidence. Then claim.
+Verify. Scout. Question. Then implement. Evidence. Then claim.
 
 ## Workflow Position
 
-**Typically follows:** `/ck:cook` (review after implementation), `/ck:fix` (review after bug fix)
-**Typically precedes:** `/ck:ship` (ship after review passes)
-**Related:** `/ck:scout` (scout before reviewing), `/ck:test` (test before reviewing)
+**Typically follows:** `cook` (review after implementation), `fix` (review after bug fix)
+**Typically precedes:** `ship` (ship after review passes)
+**Related:** `scout` (scout before reviewing), `test` (test before reviewing)

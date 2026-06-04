@@ -4,9 +4,9 @@
  * Run: node --test .claude/hooks/__tests__/descriptive-name.test.cjs
  *
  * Issue #440: Hook should respect language-specific naming conventions
- * - JS/TS/Python/shell: kebab-case preferred
+ * - JS/TS/shell: kebab-case preferred
+ * - Python/Go/Rust: snake_case (language convention)
  * - C#/Java/Kotlin/Swift: PascalCase (language convention)
- * - Go/Rust: snake_case (language convention)
  */
 
 const { describe, it, beforeEach, afterEach } = require('node:test');
@@ -116,17 +116,21 @@ describe('descriptive-name.cjs', () => {
   });
 
   describe('Language-aware guidance content (Issue #440)', () => {
-    it('mentions kebab-case preference for JS/TS/Python/shell', async () => {
+    it('mentions kebab-case preference for JS/TS/shell', async () => {
       const { parsed } = await runHook();
       const context = parsed.hookSpecificOutput.additionalContext;
 
       assert.ok(
-        context.includes('kebab-case') && context.includes('JS/TS/Python'),
-        'Should mention kebab-case for JS/TS/Python/shell'
+        context.includes('kebab-case') && context.includes('JS/TS/shell'),
+        'Should mention kebab-case for JS/TS/shell'
       );
       assert.ok(
         context.includes('.sh'),
         'Should mention .sh extension for shell scripts'
+      );
+      assert.ok(
+        !context.includes('JS/TS/Python'),
+        'Should not group Python into the kebab-case preference'
       );
     });
 
@@ -156,13 +160,17 @@ describe('descriptive-name.cjs', () => {
       );
     });
 
-    it('respects Go/Rust snake_case convention', async () => {
+    it('respects Python/Go/Rust snake_case convention', async () => {
       const { parsed } = await runHook();
       const context = parsed.hookSpecificOutput.additionalContext;
 
       assert.ok(
         context.includes('snake_case'),
-        'Should mention snake_case for Go/Rust'
+        'Should mention snake_case for Python/Go/Rust'
+      );
+      assert.ok(
+        context.includes('.py') || context.includes('Python'),
+        'Should mention Python extension or language'
       );
       assert.ok(
         context.includes('.go') || context.includes('Go'),
@@ -202,6 +210,37 @@ describe('descriptive-name.cjs', () => {
       assert.ok(
         context.includes('Grep') || context.includes('Glob') || context.includes('Search'),
         'Should mention LLM tools (Grep, Glob, Search) for discoverability'
+      );
+    });
+
+    it('guides Markdown report names without skipping them', async () => {
+      const { parsed } = await runHook();
+      const context = parsed.hookSpecificOutput.additionalContext;
+
+      assert.doesNotMatch(
+        context,
+        /Skip this guidance if you are creating markdown/i,
+        'Markdown report files should still receive filename guidance'
+      );
+      assert.match(
+        context,
+        /Markdown\/plain text reports and plans/i,
+        'Should mention report and plan naming for Markdown/plain text files'
+      );
+      assert.match(
+        context,
+        /workflow \+ scope/i,
+        'Should tell agents to include workflow and scope in report filenames'
+      );
+      assert.match(
+        context,
+        /red-team-review\.md/,
+        'Should call out the generic red-team report name that caused stuck writes'
+      );
+      assert.match(
+        context,
+        /Avoid generic report names/i,
+        'Should discourage generic report names'
       );
     });
   });

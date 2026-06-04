@@ -29,7 +29,7 @@ function assertIncludes(str, sub, msg) {
 
 // --- Temp directory setup ---
 // L1: Use mkdtempSync instead of fixed /tmp/ path to avoid conflicts in parallel runs
-const tmpDir = mkdtempSync(path.join(tmpdir(), 'ck-plan-parser-'));
+const tmpDir = mkdtempSync(path.join(tmpdir(), 'plan-parser-'));
 function tmpFile(name, content) {
   const fp = path.join(tmpDir, name);
   fs.mkdirSync(path.dirname(fp), { recursive: true });

@@ -2,7 +2,7 @@
 
 Native Claude Task tools for tracking and coordinating fix workflows.
 
-**Skill:** Activate `ck:project-management` for advanced task orchestration — provides hydration (plan checkboxes → Tasks), sync-back (Tasks → plan checkboxes), cross-session resume, and progress tracking patterns.
+**Skill:** Activate `project-management` for advanced task orchestration — provides hydration (plan checkboxes → Tasks), sync-back (Tasks → plan checkboxes), cross-session resume, and progress tracking patterns.
 
 **Tool Availability:** `TaskCreate`, `TaskUpdate`, `TaskGet`, `TaskList` are **CLI-only** — disabled in VSCode extension (`isTTY` check). If these tools error, use `TodoWrite` for progress tracking instead. Fix workflow remains fully functional — Tasks add visibility and coordination, not core functionality.
 

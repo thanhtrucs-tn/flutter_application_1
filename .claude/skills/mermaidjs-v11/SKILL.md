@@ -122,4 +122,4 @@ Load `references/examples.md` for:
 - `references/integration.md` - JavaScript API and embedding
 - `references/examples.md` - Practical patterns and use cases
 
-For universal SVG layout rules (component spacing, arrow routing, label placement, z-index ordering, anti-pattern catalog) when reviewing rendered output for collisions or unreadable labels, see `/ck:tech-graph`'s `references/svg-layout-best-practices.md`.
+For universal SVG layout rules (component spacing, arrow routing, label placement, z-index ordering, anti-pattern catalog) when reviewing rendered output for collisions or unreadable labels, see `tech-graph`'s `references/svg-layout-best-practices.md`.

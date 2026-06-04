@@ -214,16 +214,19 @@ async function main() {
       // Session & plan config
       writeEnv(envFile, 'CK_SESSION_ID', sessionId || '');
       writeEnv(envFile, 'CK_PLAN_NAMING_FORMAT', config.plan.namingFormat);
+      writeEnv(envFile, 'PLAN_DATE_FORMAT', config.plan.dateFormat);
       writeEnv(envFile, 'CK_PLAN_DATE_FORMAT', config.plan.dateFormat);
       writeEnv(envFile, 'CK_PLAN_ISSUE_PREFIX', config.plan.issuePrefix || '');
       writeEnv(envFile, 'CK_PLAN_REPORTS_DIR', config.plan.reportsDir);
 
-      // NEW: Resolved naming pattern for DRY file naming in agents
+      // Resolved naming pattern for DRY file naming in agents
       // Example: "251212-1830-GH-88-{slug}" or "251212-1830-{slug}"
-      // Agents use: `{agent-type}-$CK_NAME_PATTERN.md` and substitute {slug}
+      // Agents use: `{agent-type}-$NAME_PATTERN.md` and substitute {slug}
+      writeEnv(envFile, 'NAME_PATTERN', namePattern);
       writeEnv(envFile, 'CK_NAME_PATTERN', namePattern);
 
       // Plan resolution
+      writeEnv(envFile, 'ACTIVE_PLAN', resolved.resolvedBy === 'session' ? resolved.path : '');
       writeEnv(envFile, 'CK_ACTIVE_PLAN', resolved.resolvedBy === 'session' ? resolved.path : '');
       writeEnv(envFile, 'CK_SUGGESTED_PLAN', resolved.resolvedBy === 'branch' ? resolved.path : '');
 
@@ -234,10 +237,15 @@ async function main() {
       }
 
       // Paths - use absolute paths based on CWD for subdirectory workflow support (Issue #327)
+      writeEnv(envFile, 'GIT_ROOT', staticEnv.gitRoot || '');
       writeEnv(envFile, 'CK_GIT_ROOT', staticEnv.gitRoot || '');
+      writeEnv(envFile, 'REPORTS_PATH', path.join(baseDir, reportsPath));
       writeEnv(envFile, 'CK_REPORTS_PATH', path.join(baseDir, reportsPath));
+      writeEnv(envFile, 'DOCS_PATH', path.join(baseDir, config.paths.docs));
       writeEnv(envFile, 'CK_DOCS_PATH', path.join(baseDir, config.paths.docs));
+      writeEnv(envFile, 'PLANS_PATH', path.join(baseDir, config.paths.plans));
       writeEnv(envFile, 'CK_PLANS_PATH', path.join(baseDir, config.paths.plans));
+      writeEnv(envFile, 'PROJECT_ROOT', process.cwd());
       writeEnv(envFile, 'CK_PROJECT_ROOT', process.cwd());
 
       // Project detection
@@ -245,10 +253,11 @@ async function main() {
       writeEnv(envFile, 'CK_PACKAGE_MANAGER', detections.pm || '');
       writeEnv(envFile, 'CK_FRAMEWORK', detections.framework || '');
 
-      // NEW: Static environment info (so other hooks don't need to recompute)
+      // Static environment info (so other hooks don't need to recompute)
       writeEnv(envFile, 'CK_NODE_VERSION', staticEnv.nodeVersion);
       writeEnv(envFile, 'CK_OS_PLATFORM', staticEnv.osPlatform);
       writeEnv(envFile, 'CK_GIT_BRANCH', staticEnv.gitBranch || '');
+      writeEnv(envFile, 'GIT_BRANCH', staticEnv.gitBranch || '');
       writeEnv(envFile, 'CK_USER', staticEnv.user);
       writeEnv(envFile, 'CK_LOCALE', staticEnv.locale);
       writeEnv(envFile, 'CK_TIMEZONE', staticEnv.timezone);
@@ -262,7 +271,7 @@ async function main() {
         writeEnv(envFile, 'CK_RESPONSE_LANGUAGE', config.locale.responseLanguage);
       }
 
-      // Plan validation config (for /ck:plan validate, /ck:plan --hard, /ck:plan --parallel)
+      // Plan validation config (for plan validate, plan --hard, plan --parallel)
       const validation = config.plan?.validation || {};
       writeEnv(envFile, 'CK_VALIDATION_MODE', validation.mode || 'prompt');
       writeEnv(envFile, 'CK_VALIDATION_MIN_QUESTIONS', validation.minQuestions || 3);
@@ -326,7 +335,7 @@ async function main() {
     if (teamInfo) {
       console.log(`[i] Agent Team detected: "${teamInfo.teamName}" (${teamInfo.memberCount} members)`);
       console.log(`    Team config: ~/.claude/teams/${teamInfo.teamName}/config.json`);
-      console.log(`    Use /ck:team skill for orchestration templates.`);
+      console.log(`    Use team skill for orchestration templates.`);
     }
 
     // Info: Show git root when running from subdirectory (Issue #327: now supported)

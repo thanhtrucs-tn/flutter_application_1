@@ -12,7 +12,7 @@ All research happens in parallel, then feeds into planning:
 - 2 `researcher` subagents (max 5 sources each): find best-fit tech stack
 - 2 `researcher` subagents (max 5 sources each): research design style, trends, fonts, colors, spacing, positions
   - Predict Google Fonts name (NOT just Inter/Poppins)
-  - Describe assets for `ck:ai-multimodal` generation
+  - Describe assets for `ai-multimodal` generation
 
 Keep all reports ≤150 lines.
 
@@ -21,16 +21,16 @@ Keep all reports ≤150 lines.
 1. `ui-ux-designer` subagent analyzes research, creates:
    - Design guidelines at `./docs/design-guidelines.md`
    - Wireframes in HTML at `./docs/wireframe/`
-2. If no logo provided: generate with `ck:ai-multimodal` skill
-3. Screenshot wireframes with `ck:agent-browser` → save to `./docs/wireframes/`
+2. If no logo provided: generate with `ai-multimodal` skill
+3. Screenshot wireframes with `agent-browser` → save to `./docs/wireframes/`
 
-**Image tools:** `ck:ai-multimodal` for generation/analysis, `imagemagick` for crop/resize, background removal tool as needed.
+**Image tools:** `ai-multimodal` for generation/analysis, `imagemagick` for crop/resize, background removal tool as needed.
 
 No design gate in fast mode — proceed directly to planning.
 
 ## Step 3: Planning
 
-Activate **ck:plan** skill: `/ck:plan --fast <requirements>`
+Activate **plan** skill: `plan --fast <requirements>`
 - Skip research (already done above)
 - Read codebase docs → create plan directly
 - Plan directory using `## Naming` pattern
@@ -42,7 +42,7 @@ No pre-implementation gate here — hand off to cook, which keeps review gates u
 
 Load `references/shared-phases.md` for remaining phases.
 
-Activate **ck:cook** skill: `/ck:cook <plan-path>`
+Activate **cook** skill: `cook <plan-path>`
 - Skips redundant research because planning already happened
 - Keeps cook review gates; add `--auto` only when the user explicitly asked for autonomous bootstrap
 - Continues according to normal cook mode

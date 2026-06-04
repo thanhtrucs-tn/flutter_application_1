@@ -56,45 +56,45 @@ Detect multiple features from natural language:
 | Mode | Skip Research | Skip Test | Review Gates | Auto-Approve | Parallel Exec |
 |------|---------------|-----------|--------------|--------------|---------------|
 | interactive | ✗ | ✗ | **Yes (stops)** | ✗ | ✗ |
-| auto | ✗ | ✗ | **No (skips)** | ✓ (score≥9.5) | ✓ (all phases) |
+| auto | ✗ | ✗ | Low-risk only | ✓ (artifact-gated) | ✓ (low-risk phases) |
 | fast | ✓ | ✗ | Yes (stops) | ✗ | ✗ |
 | parallel | Optional | ✗ | Yes (stops) | ✗ | ✓ |
 | no-test | ✗ | ✓ | Yes (stops) | ✗ | ✗ |
 | code | ✓ | ✗ | Yes (stops) | Per plan | Per plan |
 
 **Review Gates:** Human approval checkpoints between major steps (see `workflow-steps.md`).
-- All modes EXCEPT `auto` stop at review gates for human approval.
-- `auto` mode is the only mode that runs continuously without stopping.
+- All modes EXCEPT low-risk `auto` stop at review gates for human approval.
+- `auto` mode runs continuously only when review artifacts pass and `risk-gate.autoStopRequired` is false.
 
 ## Examples
 
 ```
-"/ck:cook implement user auth --interactive"
+"cook implement user auth --interactive"
 → Mode: interactive (explicit flag, stops at review gates)
 
-"/ck:cook implement user auth"
+"cook implement user auth"
 → Mode: interactive (default, stops at review gates)
 
-"/ck:cook plans/260120-auth/phase-02-api.md"
+"cook plans/260120-auth/phase-02-api.md"
 → Mode: code (path detected, stops at review gates)
 
-"/ck:cook quick fix for the login bug"
+"cook quick fix for the login bug"
 → Mode: fast ("quick" keyword, stops at review gates)
 
-"/ck:cook implement auth, payments, notifications, shipping"
+"cook implement auth, payments, notifications, shipping"
 → Mode: parallel (4 features, stops at review gates)
 
-"/ck:cook implement dashboard --fast"
+"cook implement dashboard --fast"
 → Mode: fast (explicit flag, stops at review gates)
 
-"/ck:cook refactor auth middleware --tdd"
+"cook refactor auth middleware --tdd"
 → Mode: interactive (default mode, with tests-first implementation behavior)
 
-"/ck:cook implement everything --auto"
-→ Mode: auto (NO STOPS, implements all phases continuously)
+"cook implement everything --auto"
+→ Mode: auto (continuous only for low-risk, artifact-validated work)
 
-"/ck:cook implement dashboard trust me"
-→ Mode: auto ("trust me" keyword, NO STOPS)
+"cook implement dashboard trust me"
+→ Mode: auto ("trust me" keyword, still stops on high-risk changes)
 ```
 
 **Note:** Only `--auto` flag or "trust me"/"auto"/"yolo" keywords enable continuous execution.

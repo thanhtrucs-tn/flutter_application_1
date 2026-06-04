@@ -510,6 +510,40 @@
           "type": "boolean",
           "default": true,
           "description": "UserPromptSubmit hook - blocks ship/merge/pr (and warns on commit/finalize/release) when working tree carries a large unsimplified diff"
+        },
+        "workflow-artifact-gate": {
+          "type": "boolean",
+          "default": false,
+          "description": "Opt-in UserPromptSubmit/PreToolUse hook - validates fix/cook workflow artifacts before finalize and ship-like actions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflowArtifactGate": {
+      "type": "object",
+      "description": "Review artifact gate settings for fix and cook.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Runtime toggle for the workflow artifact gate after the hook itself is enabled."
+        },
+        "softStages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["finalize", "commit"],
+          "description": "Stages that warn when proof is missing."
+        },
+        "hardStages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["ship", "push", "pr", "deploy"],
+          "description": "Stages that block when artifacts fail validation."
+        },
+        "highRiskAutoStop": {
+          "type": "boolean",
+          "default": true,
+          "description": "Require human approval for high-risk auto-mode workflows."
         }
       },
       "additionalProperties": false

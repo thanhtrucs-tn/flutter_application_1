@@ -17,7 +17,7 @@ metadata:
 
 Cyber threat intelligence and open-source intelligence skill. Turns Claude into a trained CTI/OSINT analyst. Generates precision search queries, interprets public data, builds case timelines, and delivers structured intelligence products — no API keys, no paid subscriptions.
 
-Collection method: `agent-browser` when available (JavaScript-heavy sites, infinite-scroll, screenshot evidence), with automatic fallback to web search / web fetch / direct URL fetch. Tool limitations are logged as collection gaps — never as case blockers.
+Collection method: `agent-browser` when available (JavaScript-heavy sites, infinite-scroll, screenshot evidence without real user login state); use `chrome-profile` only when the collection needs the user's actual Chrome cookies, with automatic fallback to web search / web fetch / direct URL fetch. Tool limitations are logged as collection gaps — never as case blockers.
 
 ---
 
@@ -834,8 +834,8 @@ When `/case` or `/sweep` runs on a Domain or Org target, it inspects the MX reco
 
 ## Tool Priority & Fallback
 
-1. Check `agent-browser` availability first
-2. Use `agent-browser` for: screenshot evidence, interactive UI, complex multi-step browser flows
+1. Check `agent-browser` availability first; use `chrome-profile` only if real user Chrome cookies are required
+2. Use `agent-browser` for generic screenshot evidence and interactive UI; use `chrome-profile` only when real Chrome profile state is required
 3. Use Scrapling DynamicFetcher for: JS-heavy sites, SPA content, auto-escalation from static
 4. Use Scrapling StealthyFetcher for: anti-bot bypass, Cloudflare-protected targets
 5. Use Scrapling Fetcher for: fast static page collection, HTML parsing (~2ms)

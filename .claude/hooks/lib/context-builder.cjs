@@ -609,7 +609,7 @@ function buildModularizationSection() {
     `## **[IMPORTANT] Consider Modularization:**`,
     `- Check existing modules before creating new`,
     `- Analyze logical separation boundaries (functions, classes, concerns)`,
-    `- Prefer kebab-case for JS/TS/Python/shell; respect language conventions (C#/Java use PascalCase, Go/Rust use snake_case)`,
+    `- Prefer kebab-case for JS/TS/shell; respect language conventions (Python/Go/Rust use snake_case, C#/Java use PascalCase)`,
     `- Write descriptive code comments`,
     `- After modularization, continue with the main task only when the current request authorizes implementation; advisory/report-only tasks should report the recommendation.`,
     `- When not to modularize: Markdown files, plain text files, bash scripts, configuration files, environment variables files, etc.`,
@@ -673,9 +673,11 @@ function buildPlanContextSection({ planLine, reportsPath, gitBranch, validationM
 function buildNamingSection({ reportsPath, plansPath, namePattern }) {
   return [
     `## Naming`,
-    `- Report: \`${reportsPath}{type}-${namePattern}.md\``,
+    `- Report: \`${reportsPath}{type}-${namePattern}-report.md\``,
     `- Plan dir: \`${plansPath}/${namePattern}/\``,
-    `- Replace \`{type}\` with: agent name, report type, or context`,
+    `- Replace \`{type}\` with: descriptive kebab-case purpose, agent handoff, or workflow context`,
+    `- Example type: \`from-code-reviewer-to-planner-red-team-plan-review\``,
+    `- Avoid generic report names like \`red-team-review.md\`, \`review.md\`, \`report.md\`, or \`notes.md\``,
     `- Replace \`{slug}\` in pattern with: descriptive-kebab-slug`
   ];
 }

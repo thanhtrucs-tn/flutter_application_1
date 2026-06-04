@@ -41,23 +41,23 @@ Present as options via `AskUserQuestion` with header "Preview Operation", questi
 ## Usage
 
 ### View Mode
-- `/ck:preview <file.md>` - View markdown file in novel-reader UI
-- `/ck:preview <directory/>` - Browse directory contents
-- `/ck:preview --stop` - Stop running server
+- `preview <file.md>` - View markdown file in novel-reader UI
+- `preview <directory/>` - Browse directory contents
+- `preview --stop` - Stop running server
 
 ### Generation Mode (Markdown)
-- `/ck:preview --explain <topic>` - Generate visual explanation (ASCII + Mermaid + prose)
-- `/ck:preview --slides <topic>` - Generate presentation slides (one concept per slide)
-- `/ck:preview --diagram <topic>` - Generate focused diagram (ASCII + Mermaid)
-- `/ck:preview --ascii <topic>` - Generate ASCII-only diagram (terminal-friendly)
+- `preview --explain <topic>` - Generate visual explanation (ASCII + Mermaid + prose)
+- `preview --slides <topic>` - Generate presentation slides (one concept per slide)
+- `preview --diagram <topic>` - Generate focused diagram (ASCII + Mermaid)
+- `preview --ascii <topic>` - Generate ASCII-only diagram (terminal-friendly)
 
 ### Generation Mode (HTML)
-- `/ck:preview --html --explain <topic>` - Self-contained HTML explanation
-- `/ck:preview --html --slides <topic>` - Magazine-quality HTML slide deck
-- `/ck:preview --html --diagram <topic>` - HTML diagram with zoom controls
-- `/ck:preview --html --diff [ref]` - Visual diff review
-- `/ck:preview --html --plan-review [plan-file]` - Plan vs codebase comparison
-- `/ck:preview --html --recap [timeframe]` - Project context snapshot
+- `preview --html --explain <topic>` - Self-contained HTML explanation
+- `preview --html --slides <topic>` - Magazine-quality HTML slide deck
+- `preview --html --diagram <topic>` - HTML diagram with zoom controls
+- `preview --html --diff [ref]` - Visual diff review
+- `preview --html --plan-review [plan-file]` - Plan vs codebase comparison
+- `preview --html --recap [timeframe]` - Project context snapshot
 
 ## Argument Resolution
 
@@ -90,10 +90,10 @@ When processing arguments, follow this priority order:
 | Error | Action |
 |-------|--------|
 | Invalid topic (empty) | Ask user to provide a topic |
-| Flag without topic | Ask user: "Please provide a topic: `/ck:preview --explain <topic>`" |
+| Flag without topic | Ask user: "Please provide a topic: `preview --explain <topic>`" |
 | Topic becomes empty after sanitization | Ask for topic with alphanumeric characters |
 | File write failure | Report error, suggest checking disk space and permissions |
-| Server startup failure | Check if port in use, try `/ck:preview --stop` first |
+| Server startup failure | Check if port in use, try `preview --stop` first |
 | No generation flag + unresolvable reference | Ask user to clarify which file they meant |
 | Existing file at output path | Overwrite with new content (no prompt) |
 | Server already running | Reuse existing server instance, just open new URL |
@@ -129,7 +129,7 @@ Before generating, agent MUST read these references:
 
 Multi-section pages (`--explain`, `--diff`, `--plan-review`, `--recap`): also read `html-responsive-nav.md`.
 
-Use `/ck:mermaidjs-v11` skill for Mermaid syntax validation.
+Use `mermaidjs-v11` skill for Mermaid syntax validation.
 
 ### HTML-Only Modes
 
@@ -151,5 +151,5 @@ Output: project identity, architecture snapshot (Mermaid), recent activity, deci
 
 ### Style Strategy
 - Default: static anti-slop rules from `html-design-guidelines.md` (6 curated presets)
-- For `--slides`: consider invoking `/ck:ui-ux-pro-max` for richer style selection
+- For `--slides`: consider invoking `ui-ux-pro-max` for richer style selection
 - Agent must vary aesthetics between consecutive HTML outputs (different font pair, palette)

@@ -449,6 +449,32 @@ describe('subagent-init.cjs', () => {
       assert.ok(context.includes('## Naming'), 'Should have Naming section');
     });
 
+    it('injects descriptive report filename guidance', async () => {
+      const result = await runHook({
+        agent_type: 'code-reviewer',
+        agent_id: 'report-name-test',
+        cwd: process.cwd()
+      });
+
+      const context = result.output?.hookSpecificOutput?.additionalContext || '';
+
+      assert.match(
+        context,
+        /code-reviewer-[^\n]*-report\.md/,
+        'Should include a report filename ending in -report.md'
+      );
+      assert.match(
+        context,
+        /red-team-plan-review-report\.md/,
+        'Should show how to add a descriptive workflow purpose before -report'
+      );
+      assert.match(
+        context,
+        /Avoid generic report names like red-team-review\.md/,
+        'Should warn against generic report names'
+      );
+    });
+
     it('includes absolute paths for reports and plans', async () => {
       const gitRoot = getGitRoot();
       if (!gitRoot) {

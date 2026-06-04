@@ -42,7 +42,7 @@ This skill generates `llms.txt` and `llms-full.txt` files. Does NOT handle: host
 ```bash
 # Scout docs directory for markdown files
 ```
-Use `/ck:scout` to find all `.md`, `.mdx` files in target directory.
+Use `scout` to find all `.md`, `.mdx` files in target directory.
 
 **From URL:**
 Use `WebFetch` to retrieve existing documentation structure.

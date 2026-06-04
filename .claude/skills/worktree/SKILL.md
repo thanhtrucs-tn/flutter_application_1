@@ -137,5 +137,5 @@ When using `--json`, the command surfaces these high-signal fields:
 
 ## Workflow Position
 
-**Typically precedes:** `/ck:cook` (implement in worktree), `/ck:fix` (fix in worktree)
+**Typically precedes:** `cook` (implement in worktree), `fix` (fix in worktree)
 **Setup skill** — creates isolated environment before implementation.

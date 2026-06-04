@@ -18,8 +18,9 @@ try {
     process.exit(0);
   }
 
-const TEAMS_DIR = path.join(os.homedir(), '.claude', 'teams');
-const TASKS_DIR = path.join(os.homedir(), '.claude', 'tasks');
+const HOME_DIR = process.env.CLAUDE_HOME || process.env.HOME || os.homedir();
+const TEAMS_DIR = path.join(HOME_DIR, '.claude', 'teams');
+const TASKS_DIR = path.join(HOME_DIR, '.claude', 'tasks');
 
 /**
  * Extract team name from agent_id (format: "name@team-name")
@@ -58,20 +59,34 @@ function buildPeerList(config, currentAgentId) {
   return peers || 'none';
 }
 
+function firstEnv(env, ...names) {
+  for (const name of names) {
+    if (env[name]) return env[name];
+  }
+  return '';
+}
+
 /**
- * Build CK stack context from environment variables
- * Set by session-init.cjs, available to subagents via SubagentStart
+ * Build runtime context from environment variables.
+ * Generic names are preferred; legacy names remain supported for compatibility.
  */
-function buildCkContext() {
+function buildRuntimeContext() {
   const ctx = [];
   const env = process.env;
 
-  if (env.CK_REPORTS_PATH) ctx.push(`Reports: ${env.CK_REPORTS_PATH}`);
-  if (env.CK_PLANS_PATH) ctx.push(`Plans: ${env.CK_PLANS_PATH}`);
-  if (env.CK_PROJECT_ROOT) ctx.push(`Project: ${env.CK_PROJECT_ROOT}`);
-  if (env.CK_NAME_PATTERN) ctx.push(`Naming: ${env.CK_NAME_PATTERN}`);
-  if (env.CK_GIT_BRANCH) ctx.push(`Branch: ${env.CK_GIT_BRANCH}`);
-  if (env.CK_ACTIVE_PLAN) ctx.push(`Active plan: ${env.CK_ACTIVE_PLAN}`);
+  const reportsPath = firstEnv(env, 'REPORTS_PATH', 'CK_REPORTS_PATH');
+  const plansPath = firstEnv(env, 'PLANS_PATH', 'CK_PLANS_PATH');
+  const projectRoot = firstEnv(env, 'PROJECT_ROOT', 'CK_PROJECT_ROOT');
+  const namePattern = firstEnv(env, 'NAME_PATTERN', 'CK_NAME_PATTERN');
+  const gitBranch = firstEnv(env, 'GIT_BRANCH', 'CK_GIT_BRANCH');
+  const activePlan = firstEnv(env, 'ACTIVE_PLAN', 'CK_ACTIVE_PLAN');
+
+  if (reportsPath) ctx.push(`Reports: ${reportsPath}`);
+  if (plansPath) ctx.push(`Plans: ${plansPath}`);
+  if (projectRoot) ctx.push(`Project: ${projectRoot}`);
+  if (namePattern) ctx.push(`Naming: ${namePattern}`);
+  if (gitBranch) ctx.push(`Branch: ${gitBranch}`);
+  if (activePlan) ctx.push(`Active plan: ${activePlan}`);
   ctx.push('Commits: conventional (feat:, fix:, docs:, refactor:, test:, chore:)');
 
   return ctx;
@@ -132,12 +147,12 @@ function main() {
       lines.push(`Task summary: ${tasks.pending} pending, ${tasks.inProgress} in progress, ${tasks.completed} completed`);
     }
 
-    // CK stack context
-    const ckCtx = buildCkContext();
-    if (ckCtx.length > 0) {
+    // Runtime context
+    const runtimeCtx = buildRuntimeContext();
+    if (runtimeCtx.length > 0) {
       lines.push('');
-      lines.push('## CK Context');
-      lines.push(...ckCtx);
+      lines.push('## Runtime Context');
+      lines.push(...runtimeCtx);
     }
 
     lines.push('');

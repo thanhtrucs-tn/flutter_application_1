@@ -2,7 +2,7 @@
 """
 Validate skill cross-references and workflow chain integrity.
 
-Scans SKILL.md bodies for /ck: references, builds a directed graph,
+Scans SKILL.md bodies for explicit skill:<name> references, builds a directed graph,
 checks expected workflow chains, reports orphans/hubs/broken refs.
 
 Usage:
@@ -29,9 +29,9 @@ except ImportError:
 # ── Constants ────────────────────────────────────────────────────────────────
 
 FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
-# Match /ck:skill-name but NOT inside code fences
+# Match skill-name but NOT inside code fences
 CODE_FENCE_RE = re.compile(r"```[\s\S]*?```", re.MULTILINE)
-SKILL_REF_RE = re.compile(r"/ck:([a-z0-9][\w-]*)")
+SKILL_REF_RE = re.compile(r"\bskill:([a-z0-9][\w-]*)")
 
 SKIP_DIRS = frozenset({"_shared", "template-skill", "common", ".venv",
                         "node_modules", "__pycache__"})
@@ -40,9 +40,9 @@ SKIP_DIRS = frozenset({"_shared", "template-skill", "common", ".venv",
 # Note: test and journal are intentionally omitted from chains because they're
 # optional steps (--fast skips test, journal is terminal/post-hoc).
 EXPECTED_CHAINS = {
-    "development": ["ck-plan", "cook", "code-review", "ship"],
-    "bugfix": ["scout", "ck-debug", "fix", "code-review"],
-    "investigation": ["scout", "ck-debug", "brainstorm"],
+    "development": ["plan", "cook", "code-review", "ship"],
+    "bugfix": ["scout", "debug", "fix", "code-review"],
+    "investigation": ["scout", "debug", "brainstorm"],
 }
 
 
@@ -65,17 +65,13 @@ def _parse_frontmatter(content: str) -> dict:
 
 
 def _extract_body_refs(content: str, own_name: str) -> set[str]:
-    """Extract /ck: skill references from body text, excluding code fences."""
+    """Extract explicit skill:<name> references from body text, excluding code fences."""
     m = FRONTMATTER_RE.match(content)
     body = content[m.end():] if m else content
     # Remove code fences to avoid false positives
     body = CODE_FENCE_RE.sub("", body)
     refs = set(SKILL_REF_RE.findall(body))
-    # Normalize: strip ck: prefix if present in the captured group
-    # The regex captures what's after /ck: so "plan" from "/ck:plan"
     refs.discard(own_name)
-    # Also discard dir-name form of own name (e.g. "ck-plan" vs "plan")
-    refs.discard(own_name.replace("ck:", ""))
     return refs
 
 
@@ -120,14 +116,8 @@ def build_reference_graph(skills: dict[str, dict]) -> dict:
 
     for dir_name, data in skills.items():
         for ref in data["body_refs"]:
-            # Resolve ref to dir name (refs are like "cook", "ck-plan", etc.)
+            # Resolve ref to a skill directory name (refs are like "cook", "plan", etc.)
             target = ref if ref in all_dirs else None
-            if not target:
-                # Try with ck- prefix removed or added
-                for candidate in [ref, f"ck-{ref}", ref.replace("ck-", "")]:
-                    if candidate in all_dirs:
-                        target = candidate
-                        break
             if target and target != dir_name:
                 edges[dir_name].add(target)
                 out_degree[dir_name] += 1
@@ -142,8 +132,7 @@ def build_reference_graph(skills: dict[str, dict]) -> dict:
     broken = []
     for dir_name, data in skills.items():
         for ref in data["body_refs"]:
-            found = ref in all_dirs or f"ck-{ref}" in all_dirs or ref.replace("ck-", "") in all_dirs
-            if not found:
+            if ref not in all_dirs:
                 broken.append((dir_name, ref))
 
     return {
@@ -197,7 +186,7 @@ def print_report(skills: dict, graph: dict, missing: list[dict]):
     if graph["broken"]:
         print(f"\n--- Broken References ---")
         for src, ref in graph["broken"]:
-            print(f"  {src} → /ck:{ref} (not found)")
+            print(f"  {src} → skill:{ref} (not found)")
 
     if graph["orphans"]:
         print(f"\n--- Orphaned Skills ({len(graph['orphans'])}) ---")
@@ -225,11 +214,11 @@ def _run_self_tests():
         base = Path(tmp)
         # Create fixture skills
         fixtures = {
-            "cook": '---\nname: ck:cook\ndescription: "Cook things"\ncategory: utilities\nkeywords: [impl]\n---\n# Cook\nAfter planning, run /ck:scout then /ck:code-review.\n',
-            "plan": '---\nname: ck:plan\ndescription: "Plan things"\ncategory: utilities\nkeywords: [plan]\n---\n# Plan\nThis skill creates plans.\n',
-            "scout": '---\nname: ck:scout\ndescription: "Scout"\ncategory: dev-tools\nkeywords: [scout]\nrequires: [ck:scout]\n---\n# Scout\nExplore code. See /ck:cook for next step.\n```\n/ck:plan should not match inside fence\n```\n',
-            "orphan-skill": '---\nname: ck:orphan\ndescription: "Orphan"\ncategory: other\nkeywords: []\n---\n# Orphan\nNo refs here.\n',
-            "broken-ref": '---\nname: ck:broken\ndescription: "Broken"\ncategory: other\nkeywords: []\n---\n# Broken\nSee /ck:nonexistent for help.\nAlso /ck:cook is good.\n',
+            "cook": '---\nname: cook\ndescription: "Cook things"\ncategory: utilities\nkeywords: [impl]\n---\n# Cook\nAfter planning, run skill:scout then skill:code-review.\n',
+            "plan": '---\nname: plan\ndescription: "Plan things"\ncategory: utilities\nkeywords: [plan]\n---\n# Plan\nThis skill creates plans.\n',
+            "scout": '---\nname: scout\ndescription: "Scout"\ncategory: dev-tools\nkeywords: [scout]\nrequires: [scout]\n---\n# Scout\nExplore code. See skill:cook for next step.\n```\nskill:plan should not match inside fence\n```\n',
+            "orphan-skill": '---\nname: orphan\ndescription: "Orphan"\ncategory: other\nkeywords: []\n---\n# Orphan\nNo refs here.\n',
+            "broken-ref": '---\nname: broken\ndescription: "Broken"\ncategory: other\nkeywords: []\n---\n# Broken\nSee skill:nonexistent for help.\nAlso skill:cook is good.\n',
         }
         for dname, content in fixtures.items():
             d = base / dname
@@ -240,11 +229,11 @@ def _run_self_tests():
         graph = build_reference_graph(skills)
 
         print("Self-tests:")
-        # T1: Detects /ck:scout in cook's body
-        _assert("scout" in graph["edges"].get("cook", []), "T1: Detects /ck:scout ref in body")
+        # T1: Detects scout in cook's body
+        _assert("scout" in graph["edges"].get("cook", []), "T1: Detects scout ref in body")
         # T2: cook→code-review edge exists
         _assert("code-review" in skills["cook"]["body_refs"] or "code-review" in graph["edges"].get("cook", []),
-                "T2: Detects /ck:code-review ref in body")
+                "T2: Detects code-review ref in body")
         # T3: orphan-skill has no refs
         _assert("orphan-skill" in graph["orphans"], "T3: Orphan detection")
         # T4: cook is referenced by scout and broken-ref → check if hub-like
@@ -256,10 +245,10 @@ def _run_self_tests():
         _assert(len(missing) > 0, "T5: Missing chain edges detected")
         # T6: Broken reference detection
         broken_refs = [r for s, r in graph["broken"] if r == "nonexistent"]
-        _assert(len(broken_refs) > 0, "T6: Broken reference /ck:nonexistent detected")
+        _assert(len(broken_refs) > 0, "T6: Broken reference nonexistent detected")
         # T7: Self-reference ignored (scout mentions itself via requires)
         _assert("scout" not in graph["edges"].get("scout", []), "T7: Self-reference ignored")
-        # T8: Code fence exclusion (scout has /ck:plan in code fence — should NOT count)
+        # T8: Code fence exclusion (scout has plan in code fence — should NOT count)
         scout_refs = skills["scout"]["body_refs"]
         _assert("plan" not in scout_refs, "T8: Code fence refs excluded")
 

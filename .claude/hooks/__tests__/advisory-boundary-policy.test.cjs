@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Regression tests for advisory workflow autonomy boundaries.
- * Run: node --test claude/hooks/__tests__/advisory-boundary-policy.test.cjs
+ * Run: node --test .claude/hooks/__tests__/advisory-boundary-policy.test.cjs
  */
 
 const { describe, it } = require('node:test');
@@ -17,12 +17,12 @@ const {
 const REPO_ROOT = path.join(__dirname, '..', '..', '..');
 const COOK_AFTER_PLAN_HOOK = path.join(__dirname, '..', 'cook-after-plan-reminder.cjs');
 const PLAN_REFERENCES = [
-  'claude/skills/ck-plan/SKILL.md',
-  'claude/skills/ck-plan/references/workflow-modes.md',
-  'claude/skills/ck-plan/references/validate-workflow.md',
-  'claude/skills/ck-plan/references/red-team-workflow.md',
-  'claude/skills/ck-plan/references/task-management.md',
-  'claude/skills/ck-plan/references/verification-roles.md'
+  '.claude/skills/plan/SKILL.md',
+  '.claude/skills/plan/references/workflow-modes.md',
+  '.claude/skills/plan/references/validate-workflow.md',
+  '.claude/skills/plan/references/red-team-workflow.md',
+  '.claude/skills/plan/references/task-management.md',
+  '.claude/skills/plan/references/verification-roles.md'
 ];
 
 function readRepoFile(relativePath) {
@@ -52,7 +52,7 @@ describe('advisory boundary policy', () => {
     assert.match(result.stdout, /validate/i);
     assert.match(result.stdout, /red-team/i);
     assert.doesNotMatch(result.stdout, /MUST invoke/i);
-    assert.doesNotMatch(result.stdout, /\/ck:cook\s+--auto/i);
+    assert.doesNotMatch(result.stdout, /\cook\s+--auto/i);
   });
 
   it('plan completion hook includes absolute plan path without auto mode', () => {
@@ -79,19 +79,19 @@ describe('advisory boundary policy', () => {
 
       assert.strictEqual(result.status, 0, result.stderr);
       assert.match(result.stdout, new RegExp(`${planDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/plan\\.md`));
-      assert.doesNotMatch(result.stdout, /\/ck:cook\s+--auto/i);
+      assert.doesNotMatch(result.stdout, /\cook\s+--auto/i);
     } finally {
       fs.rmSync(getSessionTempPath(sessionId), { force: true });
     }
   });
 
-  it('ck-plan advisory references do not default to cook auto mode', () => {
+  it('plan advisory references do not default to cook auto mode', () => {
     for (const relativePath of PLAN_REFERENCES) {
       const content = readRepoFile(relativePath);
       assert.doesNotMatch(
         content,
-        /\/ck:cook\s+--auto/i,
-        `${relativePath} must not recommend default /ck:cook --auto`
+        /\cook\s+--auto/i,
+        `${relativePath} must not recommend default cook --auto`
       );
       assert.doesNotMatch(
         content,
@@ -107,17 +107,17 @@ describe('advisory boundary policy', () => {
   });
 
   it('bootstrap fast/default modes do not imply autonomous cook execution', () => {
-    const bootstrapSkill = readRepoFile('claude/skills/bootstrap/SKILL.md');
-    const fastWorkflow = readRepoFile('claude/skills/bootstrap/references/workflow-fast.md');
-    const parallelWorkflow = readRepoFile('claude/skills/bootstrap/references/workflow-parallel.md');
-    const sharedPhases = readRepoFile('claude/skills/bootstrap/references/shared-phases.md');
+    const bootstrapSkill = readRepoFile('.claude/skills/bootstrap/SKILL.md');
+    const fastWorkflow = readRepoFile('.claude/skills/bootstrap/references/workflow-fast.md');
+    const parallelWorkflow = readRepoFile('.claude/skills/bootstrap/references/workflow-parallel.md');
+    const sharedPhases = readRepoFile('.claude/skills/bootstrap/references/shared-phases.md');
 
     assert.doesNotMatch(bootstrapSkill, /default\s+`--auto`/i);
     assert.doesNotMatch(bootstrapSkill, /\| `--fast`[^\n]*`--auto`/i);
     assert.match(bootstrapSkill, /default\s+`--full`/i);
     assert.match(bootstrapSkill, /explicit autonomous implementation/i);
 
-    assert.doesNotMatch(fastWorkflow, /\/ck:cook\s+--auto/i);
+    assert.doesNotMatch(fastWorkflow, /\cook\s+--auto/i);
     assert.doesNotMatch(fastWorkflow, /Fully autonomous from start to finish/i);
     assert.doesNotMatch(fastWorkflow, /Skips all review gates/i);
     assert.match(fastWorkflow, /keeps review gates/i);
@@ -130,7 +130,7 @@ describe('advisory boundary policy', () => {
   });
 
   it('task management docs describe cook as user-approved continuation', () => {
-    const taskManagement = readRepoFile('claude/skills/ck-plan/references/task-management.md');
+    const taskManagement = readRepoFile('.claude/skills/plan/references/task-management.md');
 
     assert.doesNotMatch(taskManagement, /Cook Handoff Protocol/i);
     assert.doesNotMatch(taskManagement, /planning\s+→\s+cook immediately/i);
@@ -139,10 +139,10 @@ describe('advisory boundary policy', () => {
   });
 
   it('validate and red-team workflows require a whole-plan consistency sweep before cook', () => {
-    const planSkill = readRepoFile('claude/skills/ck-plan/SKILL.md');
-    const validateWorkflow = readRepoFile('claude/skills/ck-plan/references/validate-workflow.md');
-    const redTeamWorkflow = readRepoFile('claude/skills/ck-plan/references/red-team-workflow.md');
-    const verificationRoles = readRepoFile('claude/skills/ck-plan/references/verification-roles.md');
+    const planSkill = readRepoFile('.claude/skills/plan/SKILL.md');
+    const validateWorkflow = readRepoFile('.claude/skills/plan/references/validate-workflow.md');
+    const redTeamWorkflow = readRepoFile('.claude/skills/plan/references/red-team-workflow.md');
+    const verificationRoles = readRepoFile('.claude/skills/plan/references/verification-roles.md');
 
     assert.match(planSkill, /Whole-Plan Consistency Gate/);
     assert.match(planSkill, /Load: `references\/verification-roles\.md`/);
@@ -181,8 +181,38 @@ describe('advisory boundary policy', () => {
     assert.match(verificationRoles, /Unresolved contradictions: N/);
   });
 
+  it('plan requires reading all generated plan stubs before writing replacements', () => {
+    const planSkill = readRepoFile('.claude/skills/plan/SKILL.md');
+    const planOrganization = readRepoFile('.claude/skills/plan/references/plan-organization.md');
+
+    assert.match(planSkill, /Generated-file write guard/);
+    assert.match(planSkill, /Read `plan\.md`/);
+    assert.match(planSkill, /Read every generated `phase-\*\.md` stub/);
+    assert.match(planSkill, /Do not draft or submit a full phase body/);
+    assert.match(planSkill, /has not been read in the current session/);
+
+    assert.match(planOrganization, /Read generated files before writing content/);
+    assert.match(planOrganization, /find \{plan-dir\}/);
+    assert.match(planOrganization, /read `plan\.md` and every listed `phase-\*\.md` stub/i);
+    assert.match(planOrganization, /rejects Write calls to existing files that were not read first/i);
+  });
+
+  it('red-team workflows require descriptive report artifact names', () => {
+    const redTeamWorkflow = readRepoFile('.claude/skills/plan/references/red-team-workflow.md');
+    const redTeamPersonas = readRepoFile('.claude/skills/plan/references/red-team-personas.md');
+
+    assert.match(redTeamWorkflow, /`reports\/` directory/i);
+    assert.match(redTeamWorkflow, /from-code-reviewer-to-planner-red-team-security-adversary-plan-review-report\.md/);
+    assert.match(redTeamWorkflow, /Never use generic names such as `red-team-review\.md`/);
+    assert.match(redTeamWorkflow, /retry immediately with a descriptive filename/i);
+
+    assert.match(redTeamPersonas, /provided reports path/i);
+    assert.match(redTeamPersonas, /from-code-reviewer-to-planner-red-team-\{lens-name\}-plan-review-report\.md/);
+    assert.match(redTeamPersonas, /Do not invent generic report filenames such as red-team-review\.md/);
+  });
+
   it('advisory agent prompts do not tell reviewers to mutate plan files', () => {
-    const codeReviewerPrompt = readRepoFile('claude/agents/code-reviewer.md');
+    const codeReviewerPrompt = readRepoFile('.claude/agents/code-reviewer.md');
 
     assert.doesNotMatch(codeReviewerPrompt, /update plan file/i);
     assert.doesNotMatch(codeReviewerPrompt, /Mark tasks complete/i);

@@ -243,7 +243,7 @@ export default async function Post({ params }: { params: { slug: string } }) {
 
 ```yaml
 # .github/workflows/ci.yml
-name: ck:CI
+name: CI
 on: [push, pull_request]
 
 jobs:
@@ -289,6 +289,7 @@ pytest
 - Use Image component for automatic optimization
 - Set proper metadata for SEO
 - Leverage caching strategies (force-cache, revalidate, no-store)
+- Track stable Next.js security releases separately from canary framework drift. Production apps should stay on a patched stable release line and avoid canary-only pins unless testing a specific upstream issue.
 
 **Turborepo:**
 - Structure monorepo with clear separation (apps/, packages/)

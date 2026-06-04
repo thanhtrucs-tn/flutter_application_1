@@ -18,7 +18,7 @@ Task(subagent_type="researcher", prompt="Research [topic]. Report ≤150 lines."
 ```
 Task(subagent_type="scout", prompt="Find files related to [feature] in codebase", description="Scout [feature]")
 ```
-- Use `/ck:scout ext` (preferred) or `/ck:scout` (fallback)
+- Use `scout ext` (preferred) or `scout` (fallback)
 
 ## Planning Phase
 ```
@@ -49,7 +49,30 @@ Task(subagent_type="debugger", prompt="Analyze failures: [details]", description
 
 ## Code Review
 ```
-Task(subagent_type="code-reviewer", prompt="Review changes for [phase]. Check security, performance, YAGNI/KISS/DRY. Return score (X/10), critical, warnings, suggestions.", description="Review [phase]")
+
+Write reviewer output into `review-decision.json` using
+`.claude/skills/_shared/references/workflow-artifacts.md`. Score is advisory.
+
+## Adversarial Validation
+```
+Task(subagent_type="code-reviewer",
+     prompt="Adversarial validation for [phase]. Disprove implementation claims only. Check acceptance coverage, regression reachability, public contracts, and verification proof. Forbidden: style polish and broad rewrite suggestions. Return JSON-ready fields for adversarial-validation.json: decision, disprovenClaims[], unverifiedClaims[], missingProof[], reachableRegressions[].",
+     description="Adversarial validate [phase]")
+```
+- Trigger for `--auto`, high-risk surfaces, large diffs, and ship/push/PR/deploy.
+- Do not average reviewers. Any evidenced critical issue blocks.
+
+## Domain-Risk Review
+```
+Task(subagent_type="code-reviewer",
+     prompt="Domain-risk review for [auth|secrets|payments|db|api|deploy|filesystem|production-config]. Return risks to risk-gate.json and blocking findings only.",
+     description="Domain-risk review")
+```
+- Trigger only when the touched files affect the named domain.
+- Keep findings tied to file/line evidence and required verification.
+Task(subagent_type="code-reviewer",
+     prompt="Review changes for [phase] against these MANDATORY checks: (a) every acceptance criterion met; (b) no regression to business logic in touchpoints/blast-radius from scout; (c) no breaking changes to public contracts (signatures, schemas, APIs, env vars) unless explicitly called out; (d) follows existing patterns from scout; (e) no new lint/type/build errors anywhere. CONTEXT — scout summary: <scout-summary>; acceptance criteria: <acceptance-criteria>. Return score (X/10), critical, warnings, suggestions, and explicitly flag any side effects to trigger HARD-GATE-NO-SIDE-EFFECTS.",
+     description="Review [phase]")
 ```
 
 ## Conditional Simplify
@@ -64,9 +87,8 @@ Task(subagent_type="code-simplifier", prompt="Simplify these files while preserv
 - Skip when `CK_SIMPLIFY_DISABLED=1` or `.ck.json` `simplify.gate.enabled=false`
 
 ## Project Management
-```
-Task(subagent_type="project-manager", prompt="Run full sync-back in [plan-path]: reconcile completed tasks with all phase files, backfill stale completed checkboxes across all phases, update plan.md status/progress, and report unresolved mappings.", description="Update plan")
-```
+Activate the `project-management` skill (MANDATORY at Finalize — not a subagent):
+> Run full sync-back in [plan-path]: reconcile completed tasks with all phase files, backfill stale completed checkboxes across all phases, update plan.md status/progress, and report unresolved mappings.
 
 ## Documentation
 ```

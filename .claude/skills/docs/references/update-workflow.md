@@ -4,7 +4,7 @@
 
 1. Scan the codebase and calculate the number of files with LOC in each directory (skip `.claude`, `.opencode`, `.git`, `tests`, `node_modules`, `__pycache__`, `secrets`, etc.)
 2. Target directories **that actually exist** - adapt to project structure
-3. Activate `ck:scout` skill to explore the code base and return detailed summary reports
+3. Activate `scout` skill to explore the code base and return detailed summary reports
 4. Merge scout reports into context summary
 
 ## Phase 1.5: Parallel Documentation Reading

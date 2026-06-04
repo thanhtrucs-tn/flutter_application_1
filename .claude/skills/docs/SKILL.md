@@ -15,7 +15,7 @@ metadata:
 
 Analyze codebase and manage project documentation through scouting, analysis, and structured doc generation.
 
-**IMPORTANT:** Invoke "/ck:project-organization" skill to organize the outputs.
+**IMPORTANT:** Invoke "project-organization" skill to organize the outputs.
 
 ## Default (No Arguments)
 
@@ -33,9 +33,9 @@ Present as options via `AskUserQuestion` with header "Documentation Operation", 
 
 | Subcommand | Reference | Purpose |
 |------------|-----------|---------|
-| `/ck:docs init` | `references/init-workflow.md` | Analyze codebase and create initial documentation |
-| `/ck:docs update` | `references/update-workflow.md` | Analyze codebase and update existing documentation |
-| `/ck:docs summarize` | `references/summarize-workflow.md` | Quick analysis and update of codebase summary |
+| `docs init` | `references/init-workflow.md` | Analyze codebase and create initial documentation |
+| `docs update` | `references/update-workflow.md` | Analyze codebase and update existing documentation |
+| `docs summarize` | `references/summarize-workflow.md` | Quick analysis and update of codebase summary |
 
 ## Routing
 
@@ -61,6 +61,6 @@ Documentation lives in `./docs` directory:
 
 Use `docs/` directory as the source of truth for documentation.
 
-When authoring or refreshing diagrams in `system-architecture.md`, apply the universal SVG layout rules from `/ck:tech-graph`'s `references/svg-layout-best-practices.md` (component spacing, arrow routing, label placement, z-index ordering). Pair with `/ck:preview --diagram` for visual self-review, or use `/ck:tech-graph` directly for publish-grade output.
+When authoring or refreshing diagrams in `system-architecture.md`, apply the universal SVG layout rules from `tech-graph`'s `references/svg-layout-best-practices.md` (component spacing, arrow routing, label placement, z-index ordering). Pair with `preview --diagram` for visual self-review, or use `tech-graph` directly for publish-grade output.
 
 **IMPORTANT**: **Do not** start implementing code.

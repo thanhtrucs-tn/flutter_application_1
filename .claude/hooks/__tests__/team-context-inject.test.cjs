@@ -7,7 +7,7 @@
  * - Team membership detection (name@team-name pattern)
  * - Team config loading and parsing
  * - Peer list building (excluding current agent)
- * - CK stack context building from environment variables
+ * - Runtime context building from environment variables
  * - Task summary generation from task directory
  * - Fail-open behavior on errors
  * - Security: path traversal prevention
@@ -407,9 +407,9 @@ describe('team-context-inject.cjs', () => {
 
   });
 
-  describe('CK Stack Context Building', () => {
+  describe('Runtime Context Building', () => {
 
-    it('includes CK context when environment variables are set', async () => {
+    it('includes runtime context when environment variables are set', async () => {
       const tmpDir = path.join(os.tmpdir(), 'team-inject-ck-' + Date.now());
       fs.mkdirSync(tmpDir, { recursive: true });
       try {
@@ -420,17 +420,17 @@ describe('team-context-inject.cjs', () => {
         }, {
           env: {
             HOME: tmpDir,
-            CK_REPORTS_PATH: '/project/plans/reports',
-            CK_PLANS_PATH: '/project/plans',
-            CK_PROJECT_ROOT: '/project',
-            CK_GIT_BRANCH: 'main'
+            REPORTS_PATH: '/project/plans/reports',
+            PLANS_PATH: '/project/plans',
+            PROJECT_ROOT: '/project',
+            GIT_BRANCH: 'main'
           }
         });
 
         assert.strictEqual(result.exitCode, 0);
         const context = result.output?.hookSpecificOutput?.additionalContext || '';
 
-        assert.ok(context.includes('CK Context'), 'Should have CK Context section');
+        assert.ok(context.includes('Runtime Context'), 'Should have Runtime Context section');
         assert.ok(context.includes('/project/plans/reports'), 'Should include reports path');
         assert.ok(context.includes('/project/plans'), 'Should include plans path');
         assert.ok(context.includes('main'), 'Should include git branch');
@@ -439,7 +439,7 @@ describe('team-context-inject.cjs', () => {
       }
     });
 
-    it('always includes commit convention in CK context', async () => {
+    it('always includes commit convention in runtime context', async () => {
       const tmpDir = path.join(os.tmpdir(), 'team-inject-commit-' + Date.now());
       fs.mkdirSync(tmpDir, { recursive: true });
       try {
@@ -464,13 +464,13 @@ describe('team-context-inject.cjs', () => {
       }
     });
 
-    it('only includes CK context lines when env vars exist (fail-open)', async () => {
+    it('only includes runtime context lines when env vars exist (fail-open)', async () => {
       const tmpDir = path.join(os.tmpdir(), 'team-inject-empty-ck-' + Date.now());
       fs.mkdirSync(tmpDir, { recursive: true });
       try {
         createTestTeam(tmpDir, 'team-a');
 
-        // Run with no CK_* env vars
+        // Run with no runtime env vars
         const result = await runHook({
           agent_id: 'alice@team-a'
         }, {
@@ -480,8 +480,8 @@ describe('team-context-inject.cjs', () => {
         assert.strictEqual(result.exitCode, 0);
         const context = result.output?.hookSpecificOutput?.additionalContext || '';
 
-        // Should not have empty CK Context section
-        // Commit convention is always present, so CK Context should appear
+        // Should not have empty Runtime Context section
+        // Commit convention is always present, so Runtime Context should appear
         // but with minimal content
         assert.ok(context.length > 0, 'Should still return context');
       } finally {

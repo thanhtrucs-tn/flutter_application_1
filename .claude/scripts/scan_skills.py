@@ -168,8 +168,6 @@ def categorize_skill(name: str, frontmatter: dict | None = None) -> str:
 
 def normalize_display_name(internal_name: str, frontmatter: dict) -> str:
     raw = frontmatter.get("name", "")
-    if raw.startswith("ck:"):
-        return raw[3:]
     return raw if raw else internal_name
 
 
@@ -258,8 +256,8 @@ def _skill_yaml_lines(skill: dict, indent: str = "") -> list[str]:
     return lines
 
 
-def write_skills_registry(skills: list[dict], repo_root: Path) -> Path:
-    out = repo_root / "claude" / "scripts" / "skills_data.yaml"
+def write_skills_registry(skills: list[dict], claude_root: Path) -> Path:
+    out = claude_root / "scripts" / "skills_data.yaml"
     lines: list[str] = []
     for skill in skills:
         # Registry uses internal name (not display_name)
@@ -268,14 +266,14 @@ def write_skills_registry(skills: list[dict], repo_root: Path) -> Path:
     return out
 
 
-def write_catalog_yaml(skills: list[dict], repo_root: Path) -> Path:
+def write_catalog_yaml(skills: list[dict], claude_root: Path) -> Path:
     cats = group_by_category(skills)
     active = [c for c in CATEGORY_ORDER if cats.get(c)]
-    out = repo_root / "guide" / "SKILLS.yaml"
+    out = claude_root / "guide" / "SKILLS.yaml"
     lines = [
         "metadata:",
         f"  title: {_qs('Skills Catalog')}",
-        f"  description: {_qs('Auto-generated catalog of all available skills in ClaudeKit Engineer')}",
+        f"  description: {_qs('Auto-generated catalog of all available skills in this bundle')}",
         f"  last_updated: '{date.today().isoformat()}'",
         f"  total_skills: {len(skills)}",
         "categories:",
@@ -293,24 +291,24 @@ def write_catalog_yaml(skills: list[dict], repo_root: Path) -> Path:
     return out
 
 
-def write_catalog_markdown(skills: list[dict], repo_root: Path) -> Path:
+def write_catalog_markdown(skills: list[dict], claude_root: Path) -> Path:
     cats = group_by_category(skills)
     active = [c for c in CATEGORY_ORDER if cats.get(c)]
-    out = repo_root / "guide" / "SKILLS.md"
+    out = claude_root / "guide" / "SKILLS.md"
     lines = [
         "# Skills Catalog", "",
-        "Auto-generated catalog of all available skills in ClaudeKit Engineer.", "",
+        "Auto-generated catalog of all available skills in this bundle.", "",
         f"**Last Updated**: {date.today().isoformat()}", "",
         f"**Total Skills**: {len(skills)}", "",
         "## Categories", "",
         *[f"- [{CATEGORY_NAMES[c]}](#{c})" for c in active],
         "", "## Legend", "",
-        "- 📦 Has executable scripts", "- 📚 Has reference documentation", "",
+        "- `[scripts]` Has executable scripts", "- `[references]` Has reference documentation", "",
     ]
     for cat in active:
         lines.extend([f"## {CATEGORY_NAMES[cat]}", ""])
         for skill in sorted(cats[cat], key=lambda s: str(s["display_name"]).lower()):
-            icons = ("📦 " if skill["has_scripts"] else "") + ("📚 " if skill["has_references"] else "")
+            icons = ("[scripts] " if skill["has_scripts"] else "") + ("[references] " if skill["has_references"] else "")
             desc_safe = str(skill["description"]).replace("\n", " ").strip()
             lines.extend([
                 f"### {icons}`{skill['display_name']}`", "",
@@ -324,8 +322,8 @@ def write_catalog_markdown(skills: list[dict], repo_root: Path) -> Path:
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main() -> None:
-    repo_root = Path(__file__).resolve().parents[2]
-    base_path = repo_root / "claude" / "skills"
+    claude_root = Path(__file__).resolve().parents[1]
+    base_path = claude_root / "skills"
     if not base_path.exists():
         raise SystemExit(f"Error: {base_path} not found")
 
@@ -342,16 +340,16 @@ def main() -> None:
             continue
         print(f"\n{CATEGORY_NAMES[cat]}:")
         for skill in sorted(cat_skills, key=lambda s: str(s["display_name"]).lower()):
-            s_icon = "📦" if skill["has_scripts"] else "  "
-            r_icon = "📚" if skill["has_references"] else "  "
+            s_icon = "S" if skill["has_scripts"] else " "
+            r_icon = "R" if skill["has_references"] else " "
             print(f"  {s_icon}{r_icon} {str(skill['display_name']):30} {str(skill['description'])[:80]}")
 
-    registry = write_skills_registry(skills, repo_root)
-    cat_yaml = write_catalog_yaml(skills, repo_root)
-    cat_md = write_catalog_markdown(skills, repo_root)
-    print(f"\n✓ Saved registry to {registry.relative_to(repo_root)}")
-    print(f"✓ Saved catalog to {cat_yaml.relative_to(repo_root)}")
-    print(f"✓ Saved catalog to {cat_md.relative_to(repo_root)}")
+    registry = write_skills_registry(skills, claude_root)
+    cat_yaml = write_catalog_yaml(skills, claude_root)
+    cat_md = write_catalog_markdown(skills, claude_root)
+    print(f"\n[OK] Saved registry to {registry.relative_to(claude_root)}")
+    print(f"[OK] Saved catalog to {cat_yaml.relative_to(claude_root)}")
+    print(f"[OK] Saved catalog to {cat_md.relative_to(claude_root)}")
 
     # Format compliance scoring (Phase 2).
     scores = [

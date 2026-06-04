@@ -11,7 +11,7 @@ metadata:
   version: "3.0.0"
 ---
 
-# Agent Teams - CK-Native Orchestration Engine
+# Agent Teams - Orchestration Engine
 
 Coordinate multiple independent Claude Code sessions. Each teammate has own context window, loads project context (CLAUDE.md, skills, agents), communicates via shared task list and messaging.
 
@@ -22,10 +22,10 @@ Coordinate multiple independent Claude Code sessions. Each teammate has own cont
 ## Usage
 
 ```
-/ck:team <template> <context> [flags]
+team <template> <context> [flags]
 ```
 
-**Templates:** `ck:research`, `ck:cook`, `ck:code-review`, `ck:debug`
+**Templates:** `research`, `cook`, `code-review`, `debug`
 
 **Flags:**
 - `--devs N` | `--researchers N` | `--reviewers N` | `--debuggers N` -- team size
@@ -39,7 +39,7 @@ Coordinate multiple independent Claude Code sessions. Each teammate has own cont
 1. Step 2 of every template calls `TeamCreate(team_name: "...", ...)`. Do NOT check whether the tool exists first -- just call it.
 2. If the call SUCCEEDS: continue with the template.
 3. If the call returns an ERROR or is unrecognized: **STOP. Tell user:** "Agent Teams requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in settings.json. Team mode is not available."
-4. Do NOT fall back to subagents. `/ck:team` MUST use Agent Teams or abort.
+4. Do NOT fall back to subagents. `team` MUST use Agent Teams or abort.
 5. Ensure `TeamCreate` was called before spawning teammates -- team association happens via session context.
 
 When activated, IMMEDIATELY execute the matching template sequence below.
@@ -65,7 +65,7 @@ When `--delegate` flag is passed:
 Agent(
   subagent_type: "researcher" | "fullstack-developer" | "code-reviewer" | "debugger" | "tester" | ...,
   description: "short task summary",
-  prompt: "full instructions + CK Context Block",
+  prompt: "full instructions + Runtime Context Block",
   model: "opus",                    # Required for Agent Teams teammates
   run_in_background: true,          # Non-blocking spawn
   isolation: "worktree"             # Git worktree isolation (cook devs)
@@ -98,27 +98,27 @@ Agent(
 
 ---
 
-## CK Context Block
+## Runtime Context Block
 
 Every teammate spawn prompt MUST include this context at the end:
 
 ```
-CK Context:
-- Work dir: {CK_PROJECT_ROOT or CWD}
-- Reports: {CK_REPORTS_PATH or "plans/reports/"}
-- Plans: {CK_PLANS_PATH or "plans/"}
-- Branch: {CK_GIT_BRANCH or current branch}
-- Naming: {CK_NAME_PATTERN or "YYMMDD-HHMM"}
-- Active plan: {CK_ACTIVE_PLAN or "none"}
+Runtime Context:
+- Work dir: {project_root or CWD}
+- Reports: {reports_path or "plans/reports/"}
+- Plans: {plans_path or "plans/"}
+- Branch: {git_branch or current branch}
+- Naming: {name_pattern or "YYMMDD-HHMM"}
+- Active plan: {active_plan or "none"}
 - Commits: conventional (feat:, fix:, docs:, refactor:, test:, chore:)
 - Refer to teammates by NAME, not agent ID
 ```
 
 ---
 
-## ON `/ck:team research <topic>` [--researchers N]:
+## ON `team research <topic>` [--researchers N]:
 
-*Wraps /ck:research skill -- scope, gather, analyze, report.*
+*Wraps research skill -- scope, gather, analyze, report.*
 
 IMMEDIATELY execute in order:
 
@@ -132,22 +132,22 @@ IMMEDIATELY execute in order:
 
 3. **CALL** `TaskCreate` x N -- one per angle:
    - Subject: `Research: <angle-title>`
-   - Description: `Investigate <angle> for topic: <topic>. Save report to: {CK_REPORTS_PATH}/researcher-{N}-{CK_NAME_PATTERN}-{topic-slug}.md. Format: Executive summary, key findings, evidence, recommendations. Mark task completed when done. Send findings summary to lead.`
+   - Description: `Investigate <angle> for topic: <topic>. Save report to: {reports_path}/researcher-{N}-{name_pattern}-{topic-slug}.md. Format: Executive summary, key findings, evidence, recommendations. Mark task completed when done. Send findings summary to lead.`
 
 4. **SPAWN** teammates x N via `Agent` tool:
    - `subagent_type: "researcher"`, `model: "opus"`
    - `run_in_background: true` (non-blocking -- spawn all N concurrently)
    - `name: "researcher-{N}"`
-   - Prompt: task description + CK Context Block
+   - Prompt: task description + Runtime Context Block
 
 5. **MONITOR** via TaskCompleted hook events + TaskList fallback:
    - TaskCompleted events auto-notify when researchers finish
    - Fallback: Check TaskList if no event received in 60s
    - If stuck >5 min, message teammate directly
 
-6. **READ** all researcher reports from `{CK_REPORTS_PATH}/`
+6. **READ** all researcher reports from `{reports_path}/`
 
-7. **SYNTHESIZE** into: `{CK_REPORTS_PATH}/research-summary-{CK_NAME_PATTERN}-{topic-slug}.md`
+7. **SYNTHESIZE** into: `{reports_path}/research-summary-{name_pattern}-{topic-slug}.md`
    Format: exec summary, key findings, comparative analysis, recommendations, unresolved questions.
 
 8. **SHUTDOWN**: `SendMessage(type: "shutdown_request")` to each teammate
@@ -155,13 +155,13 @@ IMMEDIATELY execute in order:
 9. **CLEANUP**: `TeamDelete` (no parameters -- just call it)
 
 10. **REPORT**: Tell user `Research complete. Summary: {path}. N reports generated.`
-11. **JOURNAL**: Run `/ck:journal` to write a concise technical journal entry upon completion
+11. **JOURNAL**: Run `journal` to write a concise technical journal entry upon completion
 
 ---
 
-## ON `/ck:team cook <plan-path-or-description>` [--devs N]:
+## ON `team cook <plan-path-or-description>` [--devs N]:
 
-*Wraps /ck:cook skill -- plan, code, test, review, finalize.*
+*Wraps cook skill -- plan, code, test, review, finalize.*
 
 IMMEDIATELY execute in order:
 
@@ -181,7 +181,7 @@ IMMEDIATELY execute in order:
    - `isolation: "worktree"` -- each dev gets isolated git worktree (no file conflicts)
    - `run_in_background: true`
    - `name: "dev-{N}"`
-   - Prompt: task description + plan context + CK Context Block
+   - Prompt: task description + plan context + Runtime Context Block
    - If `--plan-approval`: include instruction to plan first, await approval
    - REVIEW and APPROVE each developer's plan via `plan_approval_response`
 
@@ -200,7 +200,7 @@ IMMEDIATELY execute in order:
    - Cleanup: `git worktree remove <path>` for each worktree
    - Verify: `git log --oneline --graph` to confirm merge topology
 
-7. **DOCS SYNC EVAL** (MANDATORY for cook -- from /ck:cook finalize):
+7. **DOCS SYNC EVAL** (MANDATORY for cook -- from cook finalize):
    ```
    Docs impact: [none|minor|major]
    Action: [no update needed -- <reason>] | [updated <page>] | [needs separate PR]
@@ -210,13 +210,13 @@ IMMEDIATELY execute in order:
 9. **CLEANUP**: `TeamDelete` (no parameters -- just call it)
 
 10. **REPORT**: Tell user what was cooked, test results, docs impact.
-11. **JOURNAL**: Run `/ck:journal` to write a concise technical journal entry upon completion
+11. **JOURNAL**: Run `journal` to write a concise technical journal entry upon completion
 
 ---
 
-## ON `/ck:team review <scope>` [--reviewers N]:
+## ON `team review <scope>` [--reviewers N]:
 
-*Wraps /ck:code-review skill -- scout, review, synthesize with evidence gates.*
+*Wraps code-review skill -- scout, review, synthesize with evidence gates.*
 
 IMMEDIATELY execute in order:
 
@@ -230,19 +230,19 @@ IMMEDIATELY execute in order:
 
 3. **CALL** `TaskCreate` x N -- one per focus:
    - Subject: `Review: <focus-title>`
-   - Description: `Review <scope> for <focus>. Output severity-rated findings only. Format: [CRITICAL|IMPORTANT|MODERATE] <finding> -- <evidence> -- <recommendation>. No "seems" or "probably" -- concrete evidence only. Save to: {CK_REPORTS_PATH}/reviewer-{N}-{CK_NAME_PATTERN}-{scope-slug}.md. Mark task completed when done.`
+   - Description: `Review <scope> for <focus>. Output severity-rated findings only. Format: [CRITICAL|IMPORTANT|MODERATE] <finding> -- <evidence> -- <recommendation>. No "seems" or "probably" -- concrete evidence only. Save to: {reports_path}/reviewer-{N}-{name_pattern}-{scope-slug}.md. Mark task completed when done.`
 
 4. **SPAWN** reviewers x N via `Agent` tool:
    - `subagent_type: "code-reviewer"`, `model: "opus"`
    - `run_in_background: true`
    - `name: "reviewer-{N}"`
-   - Prompt: task description + CK Context Block
+   - Prompt: task description + Runtime Context Block
 
 5. **MONITOR** via TaskCompleted hook events + TaskList fallback:
    - TaskCompleted events auto-notify when reviewers finish
    - Fallback: Check TaskList if no event received in 60s
 
-6. **SYNTHESIZE** into: `{CK_REPORTS_PATH}/review-{scope-slug}.md`
+6. **SYNTHESIZE** into: `{reports_path}/review-{scope-slug}.md`
    - Deduplicate findings across reviewers
    - Prioritize by severity: CRITICAL > IMPORTANT > MODERATE
    - Create action items list with owners
@@ -251,13 +251,13 @@ IMMEDIATELY execute in order:
 8. **CLEANUP**: `TeamDelete` (no parameters -- just call it)
 
 9. **REPORT**: Tell user `Review complete. {X} findings ({Y} critical). Report: {path}.`
-10. **JOURNAL**: Run `/ck:journal` to write a concise technical journal entry upon completion
+10. **JOURNAL**: Run `journal` to write a concise technical journal entry upon completion
 
 ---
 
-## ON `/ck:team debug <issue>` [--debuggers N]:
+## ON `team debug <issue>` [--debuggers N]:
 
-*Wraps /ck:fix skill -- root-cause-first, adversarial hypotheses, disprove to converge.*
+*Wraps fix skill -- root-cause-first, adversarial hypotheses, disprove to converge.*
 
 IMMEDIATELY execute in order:
 
@@ -270,13 +270,13 @@ IMMEDIATELY execute in order:
 
 3. **CALL** `TaskCreate` x N -- one per hypothesis:
    - Subject: `Debug: Test hypothesis -- <theory>`
-   - Description: `Investigate hypothesis: <theory>. For issue: <issue>. ADVERSARIAL: actively try to disprove other theories. Message other debuggers to challenge findings. Report evidence FOR and AGAINST your theory. Save findings to: {CK_REPORTS_PATH}/debugger-{N}-{CK_NAME_PATTERN}-{issue-slug}.md. Mark task completed when done.`
+   - Description: `Investigate hypothesis: <theory>. For issue: <issue>. ADVERSARIAL: actively try to disprove other theories. Message other debuggers to challenge findings. Report evidence FOR and AGAINST your theory. Save findings to: {reports_path}/debugger-{N}-{name_pattern}-{issue-slug}.md. Mark task completed when done.`
 
 4. **SPAWN** debugger teammates x N via `Agent` tool:
    - `subagent_type: "debugger"`, `model: "opus"`
    - `run_in_background: true`
    - `name: "debugger-{N}"`
-   - Prompt: task description + CK Context Block
+   - Prompt: task description + Runtime Context Block
 
 5. **MONITOR** via TaskCompleted events. Debuggers should message each other -- let them converge.
    - TaskCompleted events notify as each hypothesis is tested
@@ -285,14 +285,14 @@ IMMEDIATELY execute in order:
 
 6. **READ** all debugger reports. Identify surviving theory as root cause.
 
-7. **WRITE** root cause report: `{CK_REPORTS_PATH}/debug-{issue-slug}.md`
+7. **WRITE** root cause report: `{reports_path}/debug-{issue-slug}.md`
    Format: Root cause, evidence chain, disproven hypotheses, recommended fix.
 
 8. **SHUTDOWN** all teammates via `SendMessage(type: "shutdown_request")`
 9. **CLEANUP**: `TeamDelete` (no parameters -- just call it)
 
 10. **REPORT**: Tell user `Debug complete. Root cause: <summary>. Report: {path}.`
-11. **JOURNAL**: Run `/ck:journal` to write a concise technical journal entry upon completion
+11. **JOURNAL**: Run `journal` to write a concise technical journal entry upon completion
 
 ---
 

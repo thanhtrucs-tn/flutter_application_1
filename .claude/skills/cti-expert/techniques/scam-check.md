@@ -64,7 +64,7 @@ https://urlscan.io/search/#page.domain:[DOMAIN]
 
 Free public lookup — no API key needed for basic results.
 
-**Method:** WebSearch for `site:virustotal.com "[DOMAIN]"` or fetch via `agent-browser`:
+**Method:** WebSearch for `site:virustotal.com "[DOMAIN]"` or fetch via `agent-browser`; use `chrome-profile` only for real logged-in Chrome state:
 ```
 https://www.virustotal.com/gui/domain/[DOMAIN]
 ```
@@ -204,7 +204,7 @@ RECOMMENDATION
 1. **CLI first** — `whois`, `dig`, `openssl`, `curl` (PhishDestroy API)
 2. **Web search** — for URLScan.io, VirusTotal, Scamadviser indexed results
 3. **WebFetch** — for pages with static content
-4. **agent-browser** — for JavaScript-heavy results pages (VirusTotal, Scamadviser)
+4. agent-browser - for JavaScript-heavy pages; chrome-profile only when real user Chrome cookies are required (VirusTotal, Scamadviser)
 
 ---
 

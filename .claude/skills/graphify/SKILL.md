@@ -6,7 +6,7 @@ when_to_use: "Invoke to turn code or docs into a queryable graph."
 category: dev-tools
 keywords: [knowledge-graph, code-analysis, tree-sitter, codebase-understanding, ast]
 argument-hint: "[path] [--mcp|--report|--watch]"
-related: [ck:repomix, ck:scout, ck:gkg]
+related: [repomix, scout, gkg]
 maturity: beta
 metadata:
   author: safishamsi
@@ -29,7 +29,7 @@ Turn any folder of code, docs, papers, or images into a queryable knowledge grap
 
 **Note:** The PyPI package is `graphifyy` (double-y). Other `graphify*` packages on PyPI are unaffiliated.
 
-CK already bundles this skill at `.claude1/skills/graphify/`. Do not run
+CK already bundles this skill at `.claude/skills/graphify/`. Do not run
 `graphify install` for CK setup: upstream uses that command to install its
 standalone Claude skill at `~/.claude/skills/graphify/SKILL.md`.
 
@@ -134,7 +134,7 @@ graphify .
 ```bash
 # Graph for high-level structure, scout for specific files
 graphify .                        # build graph
-/ck:scout "auth module"           # find specific files
+scout "auth module"           # find specific files
 ```
 
 ### Incremental Updates
@@ -156,5 +156,5 @@ Graph rebuilds are incremental — only changed files get reprocessed. Cache at 
 
 ## Workflow Position
 
-**Typically precedes:** `/ck:plan` (understand architecture before planning)
-**Related:** `/ck:scout` (quick file search), `/ck:repomix` (full context dump), `/ck:gkg` (semantic symbol navigation)
+**Typically precedes:** `plan` (understand architecture before planning)
+**Related:** `scout` (quick file search), `repomix` (full context dump), `gkg` (semantic symbol navigation)

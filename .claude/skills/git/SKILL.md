@@ -27,7 +27,7 @@ If invoked without arguments, use `AskUserQuestion` to present available git ope
 Present as options via `AskUserQuestion` with header "Git Operation", question "What would you like to do?".
 
 Execute git workflows via `git-manager` subagent to isolate verbose output.
-Activate `ck:context-engineering` skill.
+Activate `context-engineering` skill.
 
 **IMPORTANT:**
 - Sacrifice grammar for the sake of concision.

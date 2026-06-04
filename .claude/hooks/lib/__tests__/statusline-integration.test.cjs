@@ -4,7 +4,7 @@
 /**
  * Integration Tests for Statusline Main Script
  * Tests the complete statusline.cjs with sample JSON input
- * Run: node claude/hooks/lib/__tests__/statusline-integration.test.cjs
+ * Run: node .claude/hooks/lib/__tests__/statusline-integration.test.cjs
  */
 
 const fs = require('fs');

@@ -9,6 +9,7 @@ const path = require('path');
 const DEFAULT_PORT = 3456;
 const PORT_CANDIDATES = [3456, 3457, 3458, 3459, 3460];
 const DASHBOARD_URL = `http://localhost:${DEFAULT_PORT}/plans`;
+const CLI_BIN = process.env.PLAN_DASHBOARD_CLI || process.env.CLAUDEKIT_CLI || 'ck';
 const START_COMMAND = ['config', 'ui', '--port', String(DEFAULT_PORT), '--no-open'];
 const PID_FILE = path.join(os.tmpdir(), 'plans-kanban-dashboard.pid');
 
@@ -36,7 +37,7 @@ function parseArgs(argv) {
       args.stop = true;
       args.deprecated.push({
         flag: '--stop',
-        detail: 'The standalone plans-kanban server no longer exists. Stop the dashboard from the terminal running `ck config ui`.'
+        detail: `The standalone plans-kanban server no longer exists. Stop the dashboard from the terminal running \`${CLI_BIN} config ui\`.`
       });
       continue;
     }
@@ -62,7 +63,7 @@ function parseArgs(argv) {
 
     args.deprecated.push({
       flag: arg,
-      detail: 'This option is no longer supported by plans-kanban. Use `ck config ui --help` for dashboard runtime flags.'
+      detail: `This option is no longer supported by plans-kanban. Use \`${CLI_BIN} config ui --help\` for dashboard runtime flags.`
     });
   }
 
@@ -77,7 +78,7 @@ function getDeprecatedDetail(flag) {
     case '--port':
       return 'plans-kanban now targets the CLI dashboard starting at port 3456 and follows CLI auto-fallback ports.';
     case '--host':
-      return 'Use `ck config ui --host <addr>` directly when you need non-localhost access.';
+      return `Use \`${CLI_BIN} config ui --host <addr>\` directly when you need non-localhost access.`;
     case '--background':
     case '--foreground':
       return 'The launcher now uses a simple dashboard startup flow instead of managing a standalone server process.';
@@ -89,11 +90,11 @@ function getDeprecatedDetail(flag) {
 function printHelp() {
   console.log('plans-kanban launcher');
   console.log('');
-  console.log('Opens the ClaudeKit CLI dashboard at:');
+  console.log('Opens the configured CLI dashboard at:');
   console.log(`  ${DASHBOARD_URL}`);
   console.log('');
   console.log('If the dashboard is not running, this launcher starts:');
-  console.log(`  ck ${START_COMMAND.join(' ')}`);
+  console.log(`  ${CLI_BIN} ${START_COMMAND.join(' ')}`);
   console.log('');
   console.log('Legacy plans-kanban server flags are accepted with warnings for compatibility.');
 }
@@ -208,7 +209,7 @@ async function findRunningDashboardPort() {
 
 function ensureCliExists() {
   try {
-    execFileSync('ck', ['--version'], { stdio: 'ignore' });
+    execFileSync(CLI_BIN, ['--version'], { stdio: 'ignore' });
     return true;
   } catch {
     return false;
@@ -216,7 +217,7 @@ function ensureCliExists() {
 }
 
 function startDashboard() {
-  const child = spawn('ck', START_COMMAND, {
+  const child = spawn(CLI_BIN, START_COMMAND, {
     detached: true,
     stdio: 'ignore'
   });
@@ -259,9 +260,9 @@ async function waitForDashboard(timeoutMs = 15000) {
 function printPlansNotAvailable(port) {
   const dashboardBase = `http://localhost:${port}`;
   process.stderr.write('\x1b[33m[plans-kanban]\x1b[0m Plans dashboard not available on this CLI version.\n');
-  process.stderr.write('  The integrated plans dashboard requires claudekit-cli with the plans-dashboard feature.\n');
+  process.stderr.write('  The integrated plans dashboard requires a CLI with the plans-dashboard feature.\n');
   process.stderr.write('  Options:\n');
-  process.stderr.write('    - Update to the latest dev channel:  ck update --dev\n');
+  process.stderr.write(`    - Update to the latest dev channel:  ${CLI_BIN} update --dev\n`);
   process.stderr.write('    - Wait for the next stable CLI release\n');
   process.stderr.write(`  Dashboard is running at ${dashboardBase} — the plans route is not yet implemented there.\n`);
 }
@@ -296,10 +297,10 @@ async function main() {
 
   if (args.stop) {
     if (stopDashboard()) {
-      console.log('Stopped the launcher-managed ClaudeKit dashboard process.');
+      console.log('Stopped the launcher-managed dashboard process.');
     } else {
       console.log('No launcher-managed dashboard process was found.');
-      console.log('If the dashboard was started manually, stop the terminal running `ck config ui`.');
+      console.log(`If the dashboard was started manually, stop the terminal running \`${CLI_BIN} config ui\`.`);
     }
     return;
   }
@@ -308,20 +309,20 @@ async function main() {
 
   if (!dashboardPort) {
     if (!ensureCliExists()) {
-      console.error('ClaudeKit CLI not found: `ck` is required to start the dashboard.');
-      console.error(`Open ${DASHBOARD_URL} manually after starting \`ck ${START_COMMAND.join(' ')}\`.`);
+      console.error(`Dashboard CLI not found: \`${CLI_BIN}\` is required to start the dashboard.`);
+      console.error(`Set PLAN_DASHBOARD_CLI to a compatible binary, or open ${DASHBOARD_URL} manually after starting \`${CLI_BIN} ${START_COMMAND.join(' ')}\`.`);
       process.exitCode = 1;
       return;
     }
 
-    console.log(`Starting ClaudeKit dashboard on http://localhost:${DEFAULT_PORT} ...`);
+    console.log(`Starting dashboard on http://localhost:${DEFAULT_PORT} ...`);
     startDashboard();
     dashboardPort = await waitForDashboard();
   }
 
   if (!dashboardPort) {
     console.error(`Dashboard did not become ready on ports ${PORT_CANDIDATES.join(', ')}.`);
-    console.error(`Try running \`ck ${START_COMMAND.join(' ')}\` manually, then open ${DASHBOARD_URL}.`);
+    console.error(`Try running \`${CLI_BIN} ${START_COMMAND.join(' ')}\` manually, then open ${DASHBOARD_URL}.`);
     process.exitCode = 1;
     return;
   }

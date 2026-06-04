@@ -6,7 +6,7 @@ CSS patterns, JS engine, slide type layouts, transitions, navigation chrome, and
 
 **Before generating**, also read `./html-css-patterns.md` for shared patterns (Mermaid zoom controls, overflow protection, depth tiers, status badges) and `./html-libraries.md` for Mermaid theming, Chart.js, and font pairings. Those patterns apply to slides too — this file adds slide-specific patterns on top.
 
-For presentation-grade output, consider invoking `/ck:ui-ux-pro-max` for richer style selection and distinctive font/palette pairing.
+For presentation-grade output, consider invoking `ui-ux-pro-max` for richer style selection and distinctive font/palette pairing.
 
 ---
 
@@ -25,7 +25,7 @@ When converting a plan, spec, review, or any structured document into slides, fo
 
 **Step 3 — Choose layouts.** For each planned slide, pick a slide type and spatial composition. Vary across the sequence (see Compositional Variety below). This is where narrative pacing happens — alternate dense slides with sparse ones.
 
-**Step 4 — Plan images.** If `/ck:ai-multimodal` skill is available and image generation is appropriate, plan 2–4 images for the deck minimum. Target the **title slide** (16:9 background that sets the visual tone) and **one full-bleed slide** (immersive background for a key moment). Content slides with conceptual topics also benefit from a 1:1 illustration in the aside area. Generate these images early — before writing HTML — so you can embed them as base64 data URIs. See the Proactive Imagery section below. If image generation isn't available, degrade to CSS gradients and SVG decorations.
+**Step 4 — Plan images.** If `ai-multimodal` skill is available and image generation is appropriate, plan 2–4 images for the deck minimum. Target the **title slide** (16:9 background that sets the visual tone) and **one full-bleed slide** (immersive background for a key moment). Content slides with conceptual topics also benefit from a 1:1 illustration in the aside area. Generate these images early — before writing HTML — so you can embed them as base64 data URIs. See the Proactive Imagery section below. If image generation isn't available, degrade to CSS gradients and SVG decorations.
 
 **Step 5 — Verify before writing HTML.** Scan the inventory from Step 1. Is anything unmapped? Would a reader of the source document notice something missing from the deck? If yes, add slides. A source document with 7 sections typically produces 18–25 slides, not 10–13.
 
@@ -1120,7 +1120,7 @@ Vary gradient direction across slides to create visual rhythm.
 
 Slides should reach for visuals before defaulting to text alone.
 
-**AI image generation:** If `/ck:ai-multimodal` skill is available, use it to generate images for the deck. For any deck over 10 slides, target a minimum of 2–4 images. Priority order:
+**AI image generation:** If `ai-multimodal` skill is available, use it to generate images for the deck. For any deck over 10 slides, target a minimum of 2–4 images. Priority order:
 
 1. **Title slide** (always): background image that sets the deck's visual tone. Use 16:9 aspect ratio. Match the topic and palette.
 2. **Full-bleed slide** (always if deck has one): immersive background for the deck's visual anchor moment.
@@ -1129,7 +1129,7 @@ Slides should reach for visuals before defaulting to text alone.
 **Generate images before writing HTML** so they're ready to embed as base64 data URIs:
 
 ```bash
-# Use /ck:ai-multimodal skill for image generation if needed
+# Use ai-multimodal skill for image generation if needed
 # Embed result as: <div class="slide__bg" style="background-image:url('data:image/png;base64,...')"></div>
 ```
 

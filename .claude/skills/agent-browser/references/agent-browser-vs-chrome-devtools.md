@@ -1,55 +1,48 @@
-# agent-browser and Browser MCP
+# Browser Automation Routing
 
-Guidance for choosing between `agent-browser` and MCP-based browser diagnostics.
+Use `agent-browser` for normal browser automation and testing when a fresh or tool-managed browser is acceptable. Use `chrome-profile` only when the task needs the user's actual Chrome profile state.
 
-## Use Case Decision Tree
+## Decision Tree
 
 ```
 Need browser automation?
 |
-+-- Long autonomous AI session?
-|   +-- YES --> agent-browser (better context efficiency)
++-- Needs the user's real Chrome profile, cookies, tenant, or Google account?
+|   +-- YES --> chrome-profile
 |   +-- NO --> Continue
 |
-+-- Need video recording?
-|   +-- YES --> agent-browser (built-in)
++-- Browser/app testing, screenshots, forms, scraping, exploratory QA?
+|   +-- YES --> agent-browser
 |   +-- NO --> Continue
 |
-+-- Cloud browser (CI/CD)?
-|   +-- YES --> agent-browser (Browserbase native)
++-- Repeatable CI/e2e test suite?
+|   +-- YES --> web-testing or project-native Playwright/Vitest/Cypress
 |   +-- NO --> Continue
 |
 +-- Low-level Chrome DevTools Protocol inspection?
-|   +-- YES --> chrome-devtools-mcp through ck:use-mcp
+|   +-- YES --> chrome-devtools-mcp through use-mcp
 |   +-- NO --> Continue
 |
-+-- Ad-hoc page driving, snapshots, screenshots, forms?
++-- Browserbase/cloud browser or Electron workflow?
 |   +-- YES --> agent-browser
-+-- Otherwise --> ck:web-testing for test strategy/runners
++-- Otherwise --> web-testing
 ```
 
-## Primary Patterns
+## agent-browser Pattern
 
 ```bash
-# Long autonomous session
 agent-browser --session test1 open https://example.com
 agent-browser snapshot -i
 agent-browser click @e1
 agent-browser close
 ```
 
-## MCP Pattern
+## Chrome Profile Pattern
 
-Use `ck:use-mcp` when the project has `chrome-devtools-mcp` configured and the task specifically needs MCP/CDP tools. Claude Code Tool Search defer-loads that MCP server, so the local skill fallback is no longer shipped.
+```bash
+chrome-profile doctor
+chrome-profile setup
+chrome-profile work "https://example.com/dashboard"
+```
 
-## Migration Notes
-
-| Old local script habit | Current route |
-|------------------------|---------------|
-| `node navigate.js --url X` | `agent-browser open X` |
-| `node aria-snapshot.js --url X` | `agent-browser open X && agent-browser snapshot -i` |
-| `node select-ref.js --ref e5 --action click` | `agent-browser click @e5` |
-| `node fill.js --selector "#email" --value "X"` | `agent-browser fill @e1 "X"` |
-| `node screenshot.js --output X.png` | `agent-browser screenshot -o X.png` |
-| `node console.js --types error` | `ck:use-mcp` with browser console tools, or a project-local Playwright test |
-| `node network.js` | `ck:use-mcp` with network tools, or a project-local Playwright test |
+Then select the page whose URL contains `cdp-profile=work` through the active MCP bridge.

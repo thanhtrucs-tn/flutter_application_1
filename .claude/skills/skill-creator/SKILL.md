@@ -52,7 +52,7 @@ Full anatomy: `references/skill-anatomy-and-requirements.md`
 Follow the process in `references/skill-creation-workflow.md`:
 
 1. **Capture Intent** — What should skill do? When trigger? What output? (AskUserQuestion)
-2. **Research** — Activate `/ck:docs-seeker`, `/ck:research` for best practices
+2. **Research** — Activate `docs-seeker`, `research` for best practices
 3. **Plan** — Identify reusable scripts, references, assets
 4. **Initialize** — `scripts/init_skill.py <name> --path <dir>`
 5. **Write** — Implement resources, write SKILL.md, optimize for benchmarks

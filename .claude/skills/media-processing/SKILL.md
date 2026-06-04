@@ -16,7 +16,7 @@ metadata:
 
 Process video, audio, and images using FFmpeg, ImageMagick, and RMBG CLI tools.
 
-**IMPORTANT:** Invoke "/ck:project-organization" skill to organize the outputs.
+**IMPORTANT:** Invoke "project-organization" skill to organize the outputs.
 
 ## Tool Selection
 

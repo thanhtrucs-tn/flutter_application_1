@@ -21,7 +21,7 @@ End-to-end project bootstrapping from idea to running code.
 ## Usage
 
 ```
-/ck:bootstrap <user-requirements>
+bootstrap <user-requirements>
 ```
 
 **Flags** (optional, default `--full`):
@@ -35,8 +35,8 @@ End-to-end project bootstrapping from idea to running code.
 
 **Example:**
 ```
-/ck:bootstrap "Build a SaaS dashboard with auth" --fast
-/ck:bootstrap "E-commerce platform with Stripe" --parallel
+bootstrap "Build a SaaS dashboard with auth" --fast
+bootstrap "E-commerce platform with Stripe" --parallel
 ```
 
 ## Workflow Overview
@@ -70,20 +70,20 @@ Check if Git initialized. If not:
 After early phases (research, tech stack, design), trigger downstream skills:
 
 ### Planning Phase
-Activate **ck:plan** skill with mode-appropriate flag:
-- `--full` → `/ck:plan --hard <requirements>` (thorough research + validation)
-- `--auto` → `/ck:plan --auto <requirements>` (auto-detect complexity)
-- `--fast` → `/ck:plan --fast <requirements>` (skip research)
-- `--parallel` → `/ck:plan --parallel <requirements>` (file ownership + dependency graph)
+Activate **plan** skill with mode-appropriate flag:
+- `--full` → `plan --hard <requirements>` (thorough research + validation)
+- `--auto` → `plan --auto <requirements>` (auto-detect complexity)
+- `--fast` → `plan --fast <requirements>` (skip research)
+- `--parallel` → `plan --parallel <requirements>` (file ownership + dependency graph)
 
 Planning skill outputs a plan path. Pass this to cook.
 
 ### Implementation Phase
-Activate **ck:cook** skill with the plan path and mode-appropriate flag:
-- `--full` → `/ck:cook <plan-path>` (interactive review gates)
-- `--auto` → `/ck:cook --auto <plan-path>` (explicit autonomous implementation)
-- `--fast` → `/ck:cook <plan-path>` (skip extra research, keep cook review gates)
-- `--parallel` → `/ck:cook --parallel <plan-path>` (multi-agent execution)
+Activate **cook** skill with the plan path and mode-appropriate flag:
+- `--full` → `cook <plan-path>` (interactive review gates)
+- `--auto` → `cook --auto <plan-path>` (explicit autonomous implementation)
+- `--fast` → `cook <plan-path>` (skip extra research, keep cook review gates)
+- `--parallel` → `cook --parallel <plan-path>` (multi-agent execution)
 
 ## Role
 
@@ -98,7 +98,7 @@ Elite software engineering expert specializing in system architecture and techni
 - DO NOT implement code directly — delegate through planning + cook skills
 - Sacrifice grammar for concision in reports
 - List unresolved questions at end of reports
-- Run `/ck:journal` to write a concise technical journal entry upon completion
+- Run `journal` to write a concise technical journal entry upon completion
 
 ## References
 

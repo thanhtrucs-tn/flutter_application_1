@@ -33,20 +33,20 @@ Spawn multiple `researcher` subagents in parallel:
 1. Ask user if they want wireframes/design. If no → skip to Step 5.
 2. Use `ui-ux-designer` + `researcher` subagents in parallel:
    - Research style, trends, fonts (predict Google Fonts name, NOT just Inter/Poppins), colors, spacing, positions
-   - Describe assets for `ck:ai-multimodal` skill generation
+   - Describe assets for `ai-multimodal` skill generation
 3. `ui-ux-designer` creates:
    - Design guidelines at `./docs/design-guidelines.md`
    - Wireframes in HTML at `./docs/wireframe/`
-4. If no logo provided: generate with `ck:ai-multimodal` skill
-5. Screenshot wireframes with `ck:agent-browser` → save to `./docs/wireframes/`
+4. If no logo provided: generate with `ai-multimodal` skill
+5. Screenshot wireframes with `agent-browser` → save to `./docs/wireframes/`
 
 **Gate:** User approves design. Repeat if rejected.
 
-**Image tools:** `ck:ai-multimodal` for generation/analysis, `imagemagick` for crop/resize, background removal tool as needed.
+**Image tools:** `ai-multimodal` for generation/analysis, `imagemagick` for crop/resize, background removal tool as needed.
 
 ## Step 5: Planning
 
-Activate **ck:plan** skill: `/ck:plan --hard <requirements>`
+Activate **plan** skill: `plan --hard <requirements>`
 - Planner creates directory using `## Naming` pattern
 - Overview at `plan.md` (<80 lines) + `phase-XX-*.md` files
 - Present pros/cons of plan
@@ -57,4 +57,4 @@ Activate **ck:plan** skill: `/ck:plan --hard <requirements>`
 
 Load `references/shared-phases.md` for remaining phases.
 
-Activate **ck:cook** skill: `/ck:cook <plan-path>` (interactive mode — review gates at each step)
+Activate **cook** skill: `cook <plan-path>` (interactive mode — review gates at each step)

@@ -5,43 +5,43 @@ When orchestrating multi-step tasks, consider these workflow sequences. Skills a
 ## Core Development Workflow
 
 ```
-`ck-plan` → `cook` → `test` → `adversarial-code-review` → `ship` → `journal`
+plan → cook → test → code-review → ship → journal
 ```
 
 | User Intent | Suggested Start |
 |-------------|----------------|
-| "implement feature X", "build X", "add X" | `ck-plan` then `cook` |
-| "execute this plan" | `cook` with `<plan-path>` |
+| "implement feature X", "build X", "add X" | `plan` then `cook` |
+| "execute this plan" | `cook <plan-path>` |
 | "quick implementation" | `cook --fast` |
 
 ## Bugfix Workflow
 
 ```
-`scout` → `ck-debug` → `fix` → `test` → `adversarial-code-review`
+scout → debug → fix → test → code-review
 ```
 
 | User Intent | Suggested Start |
 |-------------|----------------|
 | "X is broken", "error in X", "bug in X" | `fix` (auto-scouts internally) |
 | "CI is failing", "tests broken" | `fix --auto` |
-| "investigate why X happens" | `scout` then `ck-debug` |
+| "investigate why X happens" | `scout` then `debug` |
 
 ## Investigation Workflow
 
 ```
-`scout` → `ck-debug` → `brainstorm` → `ck-plan`
+scout → debug → brainstorm → plan
 ```
 
 | User Intent | Suggested Start |
 |-------------|----------------|
 | "understand how X works" | `scout` |
-| "why is X happening" | `ck-debug` |
-| "explore options for X" | `brainstorm` then `ck-plan` |
+| "why is X happening" | `debug` |
+| "explore options for X" | `brainstorm` then `plan` |
 
 ## Post-Implementation Checklist
 
 After completing implementation work, consider:
-- `adversarial-code-review` — review changes before merging
+- `code-review` — review changes before merging
 - `ship` — run full shipping pipeline (tests, review, version, PR)
 - `journal` — document decisions and lessons learned
 

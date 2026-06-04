@@ -92,7 +92,7 @@ All filenames use **kebab-case**, self-documenting names.
 - Self-documenting: readable without opening the file
 - No leading/trailing hyphens
 
-**Date format:** Use `$CK_PLAN_DATE_FORMAT` env var or default `YYMMDD-HHmm`.
+**Date format:** Use `$PLAN_DATE_FORMAT` env var or default `YYMMDD-HHmm`.
 
 ```bash
 date +%y%m%d-%H%M   # Bash
@@ -182,7 +182,7 @@ When creating a new file, follow this decision tree:
 
 ## Organize Mode Actions
 
-When invoked directly with `/ck:project-organization [targets]`:
+When invoked directly with `project-organization [targets]`:
 
 1. **Scan** — List all files in target dirs, categorize by type
 2. **Analyze** — Check naming violations, misplaced files, inconsistencies

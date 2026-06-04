@@ -10,14 +10,14 @@
 
 Main agent deeply analyzes the scope to LIST all potential edge cases FIRST:
 - Read `codebase-summary.md` for context
-- Use `/ck:scout` to find relevant files
+- Use `scout` to find relevant files
 - **Think exhaustively** about what could go wrong:
   - Null/undefined scenarios
   - Boundary conditions (off-by-one, empty, max values)
   - Error handling gaps
   - Race conditions, async edge cases
   - Input validation holes
-  - Security vulnerabilities
+  - Trust-boundary defects
   - Resource leaks
   - Untested code paths
 
@@ -59,17 +59,17 @@ Launch N `code-reviewer` subagents simultaneously:
 |---|-----------|------|--------|
 ```
 
-### 5. Adversarial Review (Always-On)
+### 5. Verification Review
 
-After aggregation, spawn adversarial reviewer (see `adversarial-review.md`) on the full scope:
-- Adversarial reviewer receives aggregated findings + unhandled edge cases as context
-- Actively tries to break the code beyond what edge case verification found
-- Adjudicate findings: Accept / Reject / Defer
+After aggregation, verify accepted findings against the full scope:
+- Re-check aggregated findings and unhandled edge cases
+- Confirm each blocking issue has a concrete file/line and reproduction path
+- Classify findings as Accept / Reject / Defer
 
 ### 6. Auto-Fix Pipeline
 
 **IF** unhandled/partial edge cases found:
-- Ask: "Found N unhandled edge cases. Fix with /ck:fix --parallel? [Y/n]"
+- Ask: "Found N unhandled edge cases. Fix with fix --parallel? [Y/n]"
 
 ### 7. Final Report
 - Summary of verification

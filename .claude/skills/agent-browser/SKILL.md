@@ -1,8 +1,8 @@
 ---
 name: agent-browser
-description: Browser and desktop automation through the agent-browser CLI. Use for long autonomous browsing, compact page snapshots, screenshots, form filling, login flows, scraping, exploratory QA, cloud browsers, and Electron app automation when a live browser or app must be operated by the agent.
+description: Automate browsers and apps with agent-browser. Use for testing, screenshots, forms, scraping, Browserbase/cloud browsers, and Electron when real Chrome cookies are not required.
 user-invocable: true
-when_to_use: "Invoke for browser/app automation that needs snapshots or clicks."
+when_to_use: "Invoke for browser/app automation and testing that does not require the user's real Chrome profile state."
 category: dev-tools
 keywords: [browser, automation, playwright, testing, e2e, browserbase, autonomous, headless, electron, slack, dogfood, agentcore, vercel-sandbox]
 license: Apache-2.0
@@ -16,7 +16,11 @@ metadata:
 
 # agent-browser Skill
 
-Fast browser automation CLI for AI agents. Chrome/Chromium via CDP with accessibility-tree snapshots and compact `@eN` element refs (~280 chars/snapshot vs 8K+ for Playwright MCP).
+Fast browser automation CLI for AI agents. Chrome/Chromium via CDP with accessibility-tree snapshots and compact `@eN` element refs.
+
+Use `agent-browser` for browser testing, screenshots, form fills, scraping, exploratory QA, cloud browsers, Electron apps, and flows where a fresh or tool-managed browser is fine.
+
+Use `chrome-profile` instead when the task needs the user's actual Chrome profile: existing cookies, logged-in sessions, a specific Google account, a tenant/workspace already open in daily Chrome, or deterministic targeting across multiple Chrome profiles.
 
 ## Install / Upgrade
 
@@ -56,9 +60,9 @@ agent-browser skills get agentcore         # AWS Bedrock AgentCore cloud browser
 
 ## When to use
 
-Default for any live-browser interaction — autonomous sessions, ad-hoc navigation, screenshots, form fills, scraping, multi-tab work, self-verifying build loops, Electron desktop apps, Slack automation.
+Default for browser automation that does not depend on the user's real Chrome login state: autonomous sessions, ad-hoc navigation, screenshots, form fills, scraping, multi-tab work, self-verifying build loops, Electron desktop apps, Slack automation, and Browserbase/cloud browsers.
 
-For low-level Chrome DevTools Protocol diagnostics, use `chrome-devtools-mcp` via `/ck:use-mcp`. See `references/agent-browser-vs-chrome-devtools.md` for the trade-off.
+For real user Chrome automation with profile/cookie state, use `chrome-profile`. For low-level Chrome DevTools Protocol diagnostics, use `chrome-devtools-mcp` via `use-mcp`.
 
 ## Cloud browsers
 
@@ -71,6 +75,10 @@ agent-browser -p browserbase open https://example.com
 ```
 
 See `references/browserbase-cloud-setup.md` for detailed setup. For AWS Bedrock AgentCore or Vercel Sandbox, run `agent-browser skills get agentcore` / `agent-browser skills get vercel-sandbox`.
+
+## Observability dashboard
+
+Agent Browser exposes an observability dashboard independently of browser sessions on port 4848. When using a proxied or forwarded URL, stay on the dashboard origin; session tabs, status, and stream traffic are proxied internally, so individual session ports do not need to be exposed.
 
 ## Troubleshooting
 

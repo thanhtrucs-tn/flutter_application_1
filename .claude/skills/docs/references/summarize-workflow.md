@@ -1,6 +1,6 @@
 # Summarize Workflow
 
-Activate `ck:scout` skill to analyze the codebase and update `docs/codebase-summary.md` and respond with a summary report.
+Activate `scout` skill to analyze the codebase and update `docs/codebase-summary.md` and respond with a summary report.
 
 ## Arguments
 $1: Focused topics (default: all)

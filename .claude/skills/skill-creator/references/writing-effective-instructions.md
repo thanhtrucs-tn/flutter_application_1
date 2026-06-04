@@ -11,7 +11,7 @@ Write entirely in **imperative/infinitive form** (verb-first). Use objective, in
 
 ```markdown
 ---
-name: your-skill  # optional namespace: ck:your-skill
+name: your-skill  # optional namespace: your-skill
 description: [What + When + Key capabilities]
 ---
 # Skill Name

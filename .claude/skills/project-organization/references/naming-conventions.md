@@ -24,7 +24,7 @@ Comprehensive naming rules for all file types. See SKILL.md Rule 2 for overview.
 
 ## Date Formats
 
-Use `$CK_PLAN_DATE_FORMAT` env var if set, otherwise default to `YYMMDD-HHmm`.
+Use `$PLAN_DATE_FORMAT` env var if set, otherwise default to `YYMMDD-HHmm`.
 
 | Format | Example | Use case |
 |--------|---------|----------|

@@ -23,7 +23,7 @@ T9 = TaskCreate(subject="Finalize & docs",               activeForm="Finalizing"
 ### Step 1: Scout Codebase (parallel with Steps 2+3)
 `TaskUpdate(T1, status="in_progress")`
 
-**Mandatory:** Activate `ck:scout` skill or launch 2-3 `Explore` subagents in parallel:
+**Mandatory:** Activate `scout` skill or launch 2-3 `Explore` subagents in parallel:
 ```
 Task("Explore", "Find error origin and affected components", "Trace error")
 Task("Explore", "Find module boundaries and dependencies", "Map deps")
@@ -42,10 +42,10 @@ See `references/parallel-exploration.md` for patterns.
 
 **Mandatory skill chain:**
 1. **Capture pre-fix state:** Record ALL error messages, failing tests, stack traces, logs.
-2. Activate `ck:debug` skill (systematic-debugging + root-cause-tracing).
-3. Activate `ck:sequential-thinking` — structured hypothesis formation.
+2. Activate `debug` skill (systematic-debugging + root-cause-tracing).
+3. Activate `sequential-thinking` — structured hypothesis formation.
 4. Spawn parallel `Explore` subagents to test each hypothesis.
-5. If 2+ hypotheses fail → auto-activate `ck:problem-solving`.
+5. If 2+ hypotheses fail → auto-activate `problem-solving`.
 6. Trace backward through call chain to ROOT CAUSE origin.
 
 See `references/diagnosis-protocol.md` for full methodology.
@@ -66,7 +66,7 @@ Use `researcher` subagent for external knowledge.
 
 ### Step 4: Brainstorm
 `TaskUpdate(T4, status="in_progress")` — auto-unblocks when T1 + T2 + T3 complete.
-Activate `ck:brainstorm` skill.
+Activate `brainstorm` skill.
 
 - Evaluate multiple approaches using scout + diagnosis + research findings
 - Consider trade-offs
@@ -89,7 +89,7 @@ Use `planner` subagent to create implementation plan.
 
 ### Step 6: Implement
 `TaskUpdate(T6, status="in_progress")`
-Implement per plan. Use `ck:context-engineering`, `ck:sequential-thinking`, `ck:problem-solving`.
+Implement per plan. Use `context-engineering`, `sequential-thinking`, `problem-solving`.
 
 - Fix ROOT CAUSE per diagnosis — not symptoms
 - Follow plan phases
@@ -104,9 +104,12 @@ Implement per plan. Use `ck:context-engineering`, `ck:sequential-thinking`, `ck:
 **Mandatory skill chain:**
 1. **Iron-law verify:** Re-run EXACT commands from pre-fix state. Compare before/after.
 2. **Regression test:** Add comprehensive tests. Tests MUST fail without fix, pass with fix.
-3. **Defense-in-depth:** Apply all relevant prevention layers (see `references/prevention-gate.md`).
-4. **Parallel verification:** Launch `Bash` agents: typecheck + lint + build + test.
-5. **Edge cases:** Test boundary conditions, security implications, performance impact.
+3. **Side-effect sweep (HARD-GATE-NO-SIDE-EFFECTS):** Walk each dependent caller of changed functions from Step 1 blast-radius. Run tests in modules that share files/contracts. Confirm public contracts (signatures, schemas, APIs, env vars) unchanged. See SKILL.md HARD-GATE-NO-SIDE-EFFECTS.
+4. **Defense-in-depth:** Apply all relevant prevention layers (see `references/prevention-gate.md`).
+5. **Parallel verification:** Launch `Bash` agents: typecheck + lint + build + test.
+6. **Edge cases:** Test boundary conditions, security implications, performance impact.
+
+**On regression / side effect:** `AskUserQuestion` with 2-4 concrete options (revert / narrow scope / update dependents / accept). Never silently patch.
 
 **If verification fails:** Loop back to Step 2 (re-diagnose). Max 3 attempts → question architecture.
 
@@ -127,10 +130,10 @@ See `references/review-cycle.md` for mode-specific handling.
 ### Step 9: Finalize
 `TaskUpdate(T9, status="in_progress")`
 - Report summary: root cause, evidence chain, changes, prevention measures, confidence score
-- Activate `ck:project-management` for task sync-back, plan status updates, and progress tracking
+- Activate `project-management` for task sync-back, plan status updates, and progress tracking
 - Use `docs-manager` subagent for documentation
 - Use `git-manager` subagent for commit
-- Run `/ck:journal`
+- Run `journal`
 
 `TaskUpdate(T9, status="completed")`
 **Output:** `✓ Step 9: Complete - [actions taken]`
@@ -139,16 +142,16 @@ See `references/review-cycle.md` for mode-specific handling.
 
 | Step | Skills/Subagents |
 |------|------------------|
-| 1 | `ck:scout` OR parallel `Explore` subagents |
-| 2 | `ck:debug`, `ck:sequential-thinking`, parallel `Explore`, (`ck:problem-solving` auto) |
+| 1 | `scout` OR parallel `Explore` subagents |
+| 2 | `debug`, `sequential-thinking`, parallel `Explore`, (`problem-solving` auto) |
 | 3 | `researcher` (runs parallel with steps 1+2) |
-| 4 | `ck:brainstorm` |
+| 4 | `brainstorm` |
 | 5 | `planner` |
-| 6 | `ck:problem-solving`, `ck:sequential-thinking`, `ck:context-engineering` |
+| 6 | `problem-solving`, `sequential-thinking`, `context-engineering` |
 | 7 | `tester`, parallel `Bash` verification |
 | 8 | `code-reviewer` |
-| 9 | `ck:project-management`, `docs-manager`, `git-manager` |
+| 9 | `project-management`, `docs-manager`, `git-manager` |
 
 **Rules:** Don't skip steps. Validate before proceeding. One phase at a time.
-**Frontend:** Use `ck:agent-browser`, Chrome MCP / `chrome-devtools-mcp`, or any relevant project-native browser tests to verify.
-**Visual Assets:** Use `ck:ai-multimodal` for visual assets generation, analysis and verification.
+**Frontend:** Use `agent-browser`, `chrome-profile`, Chrome MCP / `chrome-devtools-mcp`, or any relevant project-native browser tests to verify.
+**Visual Assets:** Use `ai-multimodal` for visual assets generation, analysis and verification.

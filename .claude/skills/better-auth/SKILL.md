@@ -189,6 +189,15 @@ Better Auth uses client-server architecture:
 - [ ] Enable rate limiting for production
 - [ ] Set up error handling
 
+## Current Security Notes
+
+Recent Better Auth releases tightened several security-sensitive plugin paths. When enabling these features, verify the installed version includes the current fixes and keep the default safer settings unless the app has an explicit threat-model exception:
+
+- `oidc-provider` and `mcp` plugins: confidential clients must require `client_secret` on refresh-token grants; use constant-time secret comparison and reject incomplete PKCE parameters.
+- `magicLink`: verification tokens are single-use; avoid custom flows that mint multiple sessions from concurrent requests.
+- Organizations/invitations: keep `requireEmailVerificationOnInvitation` enabled so unverified email ownership cannot accept or enumerate invitations.
+- Device authorization: bind pending device codes to the verifying session so one authenticated user cannot approve another user's device flow.
+
 ## Reference Documentation
 
 ### Core Authentication

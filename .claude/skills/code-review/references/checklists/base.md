@@ -52,7 +52,7 @@ Be terse. One line problem, one line fix. No preamble.
 - New API endpoints without auth middleware
 - Missing authorization check (authenticated but not authorized)
 - Admin-only operations accessible to regular users
-- Session fixation or token reuse vulnerabilities
+- Session fixation or token reuse defects
 
 ---
 

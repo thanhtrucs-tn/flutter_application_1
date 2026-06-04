@@ -3,9 +3,9 @@
 For fixing visual/UI issues. Requires design skills. Uses native Claude Tasks for phase tracking.
 
 ## Required Skills (activate in order)
-1. `ck:ui-ux-pro-max` - Design database (ALWAYS FIRST)
-2. `ck:ui-ux-pro-max` - Design principles
-3. `ck:frontend-design` - Implementation patterns
+1. `ui-ux-pro-max` - Design database (ALWAYS FIRST)
+2. `ui-ux-pro-max` - Design principles
+3. `frontend-design` - Implementation patterns
 
 ## Pre-fix Research
 ```bash
@@ -29,7 +29,7 @@ T6 = TaskCreate(subject="Update design docs",       activeForm="Updating design 
 
 ### Step 1: Analyze
 `TaskUpdate(T1, status="in_progress")`
-Analyze screenshots/videos with `ck:ai-multimodal` skill.
+Analyze screenshots/videos with `ai-multimodal` skill.
 
 - Read `./docs/design-guidelines.md` first
 - Identify exact visual discrepancy
@@ -44,7 +44,7 @@ Use `ui-ux-designer` agent.
 
 ### Step 3: Verify Visually
 `TaskUpdate(T3, status="in_progress")`
-Screenshot + `ck:ai-multimodal` analysis.
+Screenshot + `ai-multimodal` analysis.
 
 - Capture parent container, not whole page
 - Compare to design guidelines
@@ -54,7 +54,7 @@ Screenshot + `ck:ai-multimodal` analysis.
 
 ### Step 4: DevTools Check
 `TaskUpdate(T4, status="in_progress")`
-Use `ck:agent-browser`, Chrome MCP / `chrome-devtools-mcp`, or project-native browser tests.
+Use `agent-browser`, `chrome-profile`, Chrome MCP / `chrome-devtools-mcp`, or project-native browser tests.
 
 `TaskUpdate(T4, status="completed")`
 
@@ -71,5 +71,5 @@ Update `./docs/design-guidelines.md` if needed.
 `TaskUpdate(T6, status="completed")`
 
 ## Tips
-- Use `ck:ai-multimodal` for generating visual assets
+- Use `ai-multimodal` for generating visual assets
 - Use `ImageMagick` for image editing

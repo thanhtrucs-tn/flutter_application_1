@@ -39,7 +39,7 @@ Canonical tree for `--both` mode (Node/TypeScript). Adapt paths for other ecosys
 │       ├── wrangler.toml           # Cloudflare Workers
 │       ├── Dockerfile
 │       └── tsconfig.json
-├── claude/skills/<tool-name>/      # companion skill (staged for marketplace)
+├── .claude/skills/<tool-name>/     # companion skill (staged for marketplace)
 ├── docs/
 │   ├── cli.md
 │   ├── mcp.md

@@ -222,7 +222,7 @@ Quick reference for all CLI tools used by Free OSINT Expert modules. Covers inst
 
 | Priority | Tool | Method | Notes |
 |----------|------|--------|-------|
-| 1 (Screenshots) | agent-browser | Playwright full automation | Interactive, visual evidence |
+| 1 (Screenshots) | agent-browser or chrome-profile | Browser automation; use chrome-profile only for real user cookies | Interactive, visual evidence |
 | 2 (JS-heavy) | Scrapling DynamicFetcher | `DynamicFetcher.get(url)` | Playwright-backed, JS rendering |
 | 3 (Anti-bot) | Scrapling StealthyFetcher | `StealthyFetcher.get(url)` | Cloudflare bypass, fingerprint spoofing |
 | 4 (Fast static) | Scrapling Fetcher | `Fetcher.get(url)` | ~2ms parse, adaptive selectors |

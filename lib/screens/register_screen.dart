@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../database/db_helper.dart';
 import '../utils/localization.dart';
@@ -62,10 +63,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (errorMessage == null) {
       if (mounted) {
-        String regSuccessMsg = DbHelper.isUsingMock 
-            ? 'Đăng ký tài khoản offline thành công!' 
-            : 'Đăng ký tài khoản MySQL thành công!';
-            
+        String regSuccessMsg;
+        if (kIsWeb) {
+          regSuccessMsg = 'Đăng ký tài khoản thành công trên Chrome (Web)!';
+        } else if (DbHelper.isUsingMock) {
+          regSuccessMsg = 'Đăng ký tài khoản offline thành công!';
+        } else {
+          regSuccessMsg = 'Đăng ký tài khoản MySQL thành công!';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(regSuccessMsg),

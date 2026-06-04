@@ -78,7 +78,14 @@ const DEFAULT_CONFIG = {
     'simplify-gate': true,
     'task-completed-handler': true,
     'teammate-idle-handler': true,
-    'session-state': true
+    'session-state': true,
+    'workflow-artifact-gate': false
+  },
+  workflowArtifactGate: {
+    enabled: true,
+    softStages: ['finalize', 'commit'],
+    hardStages: ['ship', 'push', 'pr', 'deploy'],
+    highRiskAutoStop: true
   }
 };
 
@@ -606,6 +613,8 @@ function loadConfig(options = {}) {
     result.skills = merged.skills || DEFAULT_CONFIG.skills;
     // Hooks configuration
     result.hooks = merged.hooks || DEFAULT_CONFIG.hooks;
+    // Workflow artifact review gate configuration
+    result.workflowArtifactGate = merged.workflowArtifactGate || DEFAULT_CONFIG.workflowArtifactGate;
     // Statusline mode
     result.statusline = merged.statusline || 'full';
     result.statuslineColors = merged.statuslineColors ?? true;
@@ -629,6 +638,7 @@ function getDefaultConfig(includeProject = true, includeAssertions = true, inclu
     codingLevel: -1,  // Default: disabled (no injection, saves tokens)
     skills: { ...DEFAULT_CONFIG.skills },
     hooks: { ...DEFAULT_CONFIG.hooks },
+    workflowArtifactGate: { ...DEFAULT_CONFIG.workflowArtifactGate },
     statusline: 'full',
     statuslineColors: true,
     statuslineQuota: true
@@ -923,4 +933,3 @@ module.exports = {
   extractTaskListId,
   isHookEnabled
 };
-

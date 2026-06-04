@@ -13,7 +13,7 @@ metadata:
 ---
 
 ultrathink
-Activate `ck:frontend-design` skill to create a showcase HTML presentation for the following request:
+Activate `frontend-design` skill to create a showcase HTML presentation for the following request:
 
 ## REQUEST / MISSION:
 $ARGUMENTS
@@ -23,7 +23,7 @@ Showcase, social media posting, use output images as illustrations for articles
 
 ## PREREQUISITE (MANDATORY — run BEFORE any workflow step)
 
-Invoke `/ck:project-management` **first**, before reading/analyzing the request or doing any other work. This skill owns plan/task lifecycle; `show-off` is a consumer.
+Invoke `project-management` **first**, before reading/analyzing the request or doing any other work. This skill owns plan/task lifecycle; `show-off` is a consumer.
 
 Purpose:
 - Create a dated plan directory under `plans/` (naming from hook injection: `{date}-{issue}-{slug}`).
@@ -50,7 +50,7 @@ Follow these steps strictly in order, one by one:
     -> Read it to use writing style (if none of them exists, just skip).
   - Attach citation URLs in references/footnotes at end of file.
 - Use `agentwiki` CLI to publish this document (organize or create appropriate folder).
-- Activate `ck:frontend-design` skill to create a stunning HTML file:
+- Activate `frontend-design` skill to create a stunning HTML file:
   - Include visual diagrams/illustrations
   - Include decorative elements (optional)
   - Micro-animation or subtle animation (optional)
@@ -109,7 +109,7 @@ Follow these steps strictly in order, one by one:
 
 ## CAPTURE SCRIPT USAGE
 
-The parallel capture script at `claude/skills/show-off/scripts/capture-sections.js` supports:
+The parallel capture script at `.claude/skills/show-off/scripts/capture-sections.js` supports:
 
 ```bash
 # Capture all sections in parallel across multiple ratios

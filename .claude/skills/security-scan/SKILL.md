@@ -18,10 +18,10 @@ Lightweight security scanner using Claude's reasoning + shell tools. No external
 ## Usage
 
 ```
-/ck:security-scan              # Full scan of current project
-/ck:security-scan --secrets-only   # Only secret/credential detection
-/ck:security-scan --deps-only      # Only dependency audit
-/ck:security-scan src/api/         # Scan specific directory
+security-scan              # Full scan of current project
+security-scan --secrets-only   # Only secret/credential detection
+security-scan --deps-only      # Only dependency audit
+security-scan src/api/         # Scan specific directory
 ```
 
 ## Scan Categories
@@ -130,7 +130,7 @@ Output a markdown report directly in chat:
 1. ...
 ```
 
-If `--auto` mode active in cook workflow: save report to `{CK_REPORTS_PATH}` or `plans/reports/security-scan-{date}.md`.
+If `--auto` mode active in cook workflow: save report to the runtime reports path or `plans/reports/security-scan-{date}.md`.
 
 ## Scope Declaration
 

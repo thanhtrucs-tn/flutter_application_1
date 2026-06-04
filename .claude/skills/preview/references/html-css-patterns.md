@@ -1633,7 +1633,7 @@ Avoid in reading-first content:
 
 ## Generated Images
 
-For AI-generated illustrations embedded as base64 data URIs. Use `/ck:ai-multimodal` skill for image generation if available.
+For AI-generated illustrations embedded as base64 data URIs. Use `ai-multimodal` skill for image generation if available.
 
 ### Hero Banner
 

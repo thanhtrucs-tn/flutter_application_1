@@ -24,7 +24,8 @@ try {
     process.exit(0);
   }
 
-const TASKS_DIR = path.join(os.homedir(), '.claude', 'tasks');
+const HOME_DIR = process.env.CLAUDE_HOME || process.env.HOME || os.homedir();
+const TASKS_DIR = path.join(HOME_DIR, '.claude', 'tasks');
 
 function readJson(filePath) {
   try {
@@ -50,7 +51,7 @@ function countTasks(teamName) {
 }
 
 function logCompletion(teamName, taskId, taskSubject, teammateName) {
-  const reportsPath = process.env.CK_REPORTS_PATH;
+  const reportsPath = process.env.REPORTS_PATH || process.env.CK_REPORTS_PATH;
   if (!reportsPath) return;
   const logFile = path.join(reportsPath, `team-${teamName}-completions.md`);
   try {

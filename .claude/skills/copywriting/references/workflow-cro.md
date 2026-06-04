@@ -47,20 +47,20 @@ Analyze content and optimize for conversion based on user-reported issues.
 
 ## Workflow Steps
 
-1. **Screenshots provided** → Use `ck:ai-multimodal` skill to analyze conversion issues
-2. **Videos provided** → Use `ck:ai-multimodal` video-analysis for bottleneck identification
+1. **Screenshots provided** → Use `ai-multimodal` skill to analyze conversion issues
+2. **Videos provided** → Use `ai-multimodal` video-analysis for bottleneck identification
 3. **URL provided** → Use `web_fetch` tool to fetch and analyze current issues
-4. **Scout codebase** → `/ck:scout ext` (preferred) or `/ck:scout` to find relevant files
+4. **Scout codebase** → `scout ext` (preferred) or `scout` to find relevant files
 5. **Implement** → Use `fullstack-developer` agent to write enhanced copy into code files
 
 ## CRO Plan Creation Workflow
 
-Use when creating a structured CRO optimization plan (e.g., via `/ck:plan --hard` with CRO-specific requirements).
+Use when creating a structured CRO optimization plan (e.g., via `plan --hard` with CRO-specific requirements).
 
 ### Steps
 
 1. **Analyze** → Gather issues from screenshots/videos/URLs using steps above
-2. **Activate** `ck:plan` skill for plan structure
+2. **Activate** `plan` skill for plan structure
 3. **Create plan directory** using naming pattern from `## Naming` section (hook-injected)
 4. **Write `plan.md`** with required YAML frontmatter:
    ```yaml

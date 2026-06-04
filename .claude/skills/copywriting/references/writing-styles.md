@@ -244,4 +244,4 @@ examples:
 Use with:
 - `brand-guidelines` skill - Align with brand voice
 - video-to-article workflow - Apply extracted style to long-form output
-- `ck:copywriting` skill workflows - Style-aware content generation
+- `copywriting` skill workflows - Style-aware content generation

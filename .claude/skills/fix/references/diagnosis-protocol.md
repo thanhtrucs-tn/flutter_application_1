@@ -24,7 +24,7 @@ This baseline is required for Step 5 (Verify) — you MUST compare before/after.
 
 ### Phase 1: Observe — What is actually happening?
 
-Read, don't assume. Use `ck:debug` (systematic-debugging Phase 1).
+Read, don't assume. Use `debug` (systematic-debugging Phase 1).
 
 - What is the exact error message?
 - Where does it occur? (file, line, function)
@@ -34,7 +34,7 @@ Read, don't assume. Use `ck:debug` (systematic-debugging Phase 1).
 
 ### Phase 2: Hypothesize — Why might this happen?
 
-Activate `ck:sequential-thinking` skill. Form hypotheses through structured reasoning.
+Activate `sequential-thinking` skill. Form hypotheses through structured reasoning.
 
 **Structured hypothesis formation:**
 ```
@@ -70,7 +70,7 @@ Task("Explore", "Test hypothesis C: [specific search/check]", "Verify H-C")
 
 ### Phase 4: Trace — Follow the root cause chain
 
-Use `ck:debug` (root-cause-tracing technique). Trace backward:
+Use `debug` (root-cause-tracing technique). Trace backward:
 
 ```
 Symptom (where error appears)
@@ -84,7 +84,7 @@ Symptom (where error appears)
 ### Phase 5: Escalate — When hypotheses fail
 
 If 2+ hypotheses are REFUTED:
-1. Auto-activate `ck:problem-solving` skill
+1. Auto-activate `problem-solving` skill
 2. Apply Inversion Exercise: "What would CAUSE this bug intentionally?"
 3. Apply Scale Game: "Does this fail with 1 item? 100? 10000?"
 4. Consider environmental factors (timing, concurrency, platform)

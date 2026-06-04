@@ -54,7 +54,7 @@ Task tools (`TaskCreate`/`TaskUpdate`/`TaskGet`/`TaskList`) are **CLI-only** —
 
 ## Cross-Session Resume
 
-When user runs `/ck:cook path/to/plan.md` in a new session:
+When user runs `cook path/to/plan.md` in a new session:
 1. `TaskList()` → empty (tasks died with old session)
 2. Read plan files → re-hydrate from unchecked `[ ]` items
 3. Already-checked `[x]` = done, creates tasks only for remaining work

@@ -42,12 +42,12 @@
 - **DO NOT** create new enhanced files, update to the existing files directly.
 
 ## Visual Aids
-- Use the `preview` skill with `--explain` when explaining unfamiliar code patterns or complex logic
-- Use `preview` with `--diagram` for architecture diagrams and data flow visualization
-- Use `preview` with `--slides` for step-by-step walkthroughs and presentations
-- Use `preview` with `--ascii` for terminal-friendly diagrams (no browser needed to understand)
+- Use `preview --explain` when explaining unfamiliar code patterns or complex logic
+- Use `preview --diagram` for architecture diagrams and data flow visualization
+- Use `preview --slides` for step-by-step walkthroughs and presentations
+- Use `preview --ascii` for terminal-friendly diagrams (no browser needed to understand)
 - Add `--html` to any generation flag for self-contained HTML output (opens in browser, no server needed)
 - **Plan context:** Active plan determined from `## Plan Context` in hook injection; visuals save to `{plan_dir}/visuals/`
 - If no active plan, fallback to `plans/visuals/` directory
-- For Mermaid diagrams, use the `mermaidjs-v11` skill for v11 syntax rules
+- For Mermaid diagrams, use `/mermaidjs-v11` skill for v11 syntax rules
 - See `primary-workflow.md` → Step 6 for workflow integration

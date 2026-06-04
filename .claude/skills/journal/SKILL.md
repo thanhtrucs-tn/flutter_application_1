@@ -17,9 +17,9 @@ Use the `journal-writer` subagent to explore the memories and recent code change
 Journal entries should be concise and focused on the most important events, key changes, impacts, and decisions.
 Keep journal entries in the `./docs/journals/` directory.
 
-**IMPORTANT:** Invoke "/ck:project-organization" skill to organize the outputs.
+**IMPORTANT:** Invoke "project-organization" skill to organize the outputs.
 
 ## Workflow Position
 
-**Typically follows:** `/ck:ship` (journal after shipping), `/ck:cook` (journal after implementation), `/ck:fix` (journal after bug fix)
+**Typically follows:** `ship` (journal after shipping), `cook` (journal after implementation), `fix` (journal after bug fix)
 **Terminal skill** — no typical successor.

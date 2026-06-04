@@ -23,20 +23,20 @@ No user gate — proceed automatically.
 1. Use `ui-ux-designer` + `researcher` agents in parallel:
    - Research style, trends, fonts, colors, spacing, positions
    - Predict Google Fonts name (NOT just Inter/Poppins)
-   - Describe assets for `ck:ai-multimodal` generation
+   - Describe assets for `ai-multimodal` generation
 2. `ui-ux-designer` creates:
    - Design guidelines at `./docs/design-guidelines.md`
    - Wireframes in HTML at `./docs/wireframe/`
-3. If no logo: generate with `ck:ai-multimodal` skill
-4. Screenshot with `ck:agent-browser` → save to `./docs/wireframes/`
+3. If no logo: generate with `ai-multimodal` skill
+4. Screenshot with `agent-browser` → save to `./docs/wireframes/`
 
 **Gate:** Ask user to approve design. Repeat if rejected.
 
-**Image tools:** `ck:ai-multimodal` for generation/analysis, `imagemagick` for crop/resize, background removal tool as needed.
+**Image tools:** `ai-multimodal` for generation/analysis, `imagemagick` for crop/resize, background removal tool as needed.
 
 ## Step 4: Parallel Planning
 
-Activate **ck:plan** skill: `/ck:plan --parallel <requirements>`
+Activate **plan** skill: `plan --parallel <requirements>`
 - Creates phases with **exclusive file ownership** per phase (no overlap)
 - **Dependency matrix**: which phases run concurrently vs sequentially
 - `plan.md` includes dependency graph, execution strategy, file ownership matrix
@@ -48,11 +48,11 @@ After planning, hand off to cook with normal review gates. Add `--auto` only if 
 
 Load `references/shared-phases.md` for remaining phases.
 
-Activate **ck:cook** skill: `/ck:cook --parallel <plan-path>`
+Activate **cook** skill: `cook --parallel <plan-path>`
 - Read `plan.md` for dependency graph and execution strategy
 - Launch multiple `fullstack-developer` agents in PARALLEL for concurrent phases
   - Pass: phase file path, environment info
-- Use `ui-ux-designer` for frontend (generate/analyze assets with `ck:ai-multimodal`, edit with `imagemagick`)
+- Use `ui-ux-designer` for frontend (generate/analyze assets with `ai-multimodal`, edit with `imagemagick`)
 - Respect file ownership boundaries
 - Run type checking after implementation
 - Keep cook review gates; `--parallel` controls execution shape, not approval bypass

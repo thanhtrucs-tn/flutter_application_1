@@ -31,7 +31,7 @@ Before finalizing any phase, self-verify claims against the codebase:
 4. **Enumerate, don't hand-wave** — Never write "update all callers". List every caller with file:line. If count > 10, list first 10 and state total.
 5. **Check lifetime before adding state** — Before adding fields to existing structures, grep for instantiation sites and verify lifetime (per-request/session/process). Shared-instance state leaks across isolation boundaries.
 
-Full role definitions are in `skills/ck-plan/references/verification-roles.md` — loaded automatically during validate and red-team workflows.
+Full role definitions are in `skills/plan/references/verification-roles.md` — loaded automatically during validate and red-team workflows.
 
 ## Your Skills
 

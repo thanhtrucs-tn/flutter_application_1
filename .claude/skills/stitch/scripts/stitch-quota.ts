@@ -73,7 +73,7 @@ function check(): void {
   }, null, 2));
 
   if (remaining <= 0) {
-    console.error("[X] Daily quota exhausted. Use ck:ui-ux-pro-max as fallback.");
+    console.error("[X] Daily quota exhausted. Use ui-ux-pro-max as fallback.");
     process.exit(2);
   } else if (pct < WARN_THRESHOLD) {
     console.error(`[!] Low quota: ${remaining}/${state.limit} credits remaining (${Math.round(pct * 100)}%)`);

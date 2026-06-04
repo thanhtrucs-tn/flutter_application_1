@@ -5,7 +5,7 @@ description: >-
   flow, flowchart, sequence, agent/memory, or concept maps — across 7 visual
   styles. Use when user wants "generate diagram", "draw diagram", "visualize",
   "architecture diagram", "flowchart", or any system/flow they want illustrated.
-  Pairs with /ck:preview --diagram for visual self-review and /ck:mermaidjs-v11
+  Pairs with preview --diagram for visual self-review and mermaidjs-v11
   for inline-doc diagrams; this skill is the publish-grade output mode.
 user-invocable: true
 when_to_use: "Invoke for publish-grade architecture or flow diagrams."
@@ -26,11 +26,11 @@ metadata:
 
 Generate production-quality SVG technical diagrams exported as PNG via `rsvg-convert`.
 
-> Vendored from upstream `fireworks-tech-graph` (yizhiyanhua-ai, MIT). System dep `librsvg` (provides `rsvg-convert`) is installed via `claude/skills/install.sh`. Do NOT use upstream's `npx skills add` instructions — this skill is part of the CK Engineer stack.
+> Vendored from upstream `fireworks-tech-graph` (yizhiyanhua-ai, MIT). System dep `librsvg` (provides `rsvg-convert`) is installed via `.claude/skills/install.sh`. Do NOT use upstream's `npx skills add` instructions — this skill is part of this bundled skill set.
 
 ## Vendoring Notes
 
-This skill is vendored — installation is handled by `claude/skills/install.sh` (no manual `npx skills add` step). The required system dependency `librsvg` (`rsvg-convert` binary) is installed automatically alongside FFmpeg/ImageMagick when `ck install` runs. Drift from upstream is tracked in `~/claudekit/.maintainer/external-sources.json` (Mode A entry) — see CLAUDE.md "External Source Drift Watcher" in the monorepo for the update procedure.
+This skill is vendored — installation is handled by `.claude/skills/install.sh` (no manual `npx skills add` step). The required system dependency `librsvg` (`rsvg-convert` binary) is installed automatically alongside FFmpeg/ImageMagick when the bundle installer runs. Drift from upstream is tracked in `~/claudekit/.maintainer/external-sources.json` (Mode A entry) — see CLAUDE.md "External Source Drift Watcher" in the monorepo for the update procedure.
 
 ## Helper Scripts (Recommended)
 

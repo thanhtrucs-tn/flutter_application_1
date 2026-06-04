@@ -102,4 +102,4 @@ CTAs: "Start [verb]ing" • "Get [benefit]" • "Yes, I want [benefit]"
 
 ## Outputs
 
-**IMPORTANT:** Invoke "/ck:project-organization" skill to organize the outputs.
+**IMPORTANT:** Invoke "project-organization" skill to organize the outputs.

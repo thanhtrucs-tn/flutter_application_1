@@ -1,0 +1,65 @@
+{
+  "_comment": "Skills intentionally absent from .claude/rules/skill-domain-routing.md and .claude/rules/skill-workflow-routing.md. Each entry MUST include a justification. CI router-coverage check ignores these names. Keep this list small — prefer routing additions over allowlist entries.",
+  "allowed": [
+    {
+      "name": "plans-kanban",
+      "reason": "Dashboard launcher utility. Surfaced via UI hint, not by intent-routing."
+    },
+    {
+      "name": "project-management",
+      "reason": "Orchestrator-internal skill invoked at finalize step of cook. Not user-driven."
+    },
+    {
+      "name": "project-organization",
+      "reason": "Orchestrator-internal skill invoked by other skills for path/output organization. Not user-driven."
+    },
+    {
+      "name": "skill-creator",
+      "reason": "Maintainer-tier skill for skill authoring. Routed via skill-creator workflow doc, not domain tree."
+    },
+    {
+      "name": "xia",
+      "reason": "Maintainer-tier external repo study workflow. Documented in .claude/rules/CLAUDE.md, not domain tree."
+    },
+    {
+      "name": "team",
+      "reason": "Multi-session orchestration meta-skill. Activated explicitly per orchestration-protocol.md; not domain-routed."
+    },
+    {
+      "name": "scenario",
+      "reason": "Meta-skill invoked by plan and predict for edge-case generation. Not user-driven."
+    },
+    {
+      "name": "git",
+      "reason": "Conventional-commit utility invoked by ship and finalize step. Not domain-routed."
+    },
+    {
+      "name": "loop",
+      "reason": "Meta-skill for autonomous iteration; activated by cook --loop and autoresearch. Workflow-only."
+    },
+    {
+      "name": "research",
+      "reason": "Core workflow skill referenced in primary-workflow.md; intentionally not in domain decision trees (it's a workflow phase, not a domain action)."
+    },
+    {
+      "name": "predict",
+      "reason": "Pre-implementation review skill invoked from plan. Workflow-only, not domain-routed."
+    },
+    {
+      "name": "show-off",
+      "reason": "Output presentation utility. Surfaced via cook outputs, not by intent."
+    },
+    {
+      "name": "bootstrap",
+      "reason": "Project-init mega-skill; documented in README and bootstrap SKILL.md. Routes other skills internally; not domain-routed itself."
+    },
+    {
+      "name": "coding-level",
+      "reason": "P2 cleanup pending — design-first migration to claudekit-cli config (tracked in #718). Remove allowlist entry after migration."
+    },
+    {
+      "name": "problem-solving",
+      "reason": "P2 cleanup pending — part of meta-thinking trio audit (problem-solving / sequential-thinking / context-engineering). Tracked in epic #711."
+    }
+  ]
+}

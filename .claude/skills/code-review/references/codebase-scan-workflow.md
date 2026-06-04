@@ -13,13 +13,13 @@ Think harder to scan the codebase and analyze it follow the Orchestration Protoc
 ### Research
 * Use 2 `researcher` subagents in parallel to search up to 5 sources
 * Keep every research report concise (≤150 lines)
-* Use `/ck:scout` skill invocation to search the codebase
+* Use `scout` skill invocation to search the codebase
 
 ### Code Review
 * Use multiple `code-reviewer` subagents in parallel to review code
 * If issues found, ask main agent to improve and repeat until tests pass
-* When complete, run adversarial review (see `adversarial-review.md`) — always-on, no exceptions
-* Report combined quality + adversarial findings to user
+* When complete, run verification for accepted findings before reporting completion
+* Report combined quality findings and verification evidence to user
 
 ### Plan
 * Use `planner` subagent to analyze reports and create improvement plan

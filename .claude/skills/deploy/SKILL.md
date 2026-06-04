@@ -20,7 +20,7 @@ Auto-detect deployment target and deploy the current project. Supports 15 platfo
 
 This skill handles: project deployment, platform selection, deployment docs creation/update.
 Does NOT handle: infrastructure provisioning, database migrations, DNS management, SSL certificates, CI/CD pipeline creation.
-For advanced infrastructure/troubleshooting, activate `/ck:devops` skill.
+For advanced infrastructure/troubleshooting, activate `devops` skill.
 
 ## Workflow
 
@@ -115,7 +115,7 @@ On subsequent deploys, update if config changed.
 ### 7. Troubleshooting
 
 1. Check error output, attempt auto-fix for common issues
-2. If unresolvable → activate `/ck:devops` skill
+2. If unresolvable → activate `devops` skill
 3. Update `docs/deployment.md` with troubleshooting notes
 
 ## AskUserQuestion Template

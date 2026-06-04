@@ -10,7 +10,7 @@
 ## Step 2: Generate Content
 
 **Mermaid Diagram Syntax:**
-When generating mermaid code blocks, use `/ck:mermaidjs-v11` skill for v11 syntax rules.
+When generating mermaid code blocks, use `mermaidjs-v11` skill for v11 syntax rules.
 
 **Essential rules (always apply):**
 - Quote node text with special characters: `A["text with /slashes"]`
@@ -94,7 +94,7 @@ After rendering a diagram, do not trust syntactic validity alone — load the re
 - Widen inter-row / inter-column gutters so same-layer arrows have clear corridors
 - Re-render and re-inspect — repeat until visually clean
 
-For full SVG layout rules (spacing minimums, arrow connection points, z-index ordering, anti-pattern catalog), read `/ck:tech-graph`'s `references/svg-layout-best-practices.md`. For full publish-grade SVG+PNG diagram generation (7 visual styles, agent/memory primitives), use `/ck:tech-graph` directly.
+For full SVG layout rules (spacing minimums, arrow connection points, z-index ordering, anti-pattern catalog), read `tech-graph`'s `references/svg-layout-best-practices.md`. For full publish-grade SVG+PNG diagram generation (7 visual styles, agent/memory primitives), use `tech-graph` directly.
 
 ## Step 3: Save and Preview
 
@@ -165,8 +165,8 @@ Follow the 4-phase workflow:
 
 **MANDATORY — Theme Toggle:** Every HTML page MUST include the light/dark theme toggle button from `html-css-patterns.md` → "Theme Toggle Button" section. This is non-negotiable. The toggle button (`<button class="theme-toggle">`) must be the first child of `<body>`, with its CSS and JS inlined. Pages without the toggle are considered incomplete.
 
-For `--slides`: recommend invoking `/ck:ui-ux-pro-max` for richer style selection.
-Must use `/ck:mermaidjs-v11` for any Mermaid diagrams.
+For `--slides`: recommend invoking `ui-ux-pro-max` for richer style selection.
+Must use `mermaidjs-v11` for any Mermaid diagrams.
 
 ### HTML Step 4: Open in Browser
 - macOS: `open "{output-path}"`

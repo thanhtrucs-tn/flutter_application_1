@@ -57,9 +57,9 @@ Present ideas to user via `AskUserQuestion` for approval before designing.
 
 Activate these skills in sequence:
 
-1. **`/ckm:brand`** — Extract brand colors, fonts, voice from user's project
-2. **`/ckm:design-system`** — Get design tokens (spacing, typography scale, color palette)
-3. **Randomly invoke ONE of:** `/ck:ui-ux-pro-max` OR `/ck:frontend-design` — for layout, hierarchy, visual balance. Pick one at random each run for design variety.
+1. **`brand`** — Extract brand colors, fonts, voice from user's project
+2. **`design-system`** — Get design tokens (spacing, typography scale, color palette)
+3. **Randomly invoke ONE of:** `ui-ux-pro-max` OR `frontend-design` — for layout, hierarchy, visual balance. Pick one at random each run for design variety.
 
 For each approved idea + each target size, create an HTML file:
 
@@ -119,7 +119,7 @@ output/social-photos/
 
 ### Step 5: Screenshot Export
 
-Use Chrome headless, `ck:agent-browser`, or Playwright/Puppeteer to capture exact-size screenshots.
+Use Chrome headless, `agent-browser`, or Playwright/Puppeteer to capture exact-size screenshots.
 
 **IMPORTANT:** Always add a delay (3-5s) after page load for fonts/images to fully render before capture.
 
@@ -147,7 +147,7 @@ Key flags:
 
 #### Option B: agent-browser
 
-Invoke `/ck:agent-browser` with instructions to:
+Invoke `agent-browser` with instructions to:
 1. Open each HTML file in browser
 2. Set viewport to exact target dimensions
 3. Wait 3-5s for fonts/images to fully load
@@ -210,7 +210,7 @@ async function captureScreenshots(htmlFiles) {
 
 ### Step 6: Verify & Fix Designs
 
-Use Chrome MCP / `chrome-devtools-mcp`, `ck:agent-browser`, or Playwright to visually inspect each exported PNG:
+Use Chrome MCP / `chrome-devtools-mcp`, `agent-browser`, `chrome-profile`, or Playwright to visually inspect each exported PNG:
 
 1. Open exported screenshots and check for layout/styling issues
 2. Verify: fonts rendered correctly, colors match brand, text readable at thumbnail size

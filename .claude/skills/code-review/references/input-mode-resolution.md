@@ -5,7 +5,7 @@ description: How to parse code-review arguments and resolve PR number, commit ha
 
 # Input Mode Resolution
 
-Resolve `/code-review` arguments into a diff for the review pipeline.
+Resolve `code-review` arguments into a diff for the review pipeline.
 
 ## Auto-Detection Rules
 
@@ -111,7 +111,7 @@ Codebase modes bypass diff resolution — they scan the full codebase instead.
 - `codebase` → hand off to `references/codebase-scan-workflow.md`
 - `codebase parallel` → hand off to `references/parallel-review-workflow.md`
 
-Both workflows include adversarial review (always-on).
+Both workflows include code quality review and final verification.
 
 ## Pipeline Handoff
 
@@ -122,7 +122,7 @@ Resolved diff
   ├─ Changed files → Edge case scout
   ├─ Full diff → Stage 1 (Spec compliance, if plan exists)
   ├─ Full diff → Stage 2 (Code quality review)
-  └─ Full diff + findings → Stage 3 (Adversarial review)
+  └─ Findings → Fix accepted issues and verify
 ```
 
 ## Error Handling

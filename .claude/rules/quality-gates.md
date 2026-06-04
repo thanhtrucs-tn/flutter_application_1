@@ -1,49 +1,49 @@
 # Quality Gate Rules
 
-Rules for contributors and AI agents working on the claudekit-engineer repo. These are NOT shipped to end users.
+Rules for contributors and AI agents working on this skill bundle. These are NOT shipped to end users.
 
 ## Metadata Deletions (MANDATORY)
 
-When renaming or deleting ANY file under `claude/` directory (skills, hooks, agents, scripts), you MUST add the old relative path to `claude/metadata.json` `deletions[]` array. This tells the CLI installer to remove stale files from user machines during upgrade. Forgetting this leaves orphaned files that cause conflicts.
+When renaming or deleting ANY shipped file under `.claude/` (skills, hooks, agents, scripts), you MUST add the old payload-relative path to `.claude/metadata.json` `deletions[]` array when that metadata file is part of the distribution. This tells installers to remove stale files from user machines during upgrade. Forgetting this leaves orphaned files that cause conflicts.
 
-**Affected files:** `claude/metadata.json`
+**Affected files:** `.claude/metadata.json`
 
 ## Skill Registry Contract
 
-Canonical skill identifiers live in each `claude/skills/*/SKILL.md` frontmatter `name:` field (lowercase letters, digits, hyphens; no `ck:` prefix). All cross-references in markdown files MUST use that exact registered id, typically written in backticks (for example `` `ck-plan` ``, `` `cook` ``). When adding a new skill name, check for collisions with Claude Code built-in commands (`/help`, `/clear`, `/debug`, `/plan`, `/compact`, `/review`, `/search`). When renaming a skill, update ALL cross-references in the same PR.
+Canonical skill names live in each `.claude/skills/*/SKILL.md` frontmatter `name:` field. Names MUST be portable kebab-case (`plan`, `code-review`, `security`) without legacy namespace prefixes. All cross-references in markdown files MUST use the exact registered name; when a CI-validated explicit reference is needed, use `skill:<name>` (for example `skill:plan`). When renaming a skill, update ALL cross-references in the same PR.
 
 ## Skill Cross-Reference Integrity (CI-enforced)
 
-If `node scripts/check-skill-cross-refs.js` is present in the repo, CI may build a registry from all `claude/skills/*/SKILL.md` frontmatter `name:` fields and verify references in `claude/**/*.md` resolve to a registered id. Align the checker with the project's reference style (backticks + registered `name:`).
+CI runs `node scripts/check-skill-cross-refs.js` on every push. It builds a registry from all `.claude/skills/*/SKILL.md` frontmatter `name:` fields and checks every explicit `skill:<name>` reference in `.claude/**/*.md` resolves to a registered name.
 
-**Critical rule: use REGISTERED `name:` values, not an informal alias.**
+**Critical rule: use REGISTERED names, not historical aliases.**
 
-Examples (directory vs frontmatter `name:` vs how to cite in docs):
+The registry no longer strips namespace prefixes. A frontmatter value of `name: debug` registers exactly as `debug`; `skill:debug` matches, but legacy namespaced forms or directory aliases do not.
 
-| Directory | Frontmatter `name:` | Cite in rules / docs |
-|-----------|---------------------|----------------------|
-| `ck-debug` | `ck-debug` | `` `ck-debug` `` |
-| `ck-plan` | `ck-plan` | `` `ck-plan` `` |
-| `ck-security` | `ck-security` | `` `ck-security` `` |
-| `cook` | `cook` | `` `cook` `` |
-| `code-review` | `adversarial-code-review` | `` `adversarial-code-review` `` |
+| Directory Name | Frontmatter `name:` | Registered As | Correct explicit reference |
+|----------------|---------------------|---------------|-------------------|
+| `debug` | `debug` | `debug` | `skill:debug` |
+| `plan` | `plan` | `plan` | `skill:plan` |
+| `security` | `security` | `security` | `skill:security` |
+| `cook` | `cook` | `cook` | `skill:cook` |
+| `brainstorm` | `brainstorm` | `brainstorm` | `skill:brainstorm` |
 
-**Before committing cross-references**, verify the id exists in the registry (frontmatter `name:`), for example:
+**Before committing any explicit `skill:<name>` reference**, verify the name exists in the registry:
 ```bash
 node scripts/check-skill-cross-refs.js
 ```
 
-**When modifying workflow routing rules** (`claude/rules/skill-workflow-routing.md`, `claude/rules/skill-domain-routing.md`):
-- These rules are shipped to end users — they guide skill suggestions
-- Use registered ids consistently (see domain and workflow routing files)
-- Run `python claude/scripts/validate-skill-crossrefs.py claude/skills/` when available to verify workflow chain integrity
+**When modifying workflow routing rules** (`.claude/rules/skill-workflow-routing.md`, `.claude/rules/skill-domain-routing.md`):
+- These rules are shipped to end users — they guide Claude's skill suggestions
+- Any explicit `skill:<name>` reference in these files is CI-checked
+- Run `.claude/skills/.venv/bin/python3 .claude/scripts/validate-skill-crossrefs.py .claude/skills/` to verify workflow chain integrity
 - When adding a new skill to a workflow chain, update BOTH the routing rule AND the skill's `## Workflow Position` section
 
-**Affected files:** `claude/rules/skill-*.md`, `claude/skills/*/SKILL.md`, `scripts/check-skill-cross-refs.js` (if used)
+**Affected files:** `.claude/rules/skill-*.md`, `.claude/skills/*/SKILL.md`, `.claude/scripts/check-skill-cross-refs.js`
 
 ## Skill Routing Coverage (CI-enforced)
 
-CI may run `node scripts/check-skill-routing.js` on each PR. If enabled, it verifies every shipped skill (by frontmatter `name:`) is reachable from at least one routing file (`claude/rules/skill-domain-routing.md` or `claude/rules/skill-workflow-routing.md`). Skills intentionally absent from routing (meta-routers, orchestrator-internal, maintainer-tier) must be listed in `scripts/skill-routing-allowlist.json` with a written justification.
+CI runs `node scripts/check-skill-routing.js` on every PR. It verifies every shipped skill is reachable from at least one routing file (`.claude/rules/skill-domain-routing.md` or `.claude/rules/skill-workflow-routing.md`). Skills intentionally absent from routing (meta-routers, orchestrator-internal, maintainer-tier) must be listed in `.claude/scripts/skill-routing-allowlist.json` with a written justification.
 
 **The principle (audit-route-reframe):** discoverability is part of the contract. Shipping a skill that no routing file mentions means users (and Claude) will not find it. **Telemetry zero ≠ zero value** — most dormant skills audited under epic #711 flipped to KEEP after routing or description fixes. When tempted to delete a "dormant" skill:
 
@@ -64,7 +64,7 @@ Delete only when: (a) audit confirms zero unique capability, AND (b) routing fix
 **When the lint flags a "redundant allowlist entry":**
 - The skill was added to a routing file. Drop it from the allowlist — its routing entry is now load-bearing.
 
-**Affected files:** `scripts/check-skill-routing.js`, `scripts/skill-routing-allowlist.json`, `claude/rules/skill-domain-routing.md`, `claude/rules/skill-workflow-routing.md`
+**Affected files:** `.claude/scripts/check-skill-routing.js`, `.claude/scripts/skill-routing-allowlist.json`, `.claude/rules/skill-domain-routing.md`, `.claude/rules/skill-workflow-routing.md`
 
 ### Allowlist `reason` quality (both lints)
 
@@ -74,7 +74,7 @@ Both `skill-routing-allowlist.json` and `skill-description-lint-allowlist.json` 
 
 ## Skill Description and Listing Policy
 
-CI also runs `python3 claude/scripts/validate-skill-frontmatter.py` as a blocking `skill-frontmatter-contract` job. That validator enforces the hard shipped-skill schema, including `user-invocable: true`.
+CI also runs `python3 .claude/scripts/validate-skill-frontmatter.py` as a blocking `skill-frontmatter-contract` job. That validator enforces the hard shipped-skill schema, including portable kebab-case names and `user-invocable: true`.
 
 CI runs `node scripts/check-skill-descriptions.js` on every PR as a blocking major-policy gate. Major findings fail CI; minor description guidance remains non-blocking. It surfaces frontmatter `description:` / `when_to_use:` patterns that hurt user discoverability:
 
@@ -92,12 +92,12 @@ CI runs `node scripts/check-skill-descriptions.js` on every PR as a blocking maj
 | `missing-skill-listing-budget` | major | Project settings do not define the skill listing budget settings |
 | `low-skill-listing-budget` | major | `skillListingBudgetFraction` is invalid or too low for the projected shipped-skill listing on a 200k context floor |
 | `missing-skill-description-cap` | major | Project settings do not define `skillListingMaxDescChars` |
-| `high-skill-description-cap` | major | `skillListingMaxDescChars` is invalid or above the 512-character ClaudeKit recommendation |
+| `high-skill-description-cap` | major | `skillListingMaxDescChars` is invalid or above the 512-character recommendation |
 | `forbidden-skill-overrides` | major | Project settings define `skillOverrides`; keep skills visible and manage pressure through budget/caps |
 
 Allowlist (`scripts/skill-description-lint-allowlist.json`) lets specific skills opt out of specific rules with required `reason`. Rule IDs in allowlist entries are validated at load — typos like `too_short` vs `too-short` error out instead of silently allowing nothing.
 
-`python3 claude/scripts/validate-skill-frontmatter.py` remains the blocking frontmatter contract. It requires `user-invocable: true` and rejects `disable-model-invocation: true` for shipped ClaudeKit skills; listing pressure must be handled through `skillListingBudgetFraction`, `skillListingMaxDescChars`, and tighter descriptions.
+`python3 .claude/scripts/validate-skill-frontmatter.py` remains the blocking frontmatter contract. It requires portable kebab-case names and `user-invocable: true`, and rejects `disable-model-invocation: true` for shipped skills; listing pressure must be handled through `skillListingBudgetFraction`, `skillListingMaxDescChars`, and tighter descriptions.
 
 **When the lint flags a description:**
 - For "minor" rules: review the description, rewrite if the warning is fair, OR allowlist with justification

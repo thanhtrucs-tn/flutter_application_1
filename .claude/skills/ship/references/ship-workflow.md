@@ -161,7 +161,7 @@ git fetch origin <target> && git merge origin/<target> --no-edit
 
 Write a technical journal entry capturing this ship session. Run as **background task** to not block pipeline.
 
-1. Invoke `/ck:journal` skill via `journal-writer` subagent in background:
+1. Invoke `journal` skill via `journal-writer` subagent in background:
    - Topic: summary of shipped changes (from commit messages + diff stats)
    - Include: what was shipped, key decisions, technical challenges encountered
    - Output: saved to `./docs/journals/` directory
@@ -173,7 +173,7 @@ Write a technical journal entry capturing this ship session. Run as **background
 
 Update project documentation for official releases. Run as **background task**.
 
-1. Invoke `/ck:docs update` skill via `docs-manager` subagent in background:
+1. Invoke `docs update` skill via `docs-manager` subagent in background:
    - Analyzes code changes since last release
    - Updates relevant docs in `./docs/` directory
 2. Don't wait for completion — continue to next step immediately.

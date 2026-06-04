@@ -9,7 +9,7 @@ license: MIT
 argument-hint: "[topic or problem]"
 metadata:
   author: claudekit
-  version: "2.0.0"
+  version: "2.2.1"
 ---
 
 # Brainstorming Skill
@@ -41,16 +41,45 @@ You operate by the holy trinity of software engineering: **YAGNI** (You Aren't G
 - Consult the `planner` agent to research industry best practices and find proven solutions
 - Engage the `docs-manager` agent to understand existing project implementation and constraints
 - Use `WebSearch` tool to find efficient approaches and learn from others' experiences
-- Use `ck:docs-seeker` skill to read latest documentation of external plugins/packages
-- Leverage `ck:ai-multimodal` skill to analyze visual materials and mockups
+- Use `docs-seeker` skill to read latest documentation of external plugins/packages
+- Leverage `ai-multimodal` skill to analyze visual materials and mockups
 - Query `psql` command to understand current database structure and existing data
-- Employ `ck:sequential-thinking` skill for complex problem-solving that requires structured analysis
+- Employ `sequential-thinking` skill for complex problem-solving that requires structured analysis
 
 <HARD-GATE>
 Do NOT invoke any implementation skill, write any code, scaffold any project, or take any implementation action until you have presented a design and the user has approved it.
 This applies to EVERY brainstorming session regardless of perceived simplicity.
 The design can be brief for simple projects, but you MUST present it and get approval.
 </HARD-GATE>
+
+<HARD-GATE-SCOUT-FIRST>
+Before asking ANY clarifying question or proposing ANY approach, you MUST scan the codebase first. No exceptions.
+
+Mandatory scout outputs (collect before Discovery Phase):
+1. Project type, primary language(s), framework(s) — from package.json/pyproject.toml/go.mod/Cargo.toml/etc.
+2. Existing modules/files relevant to the user's topic (use `scout` or Glob/Grep)
+3. Current patterns/conventions already in use for similar features
+4. Existing docs in `./docs/` and any related plans in `./plans/`
+5. Constraints discovered (tech stack lock-in, existing schemas, public APIs, naming conventions)
+
+Why: clarifying questions asked WITHOUT codebase context produce vague answers and wasted cycles. Scout first → ask specific questions grounded in what already exists.
+
+After scouting, briefly state to the user (3-6 bullets max): "Here's what I found in the codebase relevant to your request" — then proceed to Discovery Phase.
+</HARD-GATE-SCOUT-FIRST>
+
+<HARD-GATE-EXACT-REQUIREMENTS>
+Discovery Phase questions MUST extract EXACT, CONCRETE requirements — not vague intent. Before proposing approaches, you MUST be able to answer in one sentence each:
+
+1. **Expected output**: what artifact(s) does the user expect at the end? (file, feature behavior, UI screen, API response shape, CLI command, etc.) — be concrete enough to verify it later.
+2. **Acceptance criteria**: how will the user know it's done correctly? (specific behaviors, inputs/outputs, edge cases that must work)
+3. **Scope boundary**: what is explicitly OUT of scope for this round?
+4. **Non-negotiable constraints**: tech stack, file locations, naming, backward compatibility, deadlines.
+5. **Touchpoints**: which existing files/modules (from scout) will this interact with or modify?
+
+If any of these is still vague after one round of questions, ask another round. Do NOT proceed to design with hand-wavy answers like "make it better", "add some validation", "improve UX". Push for concrete examples, sample inputs/outputs, or a reference to mimic.
+
+Use `AskUserQuestion` with options grounded in what scout found (e.g., "Should the new endpoint live in `src/api/users.ts` (existing pattern) or a new `src/api/profile/` module?") — never ask abstract questions when the codebase already constrains the answer.
+</HARD-GATE-EXACT-REQUIREMENTS>
 
 ## Anti-Rationalization
 
@@ -66,8 +95,11 @@ The design can be brief for simple projects, but you MUST present it and get app
 
 ```mermaid
 flowchart TD
-    A[Scout Project Context] --> B[Ask Clarifying Questions]
-    B --> C{Scope too large?}
+    A[Scout Codebase MANDATORY] --> A2[Summarize Findings to User]
+    A2 --> B[Ask Clarifying Questions grounded in scout]
+    B --> B2{Exact requirements captured?<br/>output, acceptance, scope, constraints, touchpoints}
+    B2 -->|No| B
+    B2 -->|Yes| C{Scope too large?}
     C -->|Yes| D[Decompose into Sub-Projects]
     D --> B
     C -->|No| E[Propose 2-3 Approaches]
@@ -76,17 +108,23 @@ flowchart TD
     G -->|No| F
     G -->|Yes| H[Write Design Doc / Report]
     H --> I{Create Plan?}
-    I -->|Yes| J[Invoke /ck:plan]
+    I -->|Yes| J[Pick plan mode<br/>--tdd or default]
     I -->|No| K[End Session]
     J --> L[Journal]
     K --> L
 ```
 
-**This diagram is the authoritative workflow.** If prose conflicts with this flow, follow the diagram. The terminal state is either `/ck:plan` or end.
+**This diagram is the authoritative workflow.** If prose conflicts with this flow, follow the diagram. The terminal state is either `plan` or end.
 
 ## Your Process
-1. **Scout Phase**: Use `ck:scout` skill to discover relevant files and code patterns, read relevant docs in `<project-dir>/docs` directory, to understand the current state of the project
-2. **Discovery Phase**: Use `AskUserQuestion` tool to ask clarifying questions about requirements, constraints, timeline, and success criteria
+1. **Scout Phase (MANDATORY FIRST STEP)**: Always run before anything else.
+   - Use `scout` skill (or Glob/Grep directly for small repos) to map files relevant to the user's topic
+   - Read `./README.md` and any `./docs/*.md` files relevant to the area
+   - Identify the project type, language, framework, and existing patterns/conventions
+   - Note existing modules that the request will likely touch
+   - List any in-flight plans in `./plans/` related to the topic
+   - Output a brief codebase-context summary (3-6 bullets) to the user before asking questions
+2. **Discovery Phase**: Use `AskUserQuestion` tool to extract EXACT requirements (see HARD-GATE-EXACT-REQUIREMENTS). Ground every option in what scout found. Loop until the 5 mandatory items (expected output, acceptance criteria, scope boundary, non-negotiable constraints, touchpoints) are concrete.
 3. **Scope Assessment**: Before deep-diving, assess if request covers multiple independent subsystems:
    - If request describes 3+ independent concerns (e.g., "build platform with chat, billing, analytics") → flag immediately
    - Help user decompose into sub-projects: identify pieces, relationships, build order
@@ -97,17 +135,30 @@ flowchart TD
 6. **Debate Phase**: Use `AskUserQuestion` tool to Present options, challenge user preferences, and work toward the optimal solution
 7. **Consensus Phase**: Ensure alignment on the chosen approach and document decisions
 8. **Documentation Phase**: Create a comprehensive markdown summary report with the final agreed solution
-9. **Finalize Phase**: Use `AskUserQuestion` tool to ask if user wants to create a detailed implementation plan.
-   - If `Yes`: Run `/ck:plan` command with the brainstorm summary context as the argument to ensure plan continuity.
-     **CRITICAL:** The invoked plan command will create `plan.md` with YAML frontmatter including `status: pending`.
-   - If `No`: End the session.
-10. **Journal Phase**: Run `/ck:journal` to write a concise technical journal entry upon completion.
+9. **Finalize Phase (Plan Handoff)**: Once the user has confirmed the proposal AND has no further questions (i.e. brainstorm is converging to close), use `AskUserQuestion` to offer the appropriate `plan` mode. Pass the brainstorm summary path as context to `plan` for continuity.
+
+   **Trigger conditions (ALL must hold):** user explicitly approved the proposal, no open clarifying questions remain, design doc/report has been written.
+
+   **Plan mode selection — present these as options:**
+
+   | Option | Recommend When | Why |
+   |--------|----------------|-----|
+   | `plan --tdd` | Solution refactors existing behavior, modifies critical business logic, or has strong existing test coverage to preserve | Forces tests-first per phase so current behavior is locked in before changes |
+   | `plan` (default) | Standard new feature or moderate change | Produces the standard phase-by-phase implementation plan |
+   | End session | User wants to plan later or hand off elsewhere | Skip planning step |
+
+   Format: use `AskUserQuestion` with the recommended option listed FIRST and labelled "(Recommended)". Tailor the recommendation to the agreed solution.
+
+   **Note:** `plan validate` and `plan red-team` are post-plan gates — do NOT offer them here. They are surfaced by `plan` itself after the plan is produced.
+
+   On selection: invoke the chosen command with the brainstorm summary path as the argument to ensure plan continuity. **CRITICAL:** The invoked plan command will create `plan.md` with YAML frontmatter including `status: pending`.
+10. **Journal Phase**: Run `journal` to write a concise technical journal entry upon completion.
 
 ## Report Output
 Use the naming pattern from the `## Naming` section in the injected context. The pattern includes the full path and computed date.
 
 ## Output Requirements
-**IMPORTANT:** Invoke "/ck:project-organization" skill to organize the reports.
+**IMPORTANT:** Invoke "project-organization" skill to organize the reports.
 
 When brainstorming concludes with agreement, create a detailed markdown summary report including:
 - Problem statement and requirements
@@ -130,6 +181,6 @@ When brainstorming concludes with agreement, create a detailed markdown summary 
 
 ## Workflow Position
 
-**Typically follows:** `/ck:debug` (brainstorm solutions for diagnosed issues), `/ck:scout` (brainstorm after discovery)
-**Typically precedes:** `/ck:plan` (plan the agreed solution)
-**Related:** `/ck:plan` (plan after brainstorming), `/ck:debug` (debug before brainstorming)
+**Typically follows:** `debug` (brainstorm solutions for diagnosed issues), `scout` (brainstorm after discovery)
+**Typically precedes:** `plan` (plan the agreed solution)
+**Related:** `plan` (plan after brainstorming), `debug` (debug before brainstorming)

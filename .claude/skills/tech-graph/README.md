@@ -516,7 +516,7 @@ fireworks-tech-graph/
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | PNG is blank or all-black | `@import url()` in SVG — rsvg-convert can't fetch fonts | Remove `@import`, use system font stack |
-| PNG not generated | `rsvg-convert` not installed | `brew install librsvg` (macOS) or `apt install librsvg2-bin` |
+| PNG not generated | `rsvg-convert` not installed | macOS: `brew install librsvg`; Linux: `apt install librsvg2-bin`; Windows: `choco install rsvg-convert -y` or `pacman -S mingw-w64-x86_64-librsvg` |
 | Diagram cut off at bottom | ViewBox height too short | Increase `height` in `viewBox="0 0 960 <height>"` |
 | Text overflowing boxes | Labels too long | Add `text-anchor="middle"` + `<clipPath>` or shorten label |
 | Icons not rendering | External CDN URL in rsvg-convert context | Use inline SVG paths from `references/icons.md` |

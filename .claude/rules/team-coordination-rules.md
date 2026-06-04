@@ -29,10 +29,10 @@ Rules for agents operating as teammates within an Agent Team.
 - Include actionable findings in messages, not just "I'm done"
 - Never send structured JSON status messages — use plain text
 
-## CK Stack Conventions
+## Runtime Conventions
 
 ### Report Output
-- Save reports to `{CK_REPORTS_PATH}` (injected via hook, fallback: `plans/reports/`)
+- Save reports to the runtime-provided reports path (fallback: `plans/reports/`)
 - Naming: `{type}-{date}-{slug}.md` where type = your role (researcher, reviewer, debugger)
 - Sacrifice grammar for concision. List unresolved questions at end.
 

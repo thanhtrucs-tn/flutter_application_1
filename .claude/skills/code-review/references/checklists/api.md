@@ -24,7 +24,7 @@ Apply this overlay when any of these are true:
 - Request body accepted without schema validation (missing Zod, Joi, Pydantic, etc.)
 - Mass assignment: entire request body spread into database model
 - File upload without size/type restrictions
-- Array inputs without length limits (DoS via large payloads)
+- Array inputs without length limits (resource exhaustion via oversized requests)
 
 ### Data Exposure
 - Sensitive fields in API responses (password hashes, internal IDs, tokens)

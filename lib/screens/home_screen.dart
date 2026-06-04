@@ -35,6 +35,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Thêm người thân mới
+  void _addRelativePressed() {
+    // Show a snackbar for now - in a real app this would navigate to add relative screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Tính năng thêm người thân đang được phát triển'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = AppState();
@@ -97,17 +108,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.health_and_safety, color: Colors.teal),
-                const SizedBox(width: 8),
-                Text(
-                  Localization.translate('appName'),
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-              ],
+            leading: const Icon(Icons.health_and_safety, color: Colors.teal),
+            title: Text(
+              Localization.translate('appName'),
+              style: const TextStyle(fontWeight: FontWeight.w900),
             ),
+            centerTitle: false, // Android-style left-aligned title
             actions: [
               // Nút Cài đặt
               IconButton(
@@ -127,6 +133,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () => _logout(context),
               ),
             ],
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: _addRelativePressed,
+            backgroundColor: Colors.teal,
+            child: const Icon(Icons.person_add),
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
@@ -194,9 +205,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: bannerColor.withOpacity(0.35),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                        color: bannerColor.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
@@ -240,11 +251,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       const Text(
                         '🗺️ BẢN ĐỒ ĐỊNH VỊ NHANH',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                       Text(
                         'Đang theo dõi: ${selectedElderly.name}',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.teal),
                       ),
                     ],
                   ),
@@ -256,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     safeZoneLng: selectedElderly.safeZoneLng,
                     safeZoneRadius: selectedElderly.safeZoneRadius,
                     safetyStatus: selectedElderly.status,
-                    height: 180,
+                    height: 280,
                     relativeName: selectedElderly.name,
                   ),
                   const SizedBox(height: 20),
@@ -292,6 +303,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
+                      elevation: 2,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                         side: BorderSide(color: cardBorderColor, width: _selectedElderlyId == r.id ? 2.5 : 1.0),
@@ -308,7 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                         child: Padding(
-                          padding: const EdgeInsets.all(16.0),
+                          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
@@ -425,6 +437,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // 5. Lịch sử sự cố SOS
                 _buildSectionHeader('📜 ' + Localization.translate('warningHistory').toUpperCase()),
                 Card(
+                  elevation: 2,
                   child: alerts.isEmpty
                       ? const Padding(
                           padding: EdgeInsets.all(16.0),
@@ -509,12 +522,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4.0, bottom: 10.0),
+      padding: const EdgeInsets.only(left: 16.0, top: 24.0, bottom: 12.0),
       child: Text(
         title,
         style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
           color: Colors.teal,
           letterSpacing: 0.5,
         ),

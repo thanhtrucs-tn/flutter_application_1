@@ -17,7 +17,7 @@ All modes share core steps with mode-specific variations.
 
 **Interactive/Auto:**
 - Spawn multiple `researcher` agents in parallel
-- Use `/ck:scout ext` or `scout` agent for codebase search
+- Use `scout ext` or `scout` agent for codebase search
 - Keep reports ≤150 lines
 
 **Parallel:**
@@ -37,11 +37,11 @@ All modes share core steps with mode-specific variations.
 - Create `plan.md` + `phase-XX-*.md` files
 
 **Fast:**
-- Use `/ck:plan --fast` with scout results only
+- Use `plan --fast` with scout results only
 - Minimal planning, focus on action
 
 **Parallel:**
-- Use `/ck:plan --parallel` for dependency graph + file ownership matrix
+- Use `plan --parallel` for dependency graph + file ownership matrix
 
 **Code:**
 - Skip - plan already exists
@@ -52,7 +52,7 @@ All modes share core steps with mode-specific variations.
 ### [Review Gate 2] Post-Plan (skip if auto mode)
 - Present plan overview with phases
 - Use `AskUserQuestion` to ask: "Validate the plan or approve plan to start implementation?" - "Validate" / "Approve" / "Abort" / "Other" ("Request revisions")
-  - "Validate": run `/ck:plan validate` skill invocation
+  - "Validate": run `plan validate` skill invocation
   - "Approve": continue to implementation
   - "Abort": stop the workflow
   - "Other": revise the plan based on user's feedback
@@ -103,7 +103,7 @@ the refactor broke something and must be fixed before the workflow proceeds.
 - Use `TaskUpdate` to mark tasks as `in_progress` immediately.
 - Execute phase tasks sequentially (Step 3.1, 3.2, etc.)
 - Use `ui-ux-designer` for frontend
-- Use `ck:ai-multimodal` for image assets
+- Use `ai-multimodal` for image assets
 - Run type checking after each file
 
 **Parallel mode:**
@@ -167,7 +167,12 @@ Skip the step entirely when `CK_SIMPLIFY_DISABLED=1` or
 ## Step 5: Code Review
 
 **All modes - MANDATORY subagent:**
-- **MUST** spawn `code-reviewer` subagent: `Task(subagent_type="code-reviewer", prompt="Review changes. Return score, critical issues, warnings.", description="Code review")`
+- **MUST** spawn `code-reviewer` subagent with explicit (a-e) checks and scout/acceptance context:
+  ```
+  Task(subagent_type="code-reviewer",
+       prompt="Review changes against these MANDATORY checks: (a) every acceptance criterion met; (b) no regression to business logic in touchpoints/blast-radius from scout; (c) no breaking changes to public contracts (signatures, schemas, APIs, env vars) unless explicitly called out; (d) follows existing patterns from scout; (e) no new lint/type/build errors anywhere. CONTEXT — scout summary: <scout-summary>; acceptance criteria: <acceptance-criteria>. Return score (X/10), critical, warnings, suggestions, and explicitly flag any side effects to trigger HARD-GATE-NO-SIDE-EFFECTS.",
+       description="Code review")
+  ```
 - **DO NOT** review code yourself - delegate to subagent
 
 **Interactive/Parallel/Code/No-test:**
@@ -175,7 +180,7 @@ Skip the step entirely when `CK_SIMPLIFY_DISABLED=1` or
 - Requires user approval
 
 **Auto:**
-- Auto-approve if score≥9.5 AND 0 critical
+- Auto-approve only if `review-decision.json` is `PASS`, artifact validator passes, and `risk-gate.autoStopRequired` is false
 - Auto-fix critical (max 3 cycles)
 - Escalate to user after 3 failed cycles
 
@@ -185,40 +190,49 @@ Skip the step entirely when `CK_SIMPLIFY_DISABLED=1` or
 
 **Output:** `✓ Step 5: Review [score]/10 - [Approved|Auto-approved] - code-reviewer subagent invoked`
 
+**Artifact gate:** Step 5 must write review artifacts from
+`.claude/skills/_shared/references/workflow-artifacts.md` and run:
+
+```bash
+node .claude/hooks/workflow-artifact-gate.cjs --stage finalize --artifact-dir <artifact-dir>
+```
+
+For high-risk `--auto`, stop with AskUserQuestion before finalize/commit/ship unless `risk-gate.json` has `humanApproved: true`.
+
 ## Step 6: Finalize
 
 **All modes - MANDATORY subagents (NON-NEGOTIABLE):**
-1. **MUST** spawn these subagents in parallel:
-   - `Task(subagent_type="project-manager", prompt="Run full sync-back for [plan-path]: reconcile all completed Claude Tasks with all phase files, backfill stale completed checkboxes across every phase, then update plan.md frontmatter/table progress. Do NOT only mark current phase.", description="Update plan")`
+1. **MUST** activate `project-management` skill (MANDATORY) — run full sync-back for [plan-path]: reconcile all completed Claude Tasks with all phase files, backfill stale completed checkboxes across every phase, then update plan.md frontmatter/table progress. Do NOT only mark current phase.
+2. **MUST** spawn in parallel:
    - `Task(subagent_type="docs-manager", prompt="Update docs for changes.", description="Update docs")`
-2. Project-manager sync-back MUST include:
+3. Project-management sync-back MUST include:
 
 ### Status Sync (Finalize)
 
-Use CLI commands for deterministic status updates:
+Use plan commands for deterministic status updates when available:
 
 ```bash
 # Mark completed phases
-ck plan check <phase-id>
+plan check <phase-id>
 
 # Mark in-progress phases
-ck plan check <phase-id> --start
+plan check <phase-id> --start
 
 # Revert if needed
-ck plan uncheck <phase-id>
+plan uncheck <phase-id>
 ```
 
-**Fallback:** If `ck` is not available, edit plan.md directly —
+**Fallback:** If no compatible plan command is available, edit plan.md directly —
 only change the Status column cell, preserve table structure.
    - Sweep all `phase-XX-*.md` files in the plan directory.
    - Mark every completed item `[ ] → [x]` based on completed tasks (including earlier phases finished before current phase).
    - Update `plan.md` status/progress (`pending`/`in-progress`/`completed`) from actual checkbox state.
    - Return unresolved mappings if any completed task cannot be matched to a phase file.
-3. Use `TaskUpdate` to mark Claude Tasks complete after sync-back confirmation.
-4. Onboarding check (API keys, env vars)
-5. **MUST** spawn git subagent: `Task(subagent_type="git-manager", prompt="Stage and commit changes", description="Commit")`
+4. Use `TaskUpdate` to mark Claude Tasks complete after sync-back confirmation.
+5. Onboarding check (API keys, env vars)
+6. **MUST** spawn git subagent: `Task(subagent_type="git-manager", prompt="Stage and commit changes", description="Commit")`
 
-**CRITICAL:** Step 6 is INCOMPLETE without spawning all 3 subagents. DO NOT skip subagent delegation.
+**CRITICAL:** Step 6 is INCOMPLETE without activating `project-management` skill AND spawning `docs-manager` + `git-manager` subagents. DO NOT skip.
 
 **Auto mode:** Continue to next phase automatically, start from **Step 3**.
 **Others:** Ask user before next phase
@@ -231,22 +245,22 @@ Legend: `[R]` = Review Gate (human approval required)
 
 ```
 interactive: 0 → 1 → [R] → 2 → [R] → 3 → [R] → 4 → [R] → 5(user) → 6
-auto:        0 → 1 → 2 → 3 → 4 → 5(auto) → 6 → next phase (NO stops)
+auto:        0 → 1 → 2 → 3 → 4 → 5(artifact-gated auto) → 6 → next phase (stops on high risk)
 fast:        0 → skip → 2(fast) → [R] → 3 → [R] → 4 → [R] → 5(simple) → 6
 parallel:    0 → 1? → [R] → 2(parallel) → [R] → 3(multi-agent) → [R] → 4 → [R] → 5(user) → 6
 no-test:     0 → 1 → [R] → 2 → [R] → 3 → [R] → skip → 5(user) → 6
 code:        0 → skip → skip → 3 → [R] → 4 → [R] → 5(user) → 6
 ```
 
-**Key difference:** `auto` mode is the ONLY mode that skips all review gates.
+**Key difference:** `auto` mode skips human review gates only for low-risk, artifact-validated work.
 
 ## Critical Rules
 
 - Never skip steps without mode justification
-- **MANDATORY SUBAGENT DELEGATION:** Steps 4, 5, 6 MUST spawn subagents via Task tool. DO NOT implement directly.
+- **MANDATORY DELEGATION:** Steps 4, 5, 6 MUST delegate via Task tool / skill activation. DO NOT implement directly.
   - Step 4: `tester` (and `debugger` if failures)
   - Step 5: `code-reviewer`
-  - Step 6: `project-manager`, `docs-manager`, `git-manager`
+  - Step 6: `project-management` skill, `docs-manager`, `git-manager`
 - Use `TaskCreate` to create Claude Tasks for each unchecked item with priority order and dependencies (or `TodoWrite` if Task tools unavailable).
 - Use `TaskUpdate` to mark Claude Tasks `in_progress` when picking up a task (skip if Task tools unavailable).
 - Use `TaskUpdate` to mark Claude Tasks `complete` immediately after finalizing the task (skip if Task tools unavailable).
