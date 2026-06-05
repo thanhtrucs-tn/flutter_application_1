@@ -28,6 +28,7 @@ class AppState extends ChangeNotifier {
   AlertModel? _activeAlert; // Cảnh báo nguy cấp đang diễn ra
   bool _isWebSocketConnected = true; // Trạng thái kết nối realtime với ESP32/Backend
   Timer? _simulationTimer;
+  int _currentNavIndex = 0; // Chỉ số tab bottom navigation hiện tại
 
   // Getters
   List<ElderlyModel> get relatives => _relatives;
@@ -35,6 +36,13 @@ class AppState extends ChangeNotifier {
   AppSettings get settings => _settings;
   AlertModel? get activeAlert => _activeAlert;
   bool get isWebSocketConnected => _isWebSocketConnected;
+  int get currentNavIndex => _currentNavIndex;
+
+  /// Đổi tab bottom navigation
+  void setNavIndex(int index) {
+    _currentNavIndex = index;
+    notifyListeners();
+  }
 
   // --- CẤU HÌNH & THIẾT LẬP ---
 
@@ -77,10 +85,13 @@ class AppState extends ChangeNotifier {
   // --- QUẢN LÝ DỮ LIỆU NGƯỜI THÂN ---
 
   /// Khóa lưu trữ danh sách người thân offline
-  static const String _offlineElderlyKey = 'offline_elderly_v1';
+  /// v2: thêm trường address (địa chỉ chữ)
+  static const String _offlineElderlyKey = 'offline_elderly_v2';
 
   Future<void> _loadElderlyData() async {
     final prefs = await SharedPreferences.getInstance();
+    // Xóa cache cũ (v1) để buộc load lại từ MockData mới có address
+    await prefs.remove('offline_elderly_v1');
     final jsonStr = prefs.getString(_offlineElderlyKey);
     if (jsonStr != null && jsonStr.isNotEmpty) {
       try {
@@ -94,6 +105,24 @@ class AppState extends ChangeNotifier {
       }
     } else {
       _relatives = List.from(MockData.initialElderly);
+    }
+    // Tự động fill địa chỉ nếu elderly chưa có (migrate từ phiên bản cũ)
+    bool hasMigration = false;
+    _relatives = _relatives.map((e) {
+      if (e.address.isEmpty) {
+        final mockMatch = MockData.initialElderly.firstWhere(
+          (m) => m.id == e.id,
+          orElse: () => e,
+        );
+        if (mockMatch.address.isNotEmpty) {
+          hasMigration = true;
+          return e.copyWith(address: mockMatch.address);
+        }
+      }
+      return e;
+    }).toList();
+    if (hasMigration) {
+      await _saveElderlyData();
     }
     notifyListeners();
   }
@@ -200,6 +229,12 @@ class AppState extends ChangeNotifier {
   /// Xóa toàn bộ lịch sử cảnh báo
   void clearAlertHistory() {
     _alerts.clear();
+    notifyListeners();
+  }
+
+  /// Thêm cảnh báo thủ công từ form
+  void addAlert(AlertModel alert) {
+    _alerts.insert(0, alert);
     notifyListeners();
   }
 

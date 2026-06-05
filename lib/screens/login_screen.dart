@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../database/db_helper.dart';
 import '../services/auth_api_service.dart';
 import '../utils/localization.dart';
-import 'home_screen.dart';
+import 'main_shell.dart';
 import 'register_screen.dart';
 
 /// Trang đăng nhập cho ứng dụng SOS Care
@@ -139,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => const MainShell()),
       );
 
       // Hiển thị snackbar trên messenger đã capture (an toàn sau navigate)

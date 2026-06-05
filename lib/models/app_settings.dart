@@ -4,7 +4,11 @@ class AppSettings {
   final String languageCode; // 'vi' hoặc 'en'
   final bool isSoundAlertEnabled;
   final bool isAutoCallEnabled;
-  final int autoCallTimeoutSeconds; // Số giây chờ phản hồi trước khi tự gọi
+  final int autoCallTimeoutSeconds;
+  final bool notifySos;
+  final bool notifySafeZone;
+  final bool notifyHealth;
+  final bool notifyFirmware;
 
   AppSettings({
     required this.isDarkMode,
@@ -12,6 +16,10 @@ class AppSettings {
     required this.isSoundAlertEnabled,
     required this.isAutoCallEnabled,
     required this.autoCallTimeoutSeconds,
+    required this.notifySos,
+    required this.notifySafeZone,
+    required this.notifyHealth,
+    required this.notifyFirmware,
   });
 
   /// Tạo bản sao
@@ -21,6 +29,10 @@ class AppSettings {
     bool? isSoundAlertEnabled,
     bool? isAutoCallEnabled,
     int? autoCallTimeoutSeconds,
+    bool? notifySos,
+    bool? notifySafeZone,
+    bool? notifyHealth,
+    bool? notifyFirmware,
   }) {
     return AppSettings(
       isDarkMode: isDarkMode ?? this.isDarkMode,
@@ -28,6 +40,10 @@ class AppSettings {
       isSoundAlertEnabled: isSoundAlertEnabled ?? this.isSoundAlertEnabled,
       isAutoCallEnabled: isAutoCallEnabled ?? this.isAutoCallEnabled,
       autoCallTimeoutSeconds: autoCallTimeoutSeconds ?? this.autoCallTimeoutSeconds,
+      notifySos: notifySos ?? this.notifySos,
+      notifySafeZone: notifySafeZone ?? this.notifySafeZone,
+      notifyHealth: notifyHealth ?? this.notifyHealth,
+      notifyFirmware: notifyFirmware ?? this.notifyFirmware,
     );
   }
 
@@ -39,6 +55,10 @@ class AppSettings {
       isSoundAlertEnabled: true,
       isAutoCallEnabled: true,
       autoCallTimeoutSeconds: 30,
+      notifySos: true,
+      notifySafeZone: true,
+      notifyHealth: true,
+      notifyFirmware: true,
     );
   }
 
@@ -50,6 +70,10 @@ class AppSettings {
       isSoundAlertEnabled: map['isSoundAlertEnabled'] as bool? ?? true,
       isAutoCallEnabled: map['isAutoCallEnabled'] as bool? ?? true,
       autoCallTimeoutSeconds: map['autoCallTimeoutSeconds'] as int? ?? 30,
+      notifySos: map['notifySos'] as bool? ?? true,
+      notifySafeZone: map['notifySafeZone'] as bool? ?? true,
+      notifyHealth: map['notifyHealth'] as bool? ?? true,
+      notifyFirmware: map['notifyFirmware'] as bool? ?? true,
     );
   }
 
@@ -61,6 +85,10 @@ class AppSettings {
       'isSoundAlertEnabled': isSoundAlertEnabled,
       'isAutoCallEnabled': isAutoCallEnabled,
       'autoCallTimeoutSeconds': autoCallTimeoutSeconds,
+      'notifySos': notifySos,
+      'notifySafeZone': notifySafeZone,
+      'notifyHealth': notifyHealth,
+      'notifyFirmware': notifyFirmware,
     };
   }
 }

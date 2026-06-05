@@ -15,6 +15,7 @@ class CustomMap extends StatefulWidget {
   final bool isSOSMode; // Chế độ dẫn đường cứu hộ khẩn cấp
   final double height;
   final String relativeName;
+  final String address; // Địa chỉ chữ hiển thị trên bản đồ
   final VoidCallback? onZoneTap; // Callback khi người dùng tap vào zone map (không phải marker)
 
   const CustomMap({
@@ -28,6 +29,7 @@ class CustomMap extends StatefulWidget {
     this.isSOSMode = false,
     this.height = 250.0,
     required this.relativeName,
+    this.address = '',
     this.onZoneTap,
   });
 
@@ -80,6 +82,13 @@ class _CustomMapState extends State<CustomMap> {
 
   void _updateCameraPosition() {
     _mapController.move(LatLng(widget.lat, widget.lng), _zoom);
+  }
+
+  void _onZoomSliderChanged(double newZoom) {
+    setState(() {
+      _zoom = newZoom.clamp(1, 19);
+    });
+    _updateCameraPosition();
   }
 
   @override
@@ -185,44 +194,36 @@ class _CustomMapState extends State<CustomMap> {
               ],
             ),
 
-            // Các nút điều khiển bản đồ ở góc phải
+            // Thanh trượt zoom đặt phía trên cùng của bản đồ (overlay)
+            Positioned(
+              left: 12,
+              right: 12,
+              top: 12,
+              child: _buildZoomSlider(),
+            ),
+
+            // Nút gọi lại gần vị trí người cao tuổi (đặt dưới thanh trượt)
             Positioned(
               right: 12,
-              bottom: 12,
-              child: Column(
-                children: [
-                  _buildMapControl(
-                    icon: Icons.my_location,
-                    onPressed: _recenterMap,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildMapControl(
-                    icon: Icons.add,
-                    onPressed: () {
-                      setState(() {
-                        _zoom = (_zoom + 2).clamp(1, 19);
-                      });
-                      _updateCameraPosition();
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  _buildMapControl(
-                    icon: Icons.remove,
-                    onPressed: () {
-                      setState(() {
-                        _zoom = (_zoom - 2).clamp(1, 19);
-                      });
-                      _updateCameraPosition();
-                    },
-                  ),
-                ],
+              top: 64,
+              child: _buildMapControl(
+                icon: Icons.my_location,
+                onPressed: _recenterMap,
               ),
             ),
+
+            // Địa chỉ chữ của người cao tuổi (overlay góc dưới trái, trên nhãn chế độ bản đồ)
+            if (widget.address.isNotEmpty)
+              Positioned(
+                left: 12,
+                bottom: 40,
+                child: _buildAddressBadge(),
+              ),
 
             // Nhãn hiển thị chế độ bản đồ
             Positioned(
               left: 12,
-              top: 12,
+              bottom: 12,
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -245,7 +246,7 @@ class _CustomMapState extends State<CustomMap> {
             // Hint: Tap vào map để mở rộng
             if (widget.onZoneTap != null)
               Positioned(
-                left: 12,
+                right: 12,
                 bottom: 12,
                 child: Container(
                   padding:
@@ -273,6 +274,104 @@ class _CustomMapState extends State<CustomMap> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Thanh trượt zoom đặt overlay trên cùng của bản đồ
+  Widget _buildZoomSlider() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.zoom_out_map, size: 16, color: Colors.black87),
+          Expanded(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 3,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+              ),
+              child: Slider(
+                value: _zoom,
+                min: 1,
+                max: 19,
+                divisions: 18,
+                activeColor: Colors.teal.shade700,
+                inactiveColor: Colors.grey.shade400,
+                onChanged: _onZoomSliderChanged,
+              ),
+            ),
+          ),
+          const Icon(Icons.add, size: 16, color: Colors.black87),
+          const SizedBox(width: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.teal.shade700,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'x${_zoom.toStringAsFixed(0)}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Badge hiển thị địa chỉ chữ overlay góc dưới trái bản đồ
+  Widget _buildAddressBadge() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 260),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4), width: 1),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.location_on, size: 18, color: Colors.redAccent),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              widget.address,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                height: 1.3,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

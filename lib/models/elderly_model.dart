@@ -19,6 +19,7 @@ class ElderlyModel {
   final double safeZoneLat; // Vĩ độ tâm vùng an toàn
   final double safeZoneLng; // Kinh độ tâm vùng an toàn
   final List<String> emergencyContacts;
+  final String address; // Địa chỉ chữ (ví dụ: "268 Lý Thường Kiệt, Q.10, TP.HCM")
 
   ElderlyModel({
     required this.id,
@@ -38,6 +39,7 @@ class ElderlyModel {
     required this.safeZoneLat,
     required this.safeZoneLng,
     required this.emergencyContacts,
+    this.address = '',
   });
 
   /// Tạo một bản sao mới với các trường thay đổi
@@ -59,6 +61,7 @@ class ElderlyModel {
     double? safeZoneLat,
     double? safeZoneLng,
     List<String>? emergencyContacts,
+    String? address,
   }) {
     return ElderlyModel(
       id: id ?? this.id,
@@ -78,6 +81,7 @@ class ElderlyModel {
       safeZoneLat: safeZoneLat ?? this.safeZoneLat,
       safeZoneLng: safeZoneLng ?? this.safeZoneLng,
       emergencyContacts: emergencyContacts ?? this.emergencyContacts,
+      address: address ?? this.address,
     );
   }
 
@@ -100,9 +104,10 @@ class ElderlyModel {
       safeZoneRadius: (map['safeZoneRadius'] as num? ?? 500.0).toDouble(),
       safeZoneLat: (map['safeZoneLat'] as num? ?? map['latitude'] ?? 10.762622).toDouble(),
       safeZoneLng: (map['safeZoneLng'] as num? ?? map['longitude'] ?? 106.660172).toDouble(),
-      emergencyContacts: map['emergencyContacts'] is String 
+      emergencyContacts: map['emergencyContacts'] is String
           ? List<String>.from(json.decode(map['emergencyContacts'] as String) as List)
           : List<String>.from(map['emergencyContacts'] as List? ?? []),
+      address: map['address'] as String? ?? '',
     );
   }
 
@@ -126,6 +131,7 @@ class ElderlyModel {
       'safeZoneLat': safeZoneLat,
       'safeZoneLng': safeZoneLng,
       'emergencyContacts': json.encode(emergencyContacts),
+      'address': address,
     };
   }
 }

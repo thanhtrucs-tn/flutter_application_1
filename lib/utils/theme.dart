@@ -38,15 +38,16 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: bgLight,
       appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
-        foregroundColor: textDark,
+        backgroundColor: statusCritical,
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: TextStyle(
-          fontSize: 22,
+          fontSize: 20,
           fontWeight: FontWeight.bold,
-          color: textDark,
+          color: Colors.white,
         ),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -106,15 +107,16 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: bgDark,
       appBarTheme: const AppBarTheme(
-        backgroundColor: cardDark,
-        foregroundColor: textLight,
+        backgroundColor: Color(0xFFB71C1C),
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: TextStyle(
-          fontSize: 22,
+          fontSize: 20,
           fontWeight: FontWeight.bold,
-          color: textLight,
+          color: Colors.white,
         ),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(

@@ -23,6 +23,7 @@ class MockData {
       safeZoneLat: 10.762622,
       safeZoneLng: 106.660172,
       emergencyContacts: ['0901234567', '0912345678'],
+      address: '268 Lý Thường Kiệt, Phường 14, Quận 10, TP. Hồ Chí Minh',
     ),
     ElderlyModel(
       id: 2,
@@ -42,6 +43,7 @@ class MockData {
       safeZoneLat: 10.764000,
       safeZoneLng: 106.661000,
       emergencyContacts: ['0987654321'],
+      address: 'Công viên Lê Thị Riêng, Quận 10, TP. Hồ Chí Minh',
     ),
     ElderlyModel(
       id: 3,
@@ -61,6 +63,7 @@ class MockData {
       safeZoneLat: 10.760000,
       safeZoneLng: 106.658000,
       emergencyContacts: ['0933445566', '0944556677'],
+      address: '175 Hai Bà Trưng, Phường 6, Quận 3, TP. Hồ Chí Minh',
     ),
   ];
 
