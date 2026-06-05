@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
 import '../models/elderly_model.dart';
-import '../models/alert_model.dart';
 import '../models/address_model.dart';
 import '../services/address_service.dart';
 import '../widgets/custom_map.dart';
@@ -33,6 +32,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Address? _currentAddress;
   bool _isLoadingAddress = false;
   int? _lastFetchedElderlyId;
+
+  // Đã push AlertDetail cho alert này rồi, tránh push đè nhiều lần
+  String? _pushedAlertId;
 
   @override
   void initState() {
@@ -114,15 +116,33 @@ class _HomeScreenState extends State<HomeScreen> {
         final activeAlert = state.activeAlert;
 
         // TỰ ĐỘNG BẬT MÀN HÌNH BÁO ĐỘNG SOS NẾU CÓ ACTIVE ALERT
-        if (activeAlert != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            // Kiểm tra tránh push đè nhiều lần cùng 1 alert
-            Navigator.push(
+        // Chỉ push khi:
+        //  1) alert này chưa được push
+        //  2) route hiện tại trên cùng là HomeScreen (user không ở màn hình khác)
+        if (activeAlert != null && _pushedAlertId != activeAlert.id) {
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            if (!mounted) return;
+            // Nếu user đã chuyển sang màn hình khác, không push
+            final modalRoute = ModalRoute.of(context);
+            final isCurrentHome = modalRoute is PageRoute &&
+                modalRoute.settings.name != null &&
+                (modalRoute.settings.name == '/' || modalRoute.settings.name == '/home');
+            if (!isCurrentHome) {
+              // Đánh dấu đã xử lý để không push đè; reset khi user quay lại home
+              _pushedAlertId = activeAlert.id;
+              state.acknowledgeAlert(activeAlert.id);
+              return;
+            }
+            _pushedAlertId = activeAlert.id;
+            await Navigator.push(
               context,
               MaterialPageRoute(
+                settings: const RouteSettings(name: '/alert-detail'),
                 builder: (context) => AlertDetailScreen(alert: activeAlert),
               ),
             );
+            // Khi user back về home, reset để alert mới (nếu có) vẫn được push
+            _pushedAlertId = null;
             // Xóa tạm thời để tránh lặp vô hạn
             state.acknowledgeAlert(activeAlert.id);
           });

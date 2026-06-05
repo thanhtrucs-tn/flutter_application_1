@@ -155,8 +155,8 @@ class _CustomMapState extends State<CustomMap> {
                   markers: [
                     Marker(
                       point: targetPos,
-                      width: 50,
-                      height: 50,
+                      width: 140,
+                      height: 80,
                       child: _buildPinMarker(
                         color: statusColor,
                         label: widget.relativeName,
@@ -165,8 +165,8 @@ class _CustomMapState extends State<CustomMap> {
                     ),
                     Marker(
                       point: homePos,
-                      width: 50,
-                      height: 50,
+                      width: 140,
+                      height: 80,
                       child: _buildPinMarker(
                         color: Colors.blue,
                         label: 'Nhà',
@@ -285,36 +285,76 @@ class _CustomMapState extends State<CustomMap> {
   }) {
     return Tooltip(
       message: '$label — $snippet',
-      child: Stack(
-        alignment: Alignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Vòng tròn pulse cho vị trí người cao tuổi
-          if (showPulse)
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.25),
-                shape: BoxShape.circle,
-              ),
-            ),
-          // Pin chính
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
+          // Vùng chứa pin (đặt phía trên nhãn tên, neo giữa theo chiều ngang)
+          SizedBox(
+            width: 50,
+            height: 50,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Vòng tròn pulse cho vị trí người cao tuổi
+                if (showPulse)
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.25),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                // Pin chính
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.person, color: Colors.white, size: 16),
                 ),
               ],
             ),
-            child: const Icon(Icons.person, color: Colors.white, size: 16),
+          ),
+          // Nhãn tên hiển thị bên dưới pin (giống Google Maps)
+          const SizedBox(height: 2),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            constraints: const BoxConstraints(maxWidth: 130),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 3,
+                  offset: Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.2,
+              ),
+            ),
           ),
         ],
       ),

@@ -5,6 +5,11 @@ import '../utils/localization.dart';
 import '../widgets/custom_map.dart';
 import '../widgets/health_chart.dart';
 import '../widgets/big_button.dart';
+import 'ringing_device_screen.dart';
+import 'ambient_listen_screen.dart';
+import 'send_sms_screen.dart';
+import 'remote_sos_screen.dart';
+import 'test_scenario_screen.dart';
 
 /// Màn hình chi tiết sức khỏe và thiết bị đeo của người cao tuổi
 class DetailScreen extends StatefulWidget {
@@ -20,10 +25,50 @@ class DetailScreen extends StatefulWidget {
 }
 
 class _DetailScreenState extends State<DetailScreen> {
-  // Trạng thái cục bộ khi đang thao tác giả lập thiết bị
-  bool _isRingingDevice = false;
-  bool _isListeningAmbient = false;
-  bool _isSendingSMS = false;
+  /// Mở màn hình rung chuông thiết bị đeo
+  void _openRingingDevice(ElderlyModel elderly) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RingingDeviceScreen(elderly: elderly),
+      ),
+    );
+  }
+
+  /// Mở màn hình nghe âm thanh xung quanh
+  void _openAmbientListen(ElderlyModel elderly) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AmbientListenScreen(elderly: elderly),
+      ),
+    );
+  }
+
+  /// Mở màn hình gửi SMS khẩn cấp
+  void _openSendSms(ElderlyModel elderly) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SendSmsScreen(elderly: elderly),
+      ),
+    );
+  }
+
+  /// Mở màn hình báo động từ xa
+  void _openRemoteSos(ElderlyModel elderly) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RemoteSosScreen(elderly: elderly),
+      ),
+    );
+  }
+
+  /// Mở màn hình chọn kịch bản kiểm thử
+  void _openTestScenarios(ElderlyModel elderly) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TestScenarioScreen(elderly: elderly),
+      ),
+    );
+  }
 
   /// Gọi điện thoại khẩn cấp (Mô phỏng gọi thoại trên desktop/simulators)
   void _makeCall(String phoneNumber) {
@@ -37,7 +82,8 @@ class _DetailScreenState extends State<DetailScreen> {
             const Text('Cuộc gọi SOS Care'),
           ],
         ),
-        content: Text('Hệ thống đang kết nối cuộc gọi thoại khẩn cấp tới số:\n$phoneNumber'),
+        content: Text(
+            'Hệ thống đang kết nối cuộc gọi thoại khẩn cấp tới số:\n$phoneNumber'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -46,83 +92,6 @@ class _DetailScreenState extends State<DetailScreen> {
         ],
       ),
     );
-  }
-
-  /// Giả lập rung thiết bị đeo
-  void _ringDevice(ElderlyModel elderly) {
-    setState(() {
-      _isRingingDevice = true;
-    });
-    
-    // Đóng giả lập sau 2.5s
-    Future.delayed(const Duration(seconds: 2500 ~/ 1000), () {
-      if (mounted) {
-        setState(() {
-          _isRingingDevice = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đã kích hoạt còi báo động 90dB trên thiết bị ${elderly.wearableDevice}!'),
-            backgroundColor: Colors.teal,
-          ),
-        );
-      }
-    });
-  }
-
-  /// Giả lập nghe âm thanh xung quanh thiết bị
-  void _listenAmbient(ElderlyModel elderly) {
-    setState(() {
-      _isListeningAmbient = true;
-    });
-    
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() {
-          _isListeningAmbient = false;
-        });
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Row(
-              children: [
-                const Icon(Icons.mic, color: Colors.teal),
-                const SizedBox(width: 8),
-                const Text('Nghe xung quanh'),
-              ],
-            ),
-            content: Text('Kết nối thành công! Đang phát âm thanh môi trường xung quanh thiết bị đeo của ${elderly.name}.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Tắt kết nối'),
-              ),
-            ],
-          ),
-        );
-      }
-    });
-  }
-
-  /// Giả lập nhắn tin SMS khẩn cấp
-  void _sendEmergencySMS(ElderlyModel elderly) {
-    setState(() {
-      _isSendingSMS = true;
-    });
-    
-    Future.delayed(const Duration(seconds: 1500 ~/ 1000), () {
-      if (mounted) {
-        setState(() {
-          _isSendingSMS = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đã gửi tin nhắn SOS kèm vị trí định vị đến tất cả số khẩn cấp!'),
-            backgroundColor: Colors.red.shade700,
-          ),
-        );
-      }
-    });
   }
 
   @override
@@ -361,35 +330,111 @@ class _DetailScreenState extends State<DetailScreen> {
                       height: 60,
                       onPressed: () => _makeCall(elderly.emergencyContacts.first),
                     ),
-                    // Rung chuông
+                    // Rung chuông — mở màn hình riêng
                     BigButton(
-                      label: _isRingingDevice ? 'Đang rung chuông...' : Localization.translate('ringDevice'),
-                      icon: _isRingingDevice ? Icons.hourglass_empty : Icons.notification_important,
+                      label: Localization.translate('ringDevice'),
+                      icon: Icons.notification_important,
                       color: Colors.orange.shade700,
                       height: 60,
-                      onPressed: _isRingingDevice ? () {} : () => _ringDevice(elderly),
+                      onPressed: () => _openRingingDevice(elderly),
                     ),
-                    // Nghe âm thanh
+                    // Nghe âm thanh — mở màn hình riêng
                     BigButton(
-                      label: _isListeningAmbient ? 'Đang kết nối mic...' : Localization.translate('listenAmbient'),
-                      icon: _isListeningAmbient ? Icons.hearing_disabled : Icons.mic,
+                      label: Localization.translate('listenAmbient'),
+                      icon: Icons.mic,
                       color: Colors.teal,
                       height: 60,
-                      onPressed: _isListeningAmbient ? () {} : () => _listenAmbient(elderly),
+                      onPressed: () => _openAmbientListen(elderly),
                     ),
-                    // Gửi tin nhắn khẩn
+                    // Gửi tin nhắn khẩn — mở màn hình riêng
                     BigButton(
-                      label: _isSendingSMS ? 'Đang gửi SOS...' : Localization.translate('sendSOSMsg'),
+                      label: Localization.translate('sendSOSMsg'),
                       icon: Icons.sms,
                       color: Colors.red,
                       height: 60,
-                      onPressed: _isSendingSMS ? () {} : () => _sendEmergencySMS(elderly),
+                      onPressed: () => _openSendSms(elderly),
                     ),
                   ],
                 ),
-                
+
+                // 5. NÚT BÁO ĐỘNG TỪ XA (SOS lớn) — mở màn hình riêng
                 const SizedBox(height: 24),
-                // 5. Danh sách số điện thoại liên hệ khẩn cấp hiển thị bên dưới
+                BigButton(
+                  label: 'BÁO ĐỘNG TỪ XA',
+                  icon: Icons.gpp_maybe,
+                  color: Colors.red.shade700,
+                  height: 80,
+                  iconSize: 36,
+                  fontSize: 20,
+                  onPressed: () => _openRemoteSos(elderly),
+                ),
+
+                // 6. KỊCH BẢN KIỂM THỬ — mở màn hình riêng
+                const SizedBox(height: 24),
+                Material(
+                  color: isDark
+                      ? Colors.amber.withValues(alpha: 0.08)
+                      : Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    onTap: () => _openTestScenarios(elderly),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.amber.shade700,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade700,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.science,
+                                color: Colors.white, size: 24),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '🧪 KỊCH BẢN KIỂM THỬ',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: Colors.amber.shade800,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Té ngã • Ra ngoài • Nhịp tim bất thường',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : Colors.grey.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward_ios,
+                              color: Colors.amber.shade800, size: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+                // 7. Danh sách số điện thoại liên hệ khẩn cấp hiển thị bên dưới
                 const Text(
                   '📞 DANH SÁCH LIÊN HỆ KHẨN CẤP',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
@@ -420,6 +465,7 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
+  /// Cột hiển thị 1 chỉ số sức khỏe (nhịp tim, SpO2)
   Widget _buildHealthMetricCol({
     required BuildContext context,
     required IconData icon,

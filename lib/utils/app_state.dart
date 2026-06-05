@@ -76,15 +76,39 @@ class AppState extends ChangeNotifier {
 
   // --- QUẢN LÝ DỮ LIỆU NGƯỜI THÂN ---
 
+  /// Khóa lưu trữ danh sách người thân offline
+  static const String _offlineElderlyKey = 'offline_elderly_v1';
+
   Future<void> _loadElderlyData() async {
-    // Khởi tạo từ MockData
-    _relatives = List.from(MockData.initialElderly);
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString(_offlineElderlyKey);
+    if (jsonStr != null && jsonStr.isNotEmpty) {
+      try {
+        final decoded = json.decode(jsonStr) as List<dynamic>;
+        _relatives = decoded
+            .map((e) => ElderlyModel.fromMap(e as Map<String, dynamic>))
+            .toList();
+      } catch (e) {
+        print('Lỗi đọc elderly data: $e');
+        _relatives = List.from(MockData.initialElderly);
+      }
+    } else {
+      _relatives = List.from(MockData.initialElderly);
+    }
     notifyListeners();
+  }
+
+  /// Lưu danh sách người thân xuống SharedPreferences
+  Future<void> _saveElderlyData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = _relatives.map((e) => e.toMap()).toList();
+    await prefs.setString(_offlineElderlyKey, json.encode(data));
   }
 
   /// Thêm người thân mới
   void addElderly(ElderlyModel newRelative) {
     _relatives.add(newRelative);
+    _saveElderlyData();
     notifyListeners();
   }
 
@@ -93,6 +117,7 @@ class AppState extends ChangeNotifier {
     final index = _relatives.indexWhere((e) => e.id == updated.id);
     if (index != -1) {
       _relatives[index] = updated;
+      _saveElderlyData();
       notifyListeners();
     }
   }
@@ -235,7 +260,7 @@ class AppState extends ChangeNotifier {
         // 5. Kiểm tra khoảng cách tới Tâm vùng an toàn để cảnh báo Geofence
         double distance = _calculateDistance(newLat, newLng, elderly.safeZoneLat, elderly.safeZoneLng);
         bool isOutsideSafeZone = distance > elderly.safeZoneRadius;
-        
+
         String newStatus = 'safe';
         if (elderly.isFallen || newHeart > 100 || newSpo2 < 93) {
           newStatus = 'warning';
@@ -255,9 +280,12 @@ class AppState extends ChangeNotifier {
 
         _relatives[i] = updated;
 
-        // Tự động kích hoạt Cảnh báo Vùng An Toàn nếu đi quá xa
-        if (isOutsideSafeZone && elderly.status != 'critical') {
-          // Chỉ báo khi trạng thái chưa ở mức nguy cấp
+        // Chỉ trigger SOS khi có sự kiện BIÊN xảy ra:
+        //  - Từ trong vùng (status safe/warning) chuyển ra NGOÀI vùng an toàn
+        //  - HOẶC elderly đang ở critical nhưng vừa về trong vùng (để reset)
+        // Tránh spam alert mỗi 4 giây khi người dùng đã acknowledge nhưng vẫn ở ngoài.
+        final wasOutside = elderly.status == 'critical'; // trước đó đã ở ngoài
+        if (isOutsideSafeZone && !wasOutside) {
           triggerSOS(
             elderly.id,
             'Ra khỏi vùng an toàn (${distance.toStringAsFixed(0)}m > ${elderly.safeZoneRadius.toStringAsFixed(0)}m)',
@@ -265,6 +293,11 @@ class AppState extends ChangeNotifier {
             newLat,
             newLng,
           );
+        } else if (!isOutsideSafeZone && wasOutside) {
+          // Đã quay về vùng an toàn, tự động reset active alert
+          if (_activeAlert?.elderlyId == elderly.id) {
+            acknowledgeAlert(_activeAlert!.id);
+          }
         }
       }
       notifyListeners();
