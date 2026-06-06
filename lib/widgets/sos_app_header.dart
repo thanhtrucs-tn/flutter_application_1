@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
 
-/// AppBar dùng chung với nền gradient đỏ cho SOS Care.
+/// AppBar dùng chung với nền sáng/tối cho SOS Care.
+/// Tự động hiển thị nút quay lại khi có thể pop (Navigator.canPop == true).
 class SosAppHeader extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final String? subtitle;
+
+  /// Bắt buộc hiển thị nút quay lại (override mọi logic tự động).
   final bool showBackButton;
+
+  /// Ẩn nút quay lại ngay cả khi có thể pop.
+  final bool hideBackButton;
+
+  /// Custom widget thay cho nút quay lại mặc định.
+  final Widget? leading;
+
   final List<Widget>? actions;
   final PreferredSizeWidget? bottom;
 
@@ -13,6 +23,8 @@ class SosAppHeader extends StatelessWidget implements PreferredSizeWidget {
     required this.title,
     this.subtitle,
     this.showBackButton = false,
+    this.hideBackButton = false,
+    this.leading,
     this.actions,
     this.bottom,
   });
@@ -26,31 +38,46 @@ class SosAppHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final foregroundColor = isDark ? Colors.white : const Color(0xFF1E293B);
+
+    // Tự động hiển thị nút quay lại khi có thể pop.
+    final canPop = Navigator.canPop(context);
+    final shouldShowBack = !hideBackButton && (showBackButton || canPop);
+
+    Widget? leadingWidget;
+    if (leading != null) {
+      leadingWidget = leading;
+    } else if (shouldShowBack) {
+      leadingWidget = IconButton(
+        icon: Icon(Icons.arrow_back_ios_new, color: foregroundColor),
+        onPressed: () => Navigator.of(context).pop(),
+        tooltip: 'Quay lại',
+      );
+    }
+
     return AppBar(
       automaticallyImplyLeading: false,
-      leading: showBackButton
-          ? IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-              onPressed: () => Navigator.of(context).pop(),
-            )
-          : null,
+      leading: leadingWidget,
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: foregroundColor,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
             ),
           ),
           if (subtitle != null)
             Text(
               subtitle!,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.grey.shade600,
+                fontSize: 13,
                 fontWeight: FontWeight.normal,
               ),
             ),
@@ -58,19 +85,15 @@ class SosAppHeader extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: actions,
       bottom: bottom,
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? const [Color(0xFFB71C1C), Color(0xFF7F0000)]
-                : const [Color(0xFFE53935), Color(0xFFB71C1C)],
-          ),
+      backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        side: BorderSide(
+          color: Color(0xFFE2E8F0),
+          width: 1.0,
         ),
       ),
-      backgroundColor: Colors.transparent,
-      elevation: 0,
     );
   }
 }

@@ -5,6 +5,7 @@ import '../widgets/sos_app_header.dart';
 import '../widgets/filter_chip_bar.dart';
 import '../widgets/alert_list_item.dart';
 import 'alert_detail_screen.dart';
+import 'add_alert_screen.dart';
 
 /// Màn hình danh sách cảnh báo SOS đầy đủ có lọc.
 class AlertsScreen extends StatefulWidget {
@@ -36,16 +37,16 @@ class _AlertsScreenState extends State<AlertsScreen> {
         return Scaffold(
           appBar: SosAppHeader(title: Localization.translate('alerts')),
           body: alerts.isEmpty
-              ? const Center(child: Text('Không có cảnh báo nào.'))
+              ? const Center(child: Text('Không có cảnh báo nào.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)))
               : ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   children: [
                     FilterChipBar(
                       options: _options,
                       selected: _filter,
                       onSelected: (v) => setState(() => _filter = v),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     ...alerts.map((a) => AlertListItem(
                       alert: a,
                       onTap: () => Navigator.push(
@@ -55,6 +56,20 @@ class _AlertsScreenState extends State<AlertsScreen> {
                     )),
                   ],
                 ),
+          floatingActionButton: FloatingActionButton.extended(
+            backgroundColor: const Color(0xFFE53935),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AddAlertScreen()),
+              );
+            },
+            icon: const Icon(Icons.add_alert_rounded, color: Colors.white, size: 24),
+            label: const Text(
+              'Thêm Cảnh Báo',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+            ),
+          ),
         );
       },
     );

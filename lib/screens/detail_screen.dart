@@ -43,7 +43,7 @@ class _DetailScreenState extends State<DetailScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Row(children: [Icon(Icons.phone, color: Colors.green), SizedBox(width: 8), Text('Cuộc gọi SOS Care')]),
+        title: const Row(children: [Icon(Icons.phone, color: Colors.green), SizedBox(width: 8), Expanded(child: Text('Cuộc gọi SOS Care', overflow: TextOverflow.ellipsis))]),
         content: Text('Hệ thống đang kết nối cuộc gọi thoại khẩn cấp tới số:\n$phone'),
         actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Đóng'))],
       ),
@@ -72,21 +72,12 @@ class _DetailScreenState extends State<DetailScreen> {
       builder: (context, child) {
         final elderly = state.relatives.firstWhere((e) => e.id == widget.elderlyId);
         final color = _statusColor(elderly);
+        final isDark = Theme.of(context).brightness == Brightness.dark;
 
         return Scaffold(
           appBar: SosAppHeader(
             title: elderly.name,
             showBackButton: true,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.monitor_heart),
-                onPressed: () => _openHealth(elderly),
-              ),
-              IconButton(
-                icon: const Icon(Icons.contact_phone),
-                onPressed: () => _openContacts(elderly),
-              ),
-            ],
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -127,6 +118,48 @@ class _DetailScreenState extends State<DetailScreen> {
                 ),
                 const SizedBox(height: 20),
                 HealthMetricsPanel(elderly: elderly),
+                const SizedBox(height: 20),
+                
+                // Thẻ xem lịch sử sức khỏe to rõ cho người lớn tuổi
+                Card(
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: isDark ? Colors.grey.shade800 : Colors.grey.shade200),
+                  ),
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    leading: const Icon(Icons.monitor_heart, color: Colors.teal, size: 28),
+                    title: const Text(
+                      'Lịch sử sức khỏe',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    trailing: const Icon(Icons.chevron_right, size: 28),
+                    onTap: () => _openHealth(elderly),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                // Thẻ xem danh bạ khẩn cấp
+                Card(
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: isDark ? Colors.grey.shade800 : Colors.grey.shade200),
+                  ),
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    leading: const Icon(Icons.contact_phone, color: Colors.green, size: 28),
+                    title: const Text(
+                      'Danh bạ khẩn cấp',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    trailing: const Icon(Icons.chevron_right, size: 28),
+                    onTap: () => _openContacts(elderly),
+                  ),
+                ),
                 const SizedBox(height: 16),
                 SafeZoneSlider(
                   value: elderly.safeZoneRadius,
@@ -134,52 +167,15 @@ class _DetailScreenState extends State<DetailScreen> {
                     state.updateElderly(elderly.copyWith(safeZoneRadius: v, lastUpdated: DateTime.now()));
                   },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 BigButton(
                   label: 'BÁO ĐỘNG TỪ XA',
                   icon: Icons.gpp_maybe,
                   color: Colors.red.shade700,
-                  height: 70,
+                  height: 72,
                   iconSize: 32,
-                  fontSize: 18,
+                  fontSize: 20,
                   onPressed: () => _openRemoteSos(elderly),
-                ),
-                const SizedBox(height: 16),
-                Material(
-                  color: Colors.amber.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    onTap: () => _openTestScenarios(elderly),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.amber.shade700, width: 1.5),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(color: Colors.amber.shade700, shape: BoxShape.circle),
-                            child: const Icon(Icons.science, color: Colors.white, size: 20),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('🧪 KỊCH BẢN KIỂM THỬ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.amber.shade800)),
-                                const SizedBox(height: 2),
-                                Text('Té ngã • Ra ngoài • Nhịp tim bất thường', style: TextStyle(fontSize: 11, color: Colors.grey.shade700)),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.arrow_forward_ios, color: Colors.amber.shade800, size: 16),
-                        ],
-                      ),
-                    ),
-                  ),
                 ),
               ],
             ),

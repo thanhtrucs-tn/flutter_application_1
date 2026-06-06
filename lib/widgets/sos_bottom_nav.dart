@@ -21,32 +21,25 @@ class SosBottomNav extends StatelessWidget {
       currentIndex: currentIndex,
       onTap: onTap,
       type: BottomNavigationBarType.fixed,
-      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
       selectedItemColor: const Color(0xFFE53935),
       unselectedItemColor: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-      unselectedLabelStyle: const TextStyle(fontSize: 11),
+      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+      unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+      iconSize: 28,
       elevation: 8,
       items: [
         BottomNavigationBarItem(
-          icon: const Icon(Icons.home_filled),
+          icon: const Icon(Icons.home_rounded),
           label: Localization.translate('home'),
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.notifications),
+          icon: const Icon(Icons.notifications_rounded),
           label: Localization.translate('alerts'),
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.add_circle, size: 32),
-          label: Localization.translate('add'),
-        ),
-        BottomNavigationBarItem(
-          icon: const Icon(Icons.settings),
+          icon: const Icon(Icons.settings_rounded),
           label: Localization.translate('settings'),
-        ),
-        BottomNavigationBarItem(
-          icon: const Icon(Icons.person),
-          label: Localization.translate('account'),
         ),
       ],
     );

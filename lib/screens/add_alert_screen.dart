@@ -78,14 +78,23 @@ class _AddAlertScreenState extends State<AddAlertScreen> {
                 children: [
                   TextFormField(
                     controller: _titleCtrl,
-                    decoration: InputDecoration(labelText: Localization.translate('title')),
-                    validator: (v) => v == null || v.isEmpty ? 'Nhập tiêu đề' : null,
+                    maxLength: 100,
+                    maxLines: 1,
+                    decoration: InputDecoration(
+                      labelText: Localization.translate('title'),
+                      counterText: '',
+                    ),
+                    validator: (v) => v == null || v.trim().isEmpty ? 'Nhập tiêu đề' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _contentCtrl,
-                    decoration: InputDecoration(labelText: Localization.translate('content')),
+                    maxLength: 500,
                     maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: Localization.translate('content'),
+                      counterText: '',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(

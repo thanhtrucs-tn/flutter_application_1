@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/elderly_model.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
@@ -42,9 +43,8 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
     // Chuẩn hóa dữ liệu: gộp nhiều khoảng trắng thành 1, trim đầu cuối
     final name = _nameController.text.trim().replaceAll(RegExp(r'\s+'), ' ');
     final device = _deviceController.text.trim();
-    // Chuẩn hóa số điện thoại: bỏ khoảng trắng, chỉ giữ chữ số và dấu +
-    final contactRaw = _contactController.text.trim();
-    final contact = contactRaw.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    // SĐT đã được inputFormatters chuẩn hóa (chỉ còn chữ số)
+    final contact = _contactController.text.trim();
 
     // Tính ID mới an toàn — lấy max(id) + 1 để không bị trùng khi đã xóa người thân trước đó.
     final newId = state.relatives.isEmpty
@@ -132,14 +132,17 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
                 controller: _contactController,
                 keyboardType: TextInputType.phone,
                 maxLength: 10,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: const InputDecoration(
                   labelText: 'Số điện thoại khẩn cấp (tùy chọn)',
                   prefixIcon: Icon(Icons.phone_outlined),
+                  counterText: '',
                 ),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return null; // optional
-                  // Chuẩn hóa: bỏ khoảng trắng, dấu gạch, dấu ngoặc
-                  final digits = v.trim().replaceAll(RegExp(r'[\s\-\(\)]'), '');
+                  if (!RegExp(r'^[0-9]{10}$').hasMatch(v.trim())) {
+                    return 'SĐT phải đúng 10 chữ số';
+                  }
                   return null;
                 },
               ),

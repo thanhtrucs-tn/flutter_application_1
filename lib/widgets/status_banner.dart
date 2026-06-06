@@ -9,38 +9,31 @@ class StatusBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color bannerColor = const Color(0xFF10B981);
-    String bannerTitle = 'TẤT CẢ AN TOÀN';
-    String bannerDesc = 'Mọi người thân đang trong khu vực an toàn.';
-    IconData bannerIcon = Icons.check_circle;
+    String bannerTitle = 'HỆ THỐNG AN TOÀN';
+    String bannerDesc = 'Tất cả người thân đều đang an toàn.';
+    IconData bannerIcon = Icons.check_circle_rounded;
 
     if (status == 'critical') {
       bannerColor = const Color(0xFFEF4444);
       bannerTitle = 'SOS KHẨN CẤP!';
-      bannerDesc = 'Có người thân cần hỗ trợ ngay lập tức!';
-      bannerIcon = Icons.gpp_maybe;
+      bannerDesc = 'Có người thân cần trợ giúp ngay!';
+      bannerIcon = Icons.error_rounded;
     } else if (status == 'warning') {
       bannerColor = const Color(0xFFF59E0B);
-      bannerTitle = 'CHÚ Ý CẢNH BÁO';
-      bannerDesc = 'Có chỉ số sinh hiệu sức khỏe bất thường.';
-      bannerIcon = Icons.warning;
+      bannerTitle = 'CẦN CHÚ Ý';
+      bannerDesc = 'Chỉ số sức khỏe có bất thường.';
+      bannerIcon = Icons.warning_rounded;
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
         color: bannerColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: bannerColor.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Row(
         children: [
-          Icon(bannerIcon, color: Colors.white, size: 40),
+          Icon(bannerIcon, color: Colors.white, size: 44),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -50,17 +43,17 @@ class StatusBanner extends StatelessWidget {
                   bannerTitle,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   bannerDesc,
                   style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],

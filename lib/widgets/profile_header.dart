@@ -21,40 +21,46 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         Stack(
           alignment: Alignment.bottomRight,
           children: [
             CircleAvatar(
-              radius: 40,
+              radius: 44,
               backgroundImage: NetworkImage(avatarUrl),
               backgroundColor: Colors.grey.shade200,
             ),
             Container(
-              width: 14,
-              height: 14,
-              decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: statusColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: isDark ? const Color(0xFF0F172A) : Colors.white, width: 2),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
-        Text(name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        Text(name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
         if (age != null || address != null)
           Text(
             '${age ?? ''}${age != null && address != null ? ' • ' : ''}${address ?? ''}',
-            style: const TextStyle(fontSize: 13, color: Colors.grey),
+            style: TextStyle(fontSize: 14, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600, fontWeight: FontWeight.w500),
           ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: statusColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             statusText.toUpperCase(),
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: statusColor),
           ),
         ),
       ],

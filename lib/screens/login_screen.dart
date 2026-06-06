@@ -249,22 +249,26 @@ class _LoginScreenState extends State<LoginScreen> {
                             // Input Tài khoản
                             TextField(
                               controller: _usernameController,
+                              maxLength: 32,
                               style: const TextStyle(fontSize: 18),
                               decoration: InputDecoration(
                                 labelText: Localization.translate('username'),
                                 prefixIcon: const Icon(Icons.person_outline),
+                                counterText: '',
                               ),
                             ),
                             const SizedBox(height: 20),
-                            
+
                             // Input Mật khẩu
                             TextField(
                               controller: _passwordController,
                               obscureText: true,
+                              maxLength: 64,
                               style: const TextStyle(fontSize: 18),
                               decoration: InputDecoration(
                                 labelText: Localization.translate('password'),
                                 prefixIcon: const Icon(Icons.lock_outline),
+                                counterText: '',
                               ),
                             ),
                             const SizedBox(height: 12),

@@ -7,6 +7,7 @@ import '../database/mock_data.dart';
 import '../models/elderly_model.dart';
 import '../models/alert_model.dart';
 import '../models/app_settings.dart';
+import '../models/user_profile.dart';
 import 'localization.dart';
 
 /// Lớp quản lý trạng thái toàn cục của ứng dụng và mô phỏng dữ liệu realtime
@@ -16,6 +17,7 @@ class AppState extends ChangeNotifier {
   factory AppState() => _instance;
   AppState._internal() {
     _loadSettings();
+    _loadUserProfile();
     _loadElderlyData();
     _loadAlertHistory();
     startSimulation();
@@ -25,6 +27,7 @@ class AppState extends ChangeNotifier {
   List<ElderlyModel> _relatives = [];
   List<AlertModel> _alerts = [];
   AppSettings _settings = AppSettings.defaultSettings();
+  UserProfile _userProfile = UserProfile.defaultProfile();
   AlertModel? _activeAlert; // Cảnh báo nguy cấp đang diễn ra
   bool _isWebSocketConnected = true; // Trạng thái kết nối realtime với ESP32/Backend
   Timer? _simulationTimer;
@@ -34,6 +37,7 @@ class AppState extends ChangeNotifier {
   List<ElderlyModel> get relatives => _relatives;
   List<AlertModel> get alerts => _alerts;
   AppSettings get settings => _settings;
+  UserProfile get userProfile => _userProfile;
   AlertModel? get activeAlert => _activeAlert;
   bool get isWebSocketConnected => _isWebSocketConnected;
   int get currentNavIndex => _currentNavIndex;
@@ -80,6 +84,60 @@ class AppState extends ChangeNotifier {
   /// Đổi ngôn ngữ nhanh
   Future<void> toggleLanguage(String langCode) async {
     await updateSettings(_settings.copyWith(languageCode: langCode));
+  }
+
+  // --- QUẢN LÝ HỒ SƠ NGƯỜI DÙNG ---
+
+  /// Khóa lưu trữ hồ sơ người dùng offline
+  static const String _offlineUserProfileKey = 'offline_user_profile_v1';
+
+  /// Tải hồ sơ người dùng từ SharedPreferences
+  Future<void> _loadUserProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString(_offlineUserProfileKey);
+    if (jsonStr != null && jsonStr.isNotEmpty) {
+      try {
+        final map = json.decode(jsonStr) as Map<String, dynamic>;
+        _userProfile = UserProfile.fromMap(map);
+      } catch (e) {
+        print('Lỗi đọc user profile: $e');
+        _userProfile = UserProfile.defaultProfile();
+      }
+    } else {
+      _userProfile = UserProfile.defaultProfile();
+    }
+    notifyListeners();
+  }
+
+  /// Lưu hồ sơ người dùng xuống SharedPreferences
+  Future<void> _saveUserProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _offlineUserProfileKey,
+      json.encode(_userProfile.toMap()),
+    );
+  }
+
+  /// Cập nhật thông tin hồ sơ người dùng (validate trước khi gọi)
+  Future<bool> updateUserProfile(UserProfile updated) async {
+    if (updated.name.trim().isEmpty) return false;
+    if (updated.email.trim().isEmpty) return false;
+    if (updated.email.trim().length > 48) return false;
+    if (!RegExp(r'^[0-9]{10}$').hasMatch(updated.phone.trim())) return false;
+    _userProfile = updated;
+    await _saveUserProfile();
+    notifyListeners();
+    return true;
+  }
+
+  /// Cập nhập nhanh avatar (không validate name/email).
+  /// Trả về true nếu thành công.
+  Future<bool> updateUserAvatarLocalPath(String path) async {
+    if (path.isEmpty) return false;
+    _userProfile = _userProfile.copyWith(avatarLocalPath: path);
+    await _saveUserProfile();
+    notifyListeners();
+    return true;
   }
 
   // --- QUẢN LÝ DỮ LIỆU NGƯỜI THÂN ---

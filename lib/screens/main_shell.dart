@@ -3,11 +3,9 @@ import '../utils/app_state.dart';
 import '../widgets/sos_bottom_nav.dart';
 import 'home_screen.dart';
 import 'alerts_screen.dart';
-import 'add_alert_screen.dart';
 import 'settings_screen.dart';
-import 'account_screen.dart';
 
-/// Shell chứa IndexedStack + BottomNavigationBar cho 5 tab chính.
+/// Shell chứa PageView + BottomNavigationBar cho 3 tab chính.
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -21,7 +19,13 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: AppState().currentNavIndex);
+    // Đảm bảo chỉ số ban đầu hợp lệ cho 3 tab (0, 1, 2)
+    int initialPage = AppState().currentNavIndex;
+    if (initialPage > 2) {
+      initialPage = 0;
+      AppState().setNavIndex(0);
+    }
+    _pageController = PageController(initialPage: initialPage);
   }
 
   @override
@@ -45,6 +49,15 @@ class _MainShellState extends State<MainShell> {
     return AnimatedBuilder(
       animation: state,
       builder: (context, child) {
+        // Đảm bảo index hiện tại không vượt quá số tab
+        int currentIndex = state.currentNavIndex;
+        if (currentIndex > 2) {
+          currentIndex = 0;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            state.setNavIndex(0);
+          });
+        }
+
         return Scaffold(
           body: PageView(
             controller: _pageController,
@@ -52,13 +65,11 @@ class _MainShellState extends State<MainShell> {
             children: const [
               HomeScreen(),
               AlertsScreen(),
-              AddAlertScreen(),
               SettingsScreen(),
-              AccountScreen(),
             ],
           ),
           bottomNavigationBar: SosBottomNav(
-            currentIndex: state.currentNavIndex,
+            currentIndex: currentIndex,
             onTap: _onNavTap,
           ),
         );

@@ -38,16 +38,16 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: bgLight,
       appBarTheme: const AppBarTheme(
-        backgroundColor: statusCritical,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: textDark,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: TextStyle(
-          fontSize: 20,
+          fontSize: 22,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: textDark,
         ),
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: textDark),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -107,16 +107,16 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: bgDark,
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFFB71C1C),
-        foregroundColor: Colors.white,
+        backgroundColor: bgDark,
+        foregroundColor: textLight,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: TextStyle(
-          fontSize: 20,
+          fontSize: 22,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: textLight,
         ),
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: textLight),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(

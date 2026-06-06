@@ -52,82 +52,90 @@ class ElderlyListCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
                   CircleAvatar(
-                    radius: 26,
+                    radius: 28,
                     backgroundImage: NetworkImage(elderly.avatar),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Text(
-                              elderly.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                            Expanded(
+                              child: Text(
+                                elderly.name,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Container(
-                              width: 8,
-                              height: 8,
+                              width: 10,
+                              height: 10,
                               decoration: BoxDecoration(color: statusDotColor, shape: BoxShape.circle),
                             ),
                           ],
                         ),
+                        const SizedBox(height: 2),
                         Text(
                           '${Localization.translate('wearableDevice')}: ${elderly.wearableDevice}',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(
-                      isSelected ? Icons.gps_fixed : Icons.gps_not_fixed,
-                      color: isSelected ? const Color(0xFFE53935) : Colors.grey,
-                    ),
-                    onPressed: onLocateTap,
-                  ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 14),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  VitalBadge(
-                    icon: Icons.favorite,
-                    color: Colors.red,
-                    value: elderly.isOffline ? '--' : '${elderly.heartRate} bpm',
+                  Expanded(
+                    child: VitalBadge(
+                      icon: Icons.favorite,
+                      color: Colors.red,
+                      value: elderly.isOffline ? '--' : '${elderly.heartRate} bpm',
+                      isSmall: false,
+                    ),
                   ),
-                  VitalBadge(
-                    icon: Icons.opacity,
-                    color: Colors.blueAccent,
-                    value: elderly.isOffline ? '--' : 'SpO2: ${elderly.spo2}%',
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: VitalBadge(
+                      icon: Icons.opacity,
+                      color: Colors.blueAccent,
+                      value: elderly.isOffline ? '--' : 'SpO2: ${elderly.spo2}%',
+                      isSmall: false,
+                    ),
                   ),
-                  VitalBadge(
-                    icon: Icons.battery_charging_full,
-                    color: elderly.battery > 30 ? Colors.green : Colors.orange,
-                    value: '${elderly.battery}%',
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: VitalBadge(
+                      icon: Icons.battery_charging_full,
+                      color: elderly.battery > 30 ? Colors.green : Colors.orange,
+                      value: '${elderly.battery}%',
+                      isSmall: false,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     '${Localization.translate('lastUpdate')}: ${elderly.lastUpdated.hour}:${elderly.lastUpdated.minute.toString().padLeft(2, '0')}',
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: statusDotColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
@@ -135,7 +143,7 @@ class ElderlyListCard extends StatelessWidget {
                     child: Text(
                       statusText.toUpperCase(),
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: FontWeight.bold,
                         color: statusDotColor,
                       ),

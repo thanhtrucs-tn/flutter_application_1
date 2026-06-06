@@ -28,12 +28,16 @@ class VitalBadge extends StatelessWidget {
         children: [
           Icon(icon, color: color, size: isSmall ? 16 : 20),
           const SizedBox(width: 6),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: isSmall ? 13 : 15,
-              fontWeight: FontWeight.bold,
-              color: color,
+          Flexible(
+            child: Text(
+              value,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+              style: TextStyle(
+                fontSize: isSmall ? 13 : 15,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ),
         ],
