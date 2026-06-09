@@ -4,6 +4,7 @@ import '../utils/localization.dart';
 import '../widgets/sos_app_header.dart';
 import '../widgets/settings_section_card.dart';
 import '../widgets/profile_avatar.dart';
+import '../widgets/add_relative_dialog.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
 
@@ -17,8 +18,10 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   void _logout(BuildContext context) {
-    Navigator.pushAndRemoveUntil(
-      context,
+    final navigator = Navigator.of(context);
+    // Đảm bảo Navigator còn khả dụng và có route để pop.
+    if (!navigator.mounted) return;
+    navigator.pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
     );
@@ -112,37 +115,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // 2. DANH SÁCH NGƯỜI THÂN ĐANG GIÁM SÁT
                 SettingsSectionCard(
                   title: Localization.translate('manageRelatives'),
-                  children: state.relatives.map((r) {
-                    final statusColor = r.isOffline 
-                        ? Colors.grey 
-                        : (r.status == 'critical' 
-                            ? const Color(0xFFEF4444) 
-                            : (r.status == 'warning' ? const Color(0xFFF59E0B) : const Color(0xFF10B981)));
-                    
-                    return ListTile(
+                  children: [
+                    ...state.relatives.map((r) {
+                      final statusColor = r.isOffline
+                          ? Colors.grey
+                          : (r.status == 'critical'
+                              ? const Color(0xFFEF4444)
+                              : (r.status == 'warning' ? const Color(0xFFF59E0B) : const Color(0xFF10B981)));
+
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        leading: CircleAvatar(
+                          backgroundImage: NetworkImage(r.avatar),
+                          radius: 20,
+                        ),
+                        title: Text(
+                          r.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        subtitle: Text(
+                          '${r.wearableDevice} • Pin ${r.battery}%',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                        trailing: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: statusColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      );
+                    }),
+                    if (state.relatives.isNotEmpty) const Divider(height: 1),
+                    ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      leading: CircleAvatar(
-                        backgroundImage: NetworkImage(r.avatar),
-                        radius: 20,
-                      ),
-                      title: Text(
-                        r.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      subtitle: Text(
-                        '${r.wearableDevice} • Pin ${r.battery}%',
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                      trailing: Container(
-                        width: 12,
-                        height: 12,
+                      leading: Container(
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
-                          color: statusColor,
+                          color: const Color(0xFFE53935).withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
+                        child: const Icon(Icons.person_add_alt_1, color: Color(0xFFE53935), size: 22),
                       ),
-                    );
-                  }).toList(),
+                      title: const Text(
+                        'Thêm người thân',
+                        style: TextStyle(
+                          color: Color(0xFFE53935),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      trailing: const Icon(Icons.add, color: Color(0xFFE53935)),
+                      onTap: () => AddRelativeDialog.show(context),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
 

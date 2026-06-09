@@ -87,6 +87,8 @@ class ElderlyListCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           '${Localization.translate('wearableDevice')}: ${elderly.wearableDevice}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500),
                         ),
                       ],
@@ -130,22 +132,29 @@ class ElderlyListCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '${Localization.translate('lastUpdate')}: ${elderly.lastUpdated.hour}:${elderly.lastUpdated.minute.toString().padLeft(2, '0')}',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: statusDotColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
+                  Flexible(
                     child: Text(
-                      statusText.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: statusDotColor,
+                      '${Localization.translate('lastUpdate')}: ${elderly.lastUpdated.hour}:${elderly.lastUpdated.minute.toString().padLeft(2, '0')}',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusDotColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        statusText.toUpperCase(),
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: statusDotColor,
+                        ),
                       ),
                     ),
                   ),

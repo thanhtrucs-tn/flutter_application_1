@@ -33,6 +33,7 @@ class UserProfile {
   final String id;
   final String name;
 ```
+}
 
 **Giải thích:**
 - `///` là comment kiểu **docstring**. Flutter sẽ hiển thị khi bạn hover chuột vào class.
@@ -44,6 +45,7 @@ class UserProfile {
     required this.id,
     required this.name,
 ```
+  })
 
 **Giải thích:**
 - `const` constructor nghĩa là object này có thể được tạo tại **thời điểm compile** (tối ưu bộ nhớ).
@@ -410,7 +412,7 @@ class _AvatarPickerState extends State<AvatarPicker> {
 ```dart
 void startSimulation() {
   _simulationTimer?.cancel();  // Hủy timer cũ nếu có
-  _simulationTimer = Timer.periodic(
+  _simulationTimer = Timer.periodic(    // .periodic: 
     const Duration(seconds: 4),
     (timer) {
       final random = Random();

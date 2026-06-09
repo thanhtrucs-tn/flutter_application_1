@@ -164,12 +164,12 @@ class ProfileScreen extends StatelessWidget {
             onEdit: () => runEditEmail(context, state),
           ),
           const Divider(height: 1),
-          // SĐT — bấm để sửa SĐT
+          // SĐT — bấm để sửa SĐT (hiển thị kèm tên tài khoản để biết SĐT này của ai)
           _EditableInfoTile(
             icon: Icons.phone,
             color: Colors.green,
             label: 'Số điện thoại',
-            value: profile.phone,
+            value: '${profile.name} • ${profile.phone}',
             onEdit: () => runEditPhone(context, state),
           ),
           const Divider(height: 1),

@@ -52,8 +52,13 @@ class _TestScenarioScreenState extends State<TestScenarioScreen> {
     // → Home sẽ tự push AlertDetailScreen
     if (scenario != _Scenario.vital) {
       if (!mounted) return;
+      final navigator = Navigator.of(context);
+      if (!navigator.mounted) return;
       // Pop về Home (pop cả DetailScreen và TestScenarioScreen)
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      // Nếu không còn route nào ngoài root thì không pop, tránh assertion.
+      if (navigator.canPop()) {
+        navigator.popUntil((route) => route.isFirst);
+      }
     } else {
       // Warning: chỉ snackbar, ở lại màn hình
       if (!mounted) return;

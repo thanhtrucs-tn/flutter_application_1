@@ -3,6 +3,7 @@ import '../models/elderly_model.dart';
 import '../utils/localization.dart';
 import '../widgets/sos_app_header.dart';
 import '../widgets/contact_list_item.dart';
+import '../widgets/add_contact_dialog.dart';
 
 /// Màn hình danh bạ khẩn cấp của một người cao tuổi.
 class EmergencyContactsScreen extends StatelessWidget {
@@ -32,20 +33,25 @@ class EmergencyContactsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         itemCount: elderly.emergencyContacts.length,
         itemBuilder: (context, index) {
-          final phone = elderly.emergencyContacts[index];
+          // Mỗi phần tử có dạng "Tên: SĐT" → tách để hiển thị tên riêng, SĐT riêng.
+          final raw = elderly.emergencyContacts[index];
+          final split = ElderlyModel.splitContact(raw);
+          final name = split.$1;
+          final phone = split.$2;
+          // Nếu chưa có tên (chuỗi cũ chỉ chứa SĐT) thì hiển thị SĐT làm tên tạm.
+          final displayName = name.isEmpty ? phone : name;
           return ContactListItem(
-            name: phone,
+            name: displayName,
             relationship: 'Người giám hộ khẩn cấp',
             phone: phone,
             onCallTap: () => _makeCall(context, phone),
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => AddContactDialog.show(context, elderly.id),
         backgroundColor: const Color(0xFFE53935),
-        icon: const Icon(Icons.person_add),
-        label: Text(Localization.translate('addContact')),
+        child: const Icon(Icons.person_add),
       ),
     );
   }

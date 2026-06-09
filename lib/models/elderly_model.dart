@@ -111,6 +111,18 @@ class ElderlyModel {
     );
   }
 
+  /// Tách (tên, số điện thoại) từ 1 chuỗi liên hệ khẩn cấp có dạng "Tên: SĐT".
+  /// Trả về `(name, phone)` — tên rỗng nếu chuỗi không có dấu ':' hợp lệ.
+  /// Dùng record positional (.$1 = tên, .$2 = SĐT) thay vì named để tránh xung đột
+  /// với field `name`/`phone` đã có sẵn của class ElderlyModel khi truy cập từ bên ngoài.
+  static (String, String) splitContact(String contact) {
+    final idx = contact.indexOf(':');
+    if (idx < 0) return ('', contact.trim());
+    final name = contact.substring(0, idx).trim();
+    final phone = contact.substring(idx + 1).trim();
+    return (name, phone);
+  }
+
   /// Chuyển sang Map để lưu trữ
   Map<String, dynamic> toMap() {
     return {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/alert_model.dart';
+import '../models/elderly_model.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
 import '../widgets/big_button.dart';
@@ -135,46 +136,39 @@ class _AlertDetailScreenState extends State<AlertDetailScreen> with SingleTicker
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 30),
-                        const SizedBox(width: 8),
-                        Text(
-                          Localization.translate('statusCriticalText').toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.0,
-                          ),
+                    const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 30),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        Localization.translate('statusCriticalText').toUpperCase(),
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.0,
                         ),
-                      ],
+                      ),
                     ),
-                    Row(
-                      children: [
-                        // Nút tắt tiếng còi báo động mô phỏng
-                        IconButton(
-                          icon: Icon(
-                            _soundMuted ? Icons.volume_off : Icons.volume_up,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _soundMuted = !_soundMuted;
-                            });
-                          },
-                        ),
-                        // NÚT ĐÓNG (X) — luôn hiển thị ở góc trên cùng để user
-                        // có thể thoát ngay cả khi không scroll xuống thấy được nút "Đã xử lý".
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white, size: 28),
-                          tooltip: 'Đóng',
-                          onPressed: _confirmAndClose,
-                        ),
-                      ],
+                    IconButton(
+                      icon: Icon(
+                        _soundMuted ? Icons.volume_off : Icons.volume_up,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _soundMuted = !_soundMuted;
+                        });
+                      },
+                    ),
+                    // NÚT ĐÓNG (X) — luôn hiển thị ở góc trên cùng để user
+                    // có thể thoát ngay cả khi không scroll xuống thấy được nút "Đã xử lý".
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                      tooltip: 'Đóng',
+                      onPressed: _confirmAndClose,
                     ),
                   ],
                 ),
@@ -258,7 +252,10 @@ class _AlertDetailScreenState extends State<AlertDetailScreen> with SingleTicker
                           // Nút gọi điện người thân
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () => _makeCall(relative.emergencyContacts.first),
+                              onPressed: () => _makeCall(
+                                // Lấy SĐT từ chuỗi "Tên: SĐT" (phần tử thứ 2 của record).
+                                ElderlyModel.splitContact(relative.emergencyContacts.first).$2,
+                              ),
                               icon: const Icon(Icons.phone),
                               label: const Text('Gọi người thân'),
                               style: ElevatedButton.styleFrom(
@@ -274,7 +271,11 @@ class _AlertDetailScreenState extends State<AlertDetailScreen> with SingleTicker
                           // Nút gọi cứu hộ / số liên hệ khác
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () => _makeCall(relative.emergencyContacts.length > 1 ? relative.emergencyContacts[1] : '115'),
+                              onPressed: () => _makeCall(
+                                relative.emergencyContacts.length > 1
+                                    ? ElderlyModel.splitContact(relative.emergencyContacts[1]).$2
+                                    : '115',
+                              ),
                               icon: const Icon(Icons.emergency_share),
                               label: const Text('Gọi cứu hộ (115)'),
                               style: ElevatedButton.styleFrom(

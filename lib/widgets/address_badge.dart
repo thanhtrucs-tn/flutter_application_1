@@ -164,9 +164,9 @@ class AddressBadge extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            _shimmerBar(isDark, width: 200),
+            _shimmerBar(isDark),
             const SizedBox(height: 4),
-            _shimmerBar(isDark, width: 140),
+            _shimmerBar(isDark, widthFactor: 0.7),
           ],
         );
       case AddressBadgeStatus.success:
@@ -229,14 +229,19 @@ class AddressBadge extends StatelessWidget {
     }
   }
 
-  Widget _shimmerBar(bool isDark, {required double width}) {
-    return Container(
-      width: width,
-      height: 8,
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white12 : Colors.black12,
-        borderRadius: BorderRadius.circular(4),
-      ),
+  Widget _shimmerBar(bool isDark, {double widthFactor = 1.0}) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth.isFinite ? constraints.maxWidth : 200.0;
+        return Container(
+          width: availableWidth * widthFactor,
+          height: 8,
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white12 : Colors.black12,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        );
+      },
     );
   }
 

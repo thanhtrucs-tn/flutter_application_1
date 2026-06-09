@@ -26,12 +26,14 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _deviceController = TextEditingController();
-  final TextEditingController _contactController = TextEditingController();     //  Thêm controller cho số điện thoại khẩn cấp
+  final TextEditingController _contactNameController = TextEditingController();  // Tên người liên hệ khẩn cấp
+  final TextEditingController _contactController = TextEditingController();      //  Số điện thoại khẩn cấp
 
   @override
   void dispose() {
     _nameController.dispose();
     _deviceController.dispose();
+    _contactNameController.dispose();
     _contactController.dispose();
     super.dispose();
   }
@@ -45,11 +47,17 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
     final device = _deviceController.text.trim();
     // SĐT đã được inputFormatters chuẩn hóa (chỉ còn chữ số)
     final contact = _contactController.text.trim();
+    final contactName = _contactNameController.text.trim().replaceAll(RegExp(r'\s+'), ' ');
 
     // Tính ID mới an toàn — lấy max(id) + 1 để không bị trùng khi đã xóa người thân trước đó.
     final newId = state.relatives.isEmpty
         ? 1
         : state.relatives.map((e) => e.id).reduce((a, b) => a > b ? a : b) + 1;
+
+    // Lưu SĐT khẩn cấp theo định dạng "Tên: SĐT" để danh bạ khẩn cấp hiển thị được cả tên.
+    final contactEntry = contact.isEmpty
+        ? <String>['0900000000']
+        : <String>[contactName.isEmpty ? contact : '$contactName: $contact'];
 
     final newElderly = ElderlyModel(
       id: newId,
@@ -68,7 +76,7 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
       safeZoneRadius: 300.0,
       safeZoneLat: 10.762622,
       safeZoneLng: 106.660172,
-      emergencyContacts: contact.isEmpty ? <String>['0900000000'] : <String>[contact],
+      emergencyContacts: contactEntry,
     );
 
     // Lưu messenger TRƯỚC khi pop để tránh dùng context đã unmount
@@ -128,23 +136,51 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
                 },
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _contactController,
-                keyboardType: TextInputType.phone,
-                maxLength: 10,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: 'Số điện thoại khẩn cấp (tùy chọn)',
-                  prefixIcon: Icon(Icons.phone_outlined),
-                  counterText: '',
-                ),
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return null; // optional
-                  if (!RegExp(r'^[0-9]{10}$').hasMatch(v.trim())) {
-                    return 'SĐT phải đúng 10 chữ số';
-                  }
-                  return null;
-                },
+              Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: TextFormField(
+                      controller: _contactNameController,
+                      textCapitalization: TextCapitalization.words,
+                      maxLength: 30,
+                      decoration: const InputDecoration(
+                        labelText: 'Tên liên hệ',
+                        hintText: 'VD: Nguyễn Văn An',
+                        prefixIcon: Icon(Icons.badge_outlined),
+                        counterText: '',
+                      ),
+                      validator: (v) {
+                        final t = v?.trim() ?? '';
+                        if (t.isNotEmpty && t.length < 2) return 'Tên quá ngắn';
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 5,
+                    child: TextFormField(
+                      controller: _contactController,
+                      keyboardType: TextInputType.phone,
+                      maxLength: 10,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: const InputDecoration(
+                        labelText: 'SĐT',
+                        hintText: '10 chữ số',
+                        prefixIcon: Icon(Icons.phone_outlined),
+                        counterText: '',
+                      ),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return null; // optional
+                        if (!RegExp(r'^[0-9]{10}$').hasMatch(v.trim())) {
+                          return 'SĐT phải đúng 10 chữ số';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

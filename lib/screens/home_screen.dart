@@ -5,6 +5,7 @@ import '../widgets/sos_app_header.dart';
 import '../widgets/status_banner.dart';
 import '../widgets/elderly_list_card.dart';
 import '../widgets/profile_avatar.dart';
+import '../widgets/add_relative_dialog.dart';
 import 'detail_screen.dart';
 import 'alert_detail_screen.dart';
 import 'profile_screen.dart';
@@ -32,26 +33,39 @@ class _HomeScreenState extends State<HomeScreen> {
         final activeAlert = state.activeAlert;
 
         // TỰ ĐỘNG BẬT MÀN HÌNH BÁO ĐỘNG SOS NẾU CÓ ACTIVE ALERT
+        // Lưu ý: _pushedAlertId được set NGAY TRƯỚC addPostFrameCallback để chặn
+        // các lần build() liên tiếp đăng ký callback nhiều lần.
         if (activeAlert != null && _pushedAlertId != activeAlert.id) {
+          _pushedAlertId = activeAlert.id;
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             if (!mounted) return;
+            final navigator = Navigator.of(context);
+            // Chỉ push khi Navigator còn root (không bị dispose giữa lúc user logout).
+            if (!navigator.mounted) return;
             final modalRoute = ModalRoute.of(context);
             final isCurrentHome = modalRoute is PageRoute &&
                 modalRoute.settings.name != null &&
                 (modalRoute.settings.name == '/' || modalRoute.settings.name == '/home');
             if (!isCurrentHome) {
-              _pushedAlertId = activeAlert.id;
               state.acknowledgeAlert(activeAlert.id);
+              _pushedAlertId = null;
               return;
             }
-            _pushedAlertId = activeAlert.id;
-            await Navigator.push(
-              context,
+            // Tránh push chồng nếu route /alert-detail đã có trên stack
+            // (ví dụ: user back xong, alert chưa kịp clear).
+            final alreadyOnAlert = navigator.widget.initialRoute == '/alert-detail' ||
+                ModalRoute.of(context)?.settings.name == '/alert-detail';
+            if (alreadyOnAlert) {
+              _pushedAlertId = null;
+              return;
+            }
+            await navigator.push(
               MaterialPageRoute(
                 settings: const RouteSettings(name: '/alert-detail'),
-                builder: (context) => AlertDetailScreen(alert: activeAlert),
+                builder: (_) => AlertDetailScreen(alert: activeAlert),
               ),
             );
+            if (!mounted) return;
             _pushedAlertId = null;
             state.acknowledgeAlert(activeAlert.id);
           });
@@ -64,6 +78,13 @@ class _HomeScreenState extends State<HomeScreen> {
         return Scaffold(
           appBar: SosAppHeader(
             title: Localization.translate('appName'),
+          ),
+          floatingActionButton: FloatingActionButton(
+            heroTag: 'add-relative-fab',
+            backgroundColor: const Color(0xFFE53935),
+            foregroundColor: Colors.white,
+            onPressed: () => AddRelativeDialog.show(context),
+            child: const Icon(Icons.person_add_alt_1),
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -173,6 +194,8 @@ class _UserHeader extends StatelessWidget {
                   children: [
                     Text(
                       'Chào, ${profile.name}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -181,6 +204,8 @@ class _UserHeader extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       profile.role,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 13,
                         color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
@@ -190,30 +215,37 @@ class _UserHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0F766E).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.sensors_rounded,
-                      color: Color(0xFF0F766E),
-                      size: 16,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '$onlineCount/$totalCount online',
-                      style: const TextStyle(
+              const SizedBox(width: 8),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F766E).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.sensors_rounded,
                         color: Color(0xFF0F766E),
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                        size: 16,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          '$onlineCount/$totalCount online',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF0F766E),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
