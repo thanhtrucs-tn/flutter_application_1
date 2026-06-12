@@ -138,6 +138,8 @@ class _FullScreenMapModalState extends State<FullScreenMapModal> {
     final home = LatLng(widget.safeZoneLat, widget.safeZoneLng);
     final statusColor = _statusColor();
     final screenH = MediaQuery.of(context).size.height;
+    // Thiết bị chưa gửi GPS đầu tiên
+    final waitingForGps = widget.lat == 0 && widget.lng == 0;
 
     return DraggableScrollableSheet(
       initialChildSize: 1.0,
@@ -164,8 +166,10 @@ class _FullScreenMapModalState extends State<FullScreenMapModal> {
                     FlutterMap(
                       mapController: _mapController,
                       options: MapOptions(
-                        initialCenter: target,
-                        initialZoom: _zoom,
+                        initialCenter: waitingForGps
+                            ? const LatLng(10.762622, 106.660172)
+                            : target,
+                        initialZoom: waitingForGps ? 12 : _zoom,
                         minZoom: _minZoom,
                         maxZoom: _maxZoom,
                         interactionOptions: const InteractionOptions(
@@ -180,43 +184,47 @@ class _FullScreenMapModalState extends State<FullScreenMapModal> {
                           maxNativeZoom: 19,
                           tileProvider: NetworkTileProvider(),
                         ),
-                        // Vùng an toàn
+                        // Vùng an toàn (chỉ hiển thị khi đã có GPS)
                         CircleLayer(
                           circles: [
-                            CircleMarker(
-                              point: home,
-                              radius: widget.safeZoneRadius,
-                              useRadiusInMeter: true,
-                              color: Colors.orange.withValues(alpha: 0.2),
-                              borderColor: Colors.orange,
-                              borderStrokeWidth: 2,
-                            ),
+                            if (!waitingForGps &&
+                                widget.safeZoneLat != 0 &&
+                                widget.safeZoneLng != 0)
+                              CircleMarker(
+                                point: home,
+                                radius: widget.safeZoneRadius,
+                                useRadiusInMeter: true,
+                                color: Colors.orange.withValues(alpha: 0.2),
+                                borderColor: Colors.orange,
+                                borderStrokeWidth: 2,
+                              ),
                           ],
                         ),
-                        // Markers
-                        MarkerLayer(
-                          markers: [
-                            Marker(
-                              point: target,
-                              width: 150,
-                              height: 90,
-                              child: _buildPin(
-                                color: statusColor,
-                                showPulse: true,
-                                label: widget.relativeName,
+                        // Markers (chỉ hiển thị khi đã có GPS)
+                        if (!waitingForGps)
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: target,
+                                width: 150,
+                                height: 90,
+                                child: _buildPin(
+                                  color: statusColor,
+                                  showPulse: true,
+                                  label: widget.relativeName,
+                                ),
                               ),
-                            ),
-                            Marker(
-                              point: home,
-                              width: 50,
-                              height: 50,
-                              child: _buildPin(
-                                color: Colors.blue,
-                                showPulse: false,
+                              Marker(
+                                point: home,
+                                width: 50,
+                                height: 50,
+                                child: _buildPin(
+                                  color: Colors.blue,
+                                  showPulse: false,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
                         RichAttributionWidget(
                           attributions: [
                             TextSourceAttribution(_tileAttribution),
@@ -225,32 +233,82 @@ class _FullScreenMapModalState extends State<FullScreenMapModal> {
                       ],
                     ),
 
-                    // Map controls (góc phải)
-                    Positioned(
-                      right: 12,
-                      top: 12,
-                      child: Column(
-                        children: [
-                          _buildCtrl(
-                            icon: Icons.add,
-                            onPressed: _zoomIn,
-                            isDark: isDark,
+                    // Overlay "Chờ GPS" khi thiết bị ESP32 chưa gửi tọa độ đầu tiên
+                    if (waitingForGps)
+                      Positioned.fill(
+                        child: Container(
+                          color: (isDark
+                                  ? const Color(0xFF0F172A)
+                                  : Colors.white)
+                              .withValues(alpha: 0.9),
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(32),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange
+                                          .withValues(alpha: 0.15),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.gps_off,
+                                      size: 56,
+                                      color: Colors.orange,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Text(
+                                    'Chờ tín hiệu GPS',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Thiết bị đeo "${widget.relativeName}" chưa gửi tọa độ.\n'
+                                    'Vị trí sẽ xuất hiện ngay khi có tín hiệu GPS từ ESP32.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: isDark
+                                          ? Colors.white70
+                                          : Colors.black54,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange
+                                          .withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Text(
+                                      'TRẠNG THÁI: OFFLINE',
+                                      style: TextStyle(
+                                        color: Colors.orange,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 8),
-                          _buildCtrl(
-                            icon: Icons.remove,
-                            onPressed: _zoomOut,
-                            isDark: isDark,
-                          ),
-                          const SizedBox(height: 8),
-                          _buildCtrl(
-                            icon: Icons.my_location,
-                            onPressed: _recenter,
-                            isDark: isDark,
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
 
                     // Zoom indicator (góc trái dưới)
                     Positioned(

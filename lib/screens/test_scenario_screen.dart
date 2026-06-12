@@ -14,7 +14,7 @@ class TestScenarioScreen extends StatefulWidget {
   State<TestScenarioScreen> createState() => _TestScenarioScreenState();
 }
 
-enum _Scenario { fall, exit, vital }
+enum _Scenario { fall, exit, vital, online }
 
 class _TestScenarioScreenState extends State<TestScenarioScreen> {
   bool _isRunning = false;
@@ -38,6 +38,9 @@ class _TestScenarioScreenState extends State<TestScenarioScreen> {
       case _Scenario.vital:
         state.simulateHeartRateSpike(widget.elderly.id);
         break;
+      case _Scenario.online:
+        state.simulateDeviceOnline(widget.elderly.id);
+        break;
     }
 
     // Delay nhỏ để user thấy hiệu ứng loading
@@ -48,19 +51,33 @@ class _TestScenarioScreenState extends State<TestScenarioScreen> {
       _running = null;
     });
 
-    // Nếu là critical (fall/exit) thì đóng màn hình này để về Home
-    // → Home sẽ tự push AlertDetailScreen
-    if (scenario != _Scenario.vital) {
+    // Critical (fall/exit) đóng màn hình, pop về Home để xem SOS
+    if (scenario == _Scenario.fall || scenario == _Scenario.exit) {
       if (!mounted) return;
       final navigator = Navigator.of(context);
       if (!navigator.mounted) return;
-      // Pop về Home (pop cả DetailScreen và TestScenarioScreen)
-      // Nếu không còn route nào ngoài root thì không pop, tránh assertion.
+      if (navigator.canPop()) {
+        navigator.popUntil((route) => route.isFirst);
+      }
+    } else if (scenario == _Scenario.online) {
+      // Online: snackbar xác nhận, đóng màn hình để về Home thấy thiết bị online
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '✅ Đã mô phỏng "${widget.elderly.name}" ONLINE — pin 80%, có tín hiệu',
+          ),
+          backgroundColor: Colors.teal,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      if (!mounted) return;
+      final navigator = Navigator.of(context);
       if (navigator.canPop()) {
         navigator.popUntil((route) => route.isFirst);
       }
     } else {
-      // Warning: chỉ snackbar, ở lại màn hình
+      // Warning (vital): chỉ snackbar, ở lại màn hình
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -212,6 +229,20 @@ class _TestScenarioScreenState extends State<TestScenarioScreen> {
                         '→ Tạo cảnh báo mức WARNING\n'
                         '→ Cập nhật banner cảnh báo vàng trên Home',
                     color: Colors.pink,
+                    isCritical: false,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildScenarioCard(
+                    scenario: _Scenario.online,
+                    icon: Icons.wifi_tethering,
+                    title: 'THIẾT BỊ ONLINE',
+                    description:
+                        'Mô phỏng thiết bị đang online: đặt lại pin 80%, '
+                        'isOffline = false, khôi phục nhịp tim/SpO2 nếu đang = 0.\n\n'
+                        '→ Icon "Offline" biến mất trên Home\n'
+                        '→ Pin hiển thị 80% (xanh)\n'
+                        '→ Dữ liệu sinh tồn cập nhật bình thường',
+                    color: Colors.teal,
                     isCritical: false,
                   ),
                 ],

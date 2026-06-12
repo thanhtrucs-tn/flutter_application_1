@@ -20,6 +20,7 @@ class ElderlyModel {
   final double safeZoneLng; // Kinh độ tâm vùng an toàn
   final List<String> emergencyContacts;
   final String address; // Địa chỉ chữ (ví dụ: "268 Lý Thường Kiệt, Q.10, TP.HCM")
+  final int? age; // Tuổi (năm). Null nếu elderly cũ chưa cập nhật hoặc chưa nhập.
 
   ElderlyModel({
     required this.id,
@@ -40,6 +41,7 @@ class ElderlyModel {
     required this.safeZoneLng,
     required this.emergencyContacts,
     this.address = '',
+    this.age,
   });
 
   /// Tạo một bản sao mới với các trường thay đổi
@@ -62,6 +64,7 @@ class ElderlyModel {
     double? safeZoneLng,
     List<String>? emergencyContacts,
     String? address,
+    int? age,
   }) {
     return ElderlyModel(
       id: id ?? this.id,
@@ -82,6 +85,7 @@ class ElderlyModel {
       safeZoneLng: safeZoneLng ?? this.safeZoneLng,
       emergencyContacts: emergencyContacts ?? this.emergencyContacts,
       address: address ?? this.address,
+      age: age ?? this.age,
     );
   }
 
@@ -108,6 +112,7 @@ class ElderlyModel {
           ? List<String>.from(json.decode(map['emergencyContacts'] as String) as List)
           : List<String>.from(map['emergencyContacts'] as List? ?? []),
       address: map['address'] as String? ?? '',
+      age: map['age'] as int?,
     );
   }
 
@@ -144,6 +149,7 @@ class ElderlyModel {
       'safeZoneLng': safeZoneLng,
       'emergencyContacts': json.encode(emergencyContacts),
       'address': address,
+      'age': age,
     };
   }
 }

@@ -20,11 +20,11 @@ void main() {
     test('copyWith chỉ thay đổi trường được chỉ định, giữ nguyên phần còn lại', () {
       final p = UserProfile.defaultProfile();
       final p2 = p.copyWith(
-        name: 'Trúc Thành',
+        name: 'cóc',
         phone: '+84 909 111 222',
         avatarLocalPath: '/data/user/0/avatar.jpg',
       );
-      expect(p2.name, 'Trúc Thành');
+      expect(p2.name, 'cóc');
       expect(p2.phone, '+84 909 111 222');
       expect(p2.avatarLocalPath, '/data/user/0/avatar.jpg');
       expect(p2.email, p.email); // giữ nguyên

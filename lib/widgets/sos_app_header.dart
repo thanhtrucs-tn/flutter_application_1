@@ -61,24 +61,33 @@ class SosAppHeader extends StatelessWidget implements PreferredSizeWidget {
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            title,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: foregroundColor,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              title,
+              maxLines: 1,
+              style: TextStyle(
+                color: foregroundColor,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           if (subtitle != null)
-            Text(
-              subtitle!,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isDark ? Colors.white70 : Colors.grey.shade600,
-                fontSize: 13,
-                fontWeight: FontWeight.normal,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                subtitle!,
+                maxLines: 1,
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : Colors.grey.shade600,
+                  fontSize: 13,
+                  fontWeight: FontWeight.normal,
+                ),
               ),
             ),
         ],

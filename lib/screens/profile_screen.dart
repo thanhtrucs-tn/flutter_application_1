@@ -275,6 +275,7 @@ class _EditableInfoTile extends StatelessWidget {
       ),
       title: Text(
         label,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 13,
           color: Theme.of(context).brightness == Brightness.dark
@@ -284,6 +285,8 @@ class _EditableInfoTile extends StatelessWidget {
       ),
       subtitle: Text(
         value,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
         style: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.bold,
@@ -323,6 +326,7 @@ class _ReadOnlyInfoTile extends StatelessWidget {
       ),
       title: Text(
         label,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 13,
           color: Theme.of(context).brightness == Brightness.dark
@@ -332,6 +336,8 @@ class _ReadOnlyInfoTile extends StatelessWidget {
       ),
       subtitle: Text(
         value,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
         style: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.bold,

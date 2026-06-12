@@ -120,10 +120,23 @@ class AppState extends ChangeNotifier {
 
   /// Cập nhật thông tin hồ sơ người dùng (validate trước khi gọi)
   Future<bool> updateUserProfile(UserProfile updated) async {
-    if (updated.name.trim().isEmpty) return false;
-    if (updated.email.trim().isEmpty) return false;
-    if (updated.email.trim().length > 48) return false;
-    if (!RegExp(r'^[0-9]{10}$').hasMatch(updated.phone.trim())) return false;
+    print('[DEBUG] updateUserProfile được gọi với: name="${updated.name}", email="${updated.email}", phone="${updated.phone}"');
+    if (updated.name.trim().isEmpty) {
+      print('[DEBUG] updateUserProfile FAIL: name rỗng ("${updated.name}")');
+      return false;
+    }
+    if (updated.email.trim().isEmpty) {
+      print('[DEBUG] updateUserProfile FAIL: email rỗng ("${updated.email}")');
+      return false;
+    }
+    if (updated.email.trim().length > 48) {
+      print('[DEBUG] updateUserProfile FAIL: email dài ${updated.email.trim().length} ký tự > 48 ("${updated.email}")');
+      return false;
+    }
+    if (!RegExp(r'^[0-9]{10}$').hasMatch(updated.phone.trim())) {
+      print('[DEBUG] updateUserProfile FAIL: phone sai format ("${updated.phone}", length=${updated.phone.trim().length})');
+      return false;
+    }
     _userProfile = updated;
     await _saveUserProfile();
     notifyListeners();
@@ -429,6 +442,29 @@ class AppState extends ChangeNotifier {
       newLat,
       newLng,
     );
+  }
+
+  /// Giả lập thiết bị của người thân đang ONLINE (đeo lại, có pin, có tín hiệu).
+  /// - Nếu người thân không tồn tại → bỏ qua (không throw).
+  /// - Đặt lại pin về 80%, isOffline = false, khôi phục nhịp tim/SpO2 nếu đang = 0
+  ///   (vì khi offline ta set các chỉ số về 0), cập nhật lastUpdated.
+  /// - Trả về true nếu cập nhật thành công, false nếu elderlyId không tồn tại.
+  bool simulateDeviceOnline(int elderlyId) {
+    final index = _relatives.indexWhere((e) => e.id == elderlyId);
+    if (index == -1) return false;
+
+    final elderly = _relatives[index];
+    final updated = elderly.copyWith(
+      isOffline: false,
+      battery: 80,
+      heartRate: elderly.heartRate > 0 ? elderly.heartRate : 75,
+      spo2: elderly.spo2 > 0 ? elderly.spo2 : 98,
+      lastUpdated: DateTime.now(),
+    );
+    _relatives[index] = updated;
+    _saveElderlyData();
+    notifyListeners();
+    return true;
   }
 
   /// Giả lập Nhịp tim & SpO2 bất thường (Cần lưu ý)

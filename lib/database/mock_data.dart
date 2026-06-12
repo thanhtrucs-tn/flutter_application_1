@@ -24,6 +24,7 @@ class MockData {
       safeZoneLng: 106.660172,
       emergencyContacts: ['Nguyễn Văn An (Con trai): 0901234567', 'Trần Thị Bích (Con gái): 0912345678'],
       address: '268 Lý Thường Kiệt, Phường 14, Quận 10, TP. Hồ Chí Minh',
+      age: 78,
     ),
     ElderlyModel(
       id: 2,
@@ -44,6 +45,7 @@ class MockData {
       safeZoneLng: 106.661000,
       emergencyContacts: ['Lê Hoàng Cường (Con trai): 0987654321'],
       address: 'Công viên Lê Thị Riêng, Quận 10, TP. Hồ Chí Minh',
+      age: 65,
     ),
     ElderlyModel(
       id: 3,
@@ -64,6 +66,7 @@ class MockData {
       safeZoneLng: 106.658000,
       emergencyContacts: ['Phạm Thị Dung (Con gái): 0933445566', 'Hoàng Minh (Con rể): 0944556677'],
       address: '175 Hai Bà Trưng, Phường 6, Quận 3, TP. Hồ Chí Minh',
+      age: 70,
     ),
   ];
 

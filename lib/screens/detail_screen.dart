@@ -87,7 +87,9 @@ class _DetailScreenState extends State<DetailScreen> {
                 ProfileHeader(
                   avatarUrl: elderly.avatar,
                   name: elderly.name,
-                  age: '78 ${Localization.translate('age')}',
+                  age: elderly.age != null
+                      ? '${elderly.age} ${Localization.translate('age')}'
+                      : null,
                   address: 'TP. Hồ Chí Minh',
                   statusColor: color,
                   statusText: _statusText(elderly),
@@ -167,7 +169,17 @@ class _DetailScreenState extends State<DetailScreen> {
                     state.updateElderly(elderly.copyWith(safeZoneRadius: v, lastUpdated: DateTime.now()));
                   },
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+                BigButton(
+                  label: 'KỊCH BẢN KIỂM THỬ',
+                  icon: Icons.science,
+                  color: const Color(0xFF1A1400), // Nền tối giống TestScenarioScreen
+                  height: 60,
+                  iconSize: 26,
+                  fontSize: 17,
+                  onPressed: () => _openTestScenarios(elderly),
+                ),
+                const SizedBox(height: 12),
                 BigButton(
                   label: 'BÁO ĐỘNG TỪ XA',
                   icon: Icons.gpp_maybe,

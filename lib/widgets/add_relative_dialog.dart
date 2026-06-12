@@ -26,6 +26,8 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _deviceController = TextEditingController();
+  final TextEditingController _birthDateController = TextEditingController();
+  DateTime? _birthDate;
   final TextEditingController _contactNameController = TextEditingController();  // Tên người liên hệ khẩn cấp
   final TextEditingController _contactController = TextEditingController();      //  Số điện thoại khẩn cấp
 
@@ -33,13 +35,61 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
   void dispose() {
     _nameController.dispose();
     _deviceController.dispose();
+    _birthDateController.dispose();
     _contactNameController.dispose();
     _contactController.dispose();
     super.dispose();
   }
 
+  /// Mở DatePicker cho phép chọn ngày sinh (tính ra tuổi).
+  /// - firstDate = 1900, lastDate = hôm nay (không cho chọn tương lai)
+  /// - initialDate mặc định ~70 tuổi
+  /// - Đặt _birthDate = ngày được chọn, đồng thời hiển thị text vào controller
+  Future<void> _pickBirthDate() async {
+    final now = DateTime.now();
+    final initial = _birthDate ?? DateTime(now.year - 70, now.month, now.day);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(1900),
+      lastDate: now,
+      helpText: 'Chọn ngày sinh',
+      cancelText: 'Hủy',
+      confirmText: 'Chọn',
+      fieldLabelText: 'Ngày sinh',
+    );
+    if (picked != null) {
+      setState(() {
+        _birthDate = picked;
+        // Hiển thị dd/MM/yyyy cho dễ đọc
+        _birthDateController.text =
+            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+      });
+    }
+  }
+
+  /// Tính tuổi chính xác từ ngày sinh (trừ 1 nếu chưa qua sinh nhật năm nay).
+  static int _calculateAge(DateTime birthDate) {
+    final now = DateTime.now();
+    var age = now.year - birthDate.year;
+    final hasHadBirthdayThisYear = now.month > birthDate.month ||
+        (now.month == birthDate.month && now.day >= birthDate.day);
+    if (!hasHadBirthdayThisYear) age--;
+    return age;
+  }
+
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
+    if (_birthDate == null) {
+      // Validator đã xử lý, nhưng đề phòng state bị thay đổi
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng chọn ngày sinh'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     final state = AppState();
     // Chuẩn hóa dữ liệu: gộp nhiều khoảng trắng thành 1, trim đầu cuối
@@ -59,24 +109,32 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
         ? <String>['0900000000']
         : <String>[contactName.isEmpty ? contact : '$contactName: $contact'];
 
+    // Tính tuổi từ ngày sinh đã chọn
+    final age = _calculateAge(_birthDate!);
+
+    // Thiết bị đeo ESP32 sẽ gửi GPS đầu tiên qua WebSocket/realtime.
+    // Đến lúc đó, app sẽ set isOffline=false và cập nhật lat/lng/safeZoneLat/Lng.
+    // Tạm thời: lat=0, lng=0, safeZoneLat=0, safeZoneLng=0, isOffline=true.
+    // Bản đồ sẽ hiển thị overlay "Chờ GPS" cho tới khi có tín hiệu.
     final newElderly = ElderlyModel(
       id: newId,
       name: name,
       avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
-      battery: 100,
+      battery: 0, // Chưa có thiết bị, pin = 0
       lastUpdated: DateTime.now(),
       status: 'safe',
-      latitude: 10.762622,
-      longitude: 106.660172,
-      heartRate: 72,
-      spo2: 98,
-      isOffline: false,
+      latitude: 0,
+      longitude: 0,
+      heartRate: 0,
+      spo2: 0,
+      isOffline: true, // Chờ thiết bị ESP32 gửi GPS đầu tiên
       wearableDevice: device,
       isFallen: false,
       safeZoneRadius: 300.0,
-      safeZoneLat: 10.762622,
-      safeZoneLng: 106.660172,
+      safeZoneLat: 0, // Cập nhật khi có GPS
+      safeZoneLng: 0,
       emergencyContacts: contactEntry,
+      age: age,
     );
 
     // Lưu messenger TRƯỚC khi pop để tránh dùng context đã unmount
@@ -86,8 +144,11 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
 
     messenger.showSnackBar(
       SnackBar(
-        content: Text('${Localization.translate('success')}: $name'),
+        content: Text(
+          '${Localization.translate('success')}: $name ($age tuổi) — chờ GPS từ thiết bị',
+        ),
         backgroundColor: Colors.green,
+        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -131,6 +192,32 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
                   if (t.length < 3) return 'Mã thiết bị phải có ít nhất 3 ký tự';
                   if (!RegExp(r'^[A-Za-z0-9_\-]+$').hasMatch(t)) {
                     return 'Mã thiết bị chỉ chứa chữ, số, gạch ngang hoặc gạch dưới';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              // Ngày sinh (mở DatePicker). Bắt buộc — dùng để tính tuổi.
+              TextFormField(
+                controller: _birthDateController,
+                readOnly: true,
+                onTap: _pickBirthDate,
+                decoration: const InputDecoration(
+                  labelText: 'Ngày sinh',
+                  hintText: 'Bấm để chọn ngày',
+                  prefixIcon: Icon(Icons.cake_outlined),
+                  suffixIcon: Icon(Icons.calendar_today, size: 18),
+                ),
+                validator: (v) {
+                  if (_birthDate == null) {
+                    return 'Vui lòng chọn ngày sinh';
+                  }
+                  final age = _calculateAge(_birthDate!);
+                  if (age < 40) {
+                    return 'Tuổi quá thấp ($age). Người cao tuổi tối thiểu 40 tuổi';
+                  }
+                  if (age > 130) {
+                    return 'Ngày sinh không hợp lệ (tuổi $age > 130)';
                   }
                   return null;
                 },

@@ -97,6 +97,8 @@ class _CustomMapState extends State<CustomMap> {
     final targetPos = LatLng(widget.lat, widget.lng);
     final homePos = LatLng(widget.safeZoneLat, widget.safeZoneLng);
     final statusColor = _getStatusColor();
+    // Thiết bị chưa gửi GPS đầu tiên → hiển thị overlay thay vì render map ở (0,0)
+    final waitingForGps = widget.lat == 0 && widget.lng == 0;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
@@ -107,11 +109,16 @@ class _CustomMapState extends State<CustomMap> {
         child: Stack(
           children: [
             // Bản đồ vệ tinh từ Esri - hoàn toàn miễn phí
+            // Lưu ý: khi chưa có GPS, ta vẫn render bản đồ (với tâm ở VN) nhưng sẽ
+            // bị overlay che lên, người dùng không thấy marker ở (0,0).
+            // Tâm mặc định khi chờ GPS: TP.HCM
             FlutterMap(
               mapController: _mapController,
               options: MapOptions(
-                initialCenter: targetPos,
-                initialZoom: _zoom,
+                initialCenter: waitingForGps
+                    ? const LatLng(10.762622, 106.660172)
+                    : targetPos,
+                initialZoom: waitingForGps ? 12 : _zoom,
                 minZoom: 1,
                 maxZoom: 19,
                 interactionOptions: const InteractionOptions(
@@ -134,19 +141,20 @@ class _CustomMapState extends State<CustomMap> {
                 // Vùng an toàn - vẽ trước marker để marker nổi bật
                 CircleLayer(
                   circles: [
-                    CircleMarker(
-                      point: homePos,
-                      // flutter_map dùng đơn vị mét cho radius
-                      radius: widget.safeZoneRadius,
-                      useRadiusInMeter: true,
-                      color: Colors.orange.withValues(alpha: 0.2),
-                      borderColor: Colors.orange,
-                      borderStrokeWidth: 2,
-                    ),
+                    if (!waitingForGps && widget.safeZoneLat != 0 && widget.safeZoneLng != 0)
+                      CircleMarker(
+                        point: homePos,
+                        // flutter_map dùng đơn vị mét cho radius
+                        radius: widget.safeZoneRadius,
+                        useRadiusInMeter: true,
+                        color: Colors.orange.withValues(alpha: 0.2),
+                        borderColor: Colors.orange,
+                        borderStrokeWidth: 2,
+                      ),
                   ],
                 ),
                 // Đường dẫn SOS (nếu bật)
-                if (widget.isSOSMode)
+                if (widget.isSOSMode && !waitingForGps)
                   PolylineLayer(
                     polylines: [
                       Polyline(
@@ -159,32 +167,33 @@ class _CustomMapState extends State<CustomMap> {
                       ),
                     ],
                   ),
-                // Markers cho người cao tuổi và nhà
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: targetPos,
-                      width: 140,
-                      height: 80,
-                      child: _buildPinMarker(
-                        color: statusColor,
-                        label: widget.relativeName,
-                        snippet: _getStatusSnippet(),
+                // Markers cho người cao tuổi và nhà - ẩn khi chờ GPS
+                if (!waitingForGps)
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: targetPos,
+                        width: 140,
+                        height: 80,
+                        child: _buildPinMarker(
+                          color: statusColor,
+                          label: widget.relativeName,
+                          snippet: _getStatusSnippet(),
+                        ),
                       ),
-                    ),
-                    Marker(
-                      point: homePos,
-                      width: 140,
-                      height: 80,
-                      child: _buildPinMarker(
-                        color: Colors.blue,
-                        label: 'Nhà',
-                        snippet: 'Vùng an toàn trung tâm',
-                        showPulse: false,
+                      Marker(
+                        point: homePos,
+                        width: 140,
+                        height: 80,
+                        child: _buildPinMarker(
+                          color: Colors.blue,
+                          label: 'Nhà',
+                          snippet: 'Vùng an toàn trung tâm',
+                          showPulse: false,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
                 // Attribution bắt buộc theo policy của Esri
                 RichAttributionWidget(
                   attributions: [
@@ -193,6 +202,9 @@ class _CustomMapState extends State<CustomMap> {
                 ),
               ],
             ),
+
+            // Overlay "Chờ GPS" khi thiết bị ESP32 chưa gửi tọa độ đầu tiên
+            if (waitingForGps) _buildWaitingGpsOverlay(isDark),
 
             // Thanh trượt zoom đặt phía trên cùng của bản đồ (overlay)
             Positioned(
@@ -273,6 +285,75 @@ class _CustomMapState extends State<CustomMap> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Overlay hiển thị khi thiết bị ESP32 chưa gửi GPS đầu tiên.
+  /// Che toàn bộ bản đồ, thông báo cho người dùng biết đang chờ tín hiệu.
+  Widget _buildWaitingGpsOverlay(bool isDark) {
+    return Positioned.fill(
+      child: Container(
+        color: (isDark ? const Color(0xFF0F172A) : Colors.white).withValues(alpha: 0.88),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.gps_off,
+                    size: 40,
+                    color: Colors.orange,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Chờ tín hiệu GPS',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Thiết bị đeo "${widget.relativeName}" chưa gửi tọa độ.\n'
+                  'Vị trí sẽ xuất hiện ngay khi có tín hiệu GPS từ ESP32.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'TRẠNG THÁI: OFFLINE',
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

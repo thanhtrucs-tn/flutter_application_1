@@ -263,6 +263,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 8),
                     _buildDevButton('MÔ PHỎNG NHỊP TIM/SPO2 XẤU (BÀ A)', Icons.heart_broken, Colors.amber.shade800, () => state.simulateHeartRateSpike(1)),
                     const SizedBox(height: 8),
+                    _buildDevButton('MÔ PHỎNG THIẾT BỊ ONLINE (BÀ A)', Icons.wifi_tethering, Colors.teal, () => state.simulateDeviceOnline(1)),
+                    const SizedBox(height: 8),
                     OutlinedButton.icon(
                       onPressed: () {
                         final elderly = state.relatives.firstWhere((e) => e.id == 1);
