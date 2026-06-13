@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
-import '../utils/role_utils.dart';
 import '../widgets/sos_app_header.dart';
 import '../widgets/add_relative_dialog.dart';
 import '../widgets/relative_reorderable_list.dart';
@@ -93,7 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
             relatives: relatives,
             overallStatus: overallStatus,
             selectedElderlyId: _defaultSelectedElderlyId,
-            isAdmin: RoleUtils.isAdmin(state.userProfile.role),
             onTap: (id) {
               Navigator.push(
                 context,

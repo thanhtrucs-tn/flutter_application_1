@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/elderly_model.dart';
 import '../utils/localization.dart';
-import 'delete_relative_confirmation_dialog.dart';
 import 'elderly_card_content.dart';
 
 /// Card hiển thị thông tin người cao tuổi trong danh sách Home.
@@ -16,7 +15,6 @@ import 'elderly_card_content.dart';
 class ElderlyListCard extends StatelessWidget {
   final ElderlyModel elderly;
   final bool isSelected;
-  final bool isAdmin;
   final VoidCallback onTap;
   final int? reorderIndex;
   final bool showDragHandle;
@@ -25,7 +23,6 @@ class ElderlyListCard extends StatelessWidget {
     super.key,
     required this.elderly,
     required this.isSelected,
-    this.isAdmin = false,
     required this.onTap,
     this.reorderIndex,
     this.showDragHandle = false,
@@ -52,20 +49,10 @@ class ElderlyListCard extends StatelessWidget {
           onTap: onTap,
           child: Padding(
             padding: EdgeInsets.fromLTRB(16, 14, showDragHandle ? 48 : 16, 14),
-            child: Stack(
-              children: [
-                ElderlyCardContent(
-                  elderly: elderly,
-                  statusDotColor: statusDotColor,
-                  statusText: statusText,
-                ),
-                if (isAdmin)
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: _buildPopupMenu(context),
-                  ),
-              ],
+            child: ElderlyCardContent(
+              elderly: elderly,
+              statusDotColor: statusDotColor,
+              statusText: statusText,
             ),
           ),
         ),
@@ -122,29 +109,6 @@ class ElderlyListCard extends StatelessWidget {
       Colors.grey.shade300,
       const Color(0xFF10B981),
       Localization.translate('statusSafeText'),
-    );
-  }
-
-  Widget _buildPopupMenu(BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert, color: Colors.grey),
-      tooltip: Localization.translate('manageRelatives'),
-      onSelected: (_) => DeleteRelativeConfirmationDialog.show(context, elderly),
-      itemBuilder: (_) => [
-        PopupMenuItem(
-          value: 'delete',
-          child: Row(
-            children: [
-              const Icon(Icons.delete_outline, color: Color(0xFFE53935), size: 20),
-              const SizedBox(width: 12),
-              Text(
-                Localization.translate('deleteRelative'),
-                style: const TextStyle(color: Color(0xFFE53935)),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

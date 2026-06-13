@@ -12,11 +12,10 @@
     và tiếng Anh.
   - `lib/widgets/delete_relative_confirmation_dialog.dart`: hộp thoại xác nhận
     xóa với nút Cancel/Delete và SnackBar thông báo kết quả.
-  - `lib/widgets/elderly_list_card.dart`: thêm biểu tượng `⋮` (PopupMenuButton)
-    hiển thị chỉ khi người dùng là quản trị viên.
+  - `lib/widgets/elderly_list_card.dart`: **gỡ** biểu tượng `⋮`
+    (PopupMenuButton) — tính năng xóa không còn ở Home.
   - `lib/widgets/relative_reorderable_list.dart` và
-    `lib/screens/home_screen.dart`: truyền cờ `isAdmin` từ `UserProfile.role`
-    xuống card.
+    `lib/screens/home_screen.dart`: **gỡ** truyền cờ `isAdmin` xuống card.
   - `lib/screens/login_screen.dart`: cập nhật `UserProfile.role` thành
     `Quản trị viên` khi đăng nhập bằng tài khoản `admin`.
   - `lib/widgets/manage_relatives_section.dart` (file mới): tách section

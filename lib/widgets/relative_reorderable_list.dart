@@ -21,7 +21,6 @@ class RelativeReorderableList extends StatelessWidget {
   final String overallStatus;
   final int selectedElderlyId;
   final ValueChanged<int> onTap;
-  final bool isAdmin;
 
   const RelativeReorderableList({
     super.key,
@@ -29,7 +28,6 @@ class RelativeReorderableList extends StatelessWidget {
     required this.overallStatus,
     required this.selectedElderlyId,
     required this.onTap,
-    this.isAdmin = false,
   });
 
   bool _isMobile(BuildContext context) {
@@ -92,7 +90,6 @@ class RelativeReorderableList extends StatelessWidget {
           reorderIndex: index,
           showDragHandle: !isMobile,
           isSelected: selectedElderlyId == r.id,
-          isAdmin: isAdmin,
           onTap: () => onTap(r.id),
         );
 
