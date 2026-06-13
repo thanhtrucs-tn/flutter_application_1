@@ -11,7 +11,8 @@
     `deleteRelativeConfirm`, `deleteRelativeSuccess`, `delete` cho tiếng Việt
     và tiếng Anh.
   - `lib/widgets/delete_relative_confirmation_dialog.dart`: hộp thoại xác nhận
-    xóa với nút Cancel/Delete và SnackBar thông báo kết quả.
+    xóa chỉ hiển thị chữ "Xóa người thân" trong tiêu đề, không có icon; nút
+    Cancel/Delete đều là `TextButton`, không dùng icon.
   - `lib/widgets/elderly_list_card.dart`: **gỡ** biểu tượng `⋮`
     (PopupMenuButton) — tính năng xóa không còn ở Home.
   - `lib/widgets/relative_reorderable_list.dart` và
@@ -19,8 +20,9 @@
   - `lib/screens/login_screen.dart`: cập nhật `UserProfile.role` thành
     `Quản trị viên` khi đăng nhập bằng tài khoản `admin`.
   - `lib/widgets/manage_relatives_section.dart` (file mới): tách section
-    "Quản lý người thân" từ `SettingsScreen`, thêm popup menu xóa cho mỗi
-    người thân (chỉ admin) và nút thêm người thân.
+    "Quản lý người thân" từ `SettingsScreen`, thêm icon thùng rác
+    (`Icons.delete_outline`) để mở hộp thoại xác nhận xóa cho mỗi người thân
+    (khi có quyền) và nút thêm người thân.
   - `lib/widgets/relative_reorderable_list.dart`: hiển thị empty-state khi
     danh sách người thân trống, gồm icon, hướng dẫn và nút "Thêm người thân
     đầu tiên".

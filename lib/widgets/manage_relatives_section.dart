@@ -8,7 +8,7 @@ import 'settings_section_card.dart';
 /// Section "Quản lý người thân" dùng chung trong SettingsScreen.
 ///
 /// Hiển thị danh sách người thân đang giám sát, cho phép thêm mới và
-/// xóa (chỉ admin) qua popup menu `⋮`.
+/// xóa (nếu có quyền) qua icon thùng rác bên phải mỗi người thân.
 class ManageRelativesSection extends StatelessWidget {
   final List<ElderlyModel> relatives;
   final bool canDelete;
@@ -85,25 +85,10 @@ class ManageRelativesSection extends StatelessWidget {
             ),
           ),
           if (canDelete)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Colors.grey),
-              tooltip: Localization.translate('manageRelatives'),
-              onSelected: (_) => DeleteRelativeConfirmationDialog.show(context, r),
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.delete_outline, color: Color(0xFFE53935), size: 20),
-                      const SizedBox(width: 12),
-                      Text(
-                        Localization.translate('deleteRelative'),
-                        style: const TextStyle(color: Color(0xFFE53935)),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Color(0xFFE53935)),
+              tooltip: Localization.translate('deleteRelative'),
+              onPressed: () => DeleteRelativeConfirmationDialog.show(context, r),
             ),
         ],
       ),

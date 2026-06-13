@@ -70,26 +70,14 @@ class _DeleteRelativeConfirmationDialogState extends State<DeleteRelativeConfirm
       canPop: !_isDeleting,
       child: AlertDialog(
         title: Text(Localization.translate('deleteRelative')),
-        content: Text(Localization.translate('deleteRelativeConfirm')),
         actions: [
           TextButton(
             onPressed: _isDeleting ? null : () => Navigator.of(context).pop(false),
             child: Text(Localization.translate('cancel')),
           ),
-          ElevatedButton.icon(
+          TextButton(
             onPressed: _isDeleting ? null : () => _confirmDelete(context),
-            icon: _isDeleting
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Icon(Icons.delete_outline, size: 18),
-            label: Text(Localization.translate('delete')),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE53935),
-              foregroundColor: Colors.white,
-            ),
+            child: Text(Localization.translate('delete')),
           ),
         ],
       ),
