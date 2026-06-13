@@ -12,10 +12,9 @@ import '../widgets/status_banner.dart';
 /// Widget này sử dụng [ReorderableListView] với header cố định (user header,
 /// status banner, section title). Mỗi item là một card người thân.
 ///
-/// - Trên mobile: nhấn giữ bất kỳ đâu trên thẻ để kéo thả.
-/// - Trên desktop/web: kéo handle (dấu =) ở bên phải thẻ.
-///
-/// Dữ liệu thứ tự mới được lưu qua [AppState].
+/// Người dùng nhấn giữ (~300-500ms) vào bất kỳ vị trí nào bên trong card
+/// để bắt đầu kéo thả. Card được nâng lên với hiệu ứng elevation/shadow trong
+/// khi kéo. Thứ tự mới được lưu qua [AppState] ngay sau khi thả.
 class RelativeReorderableList extends StatelessWidget {
   final List<ElderlyModel> relatives;
   final String overallStatus;
@@ -30,17 +29,8 @@ class RelativeReorderableList extends StatelessWidget {
     required this.onTap,
   });
 
-  bool _isMobile(BuildContext context) {
-    final platform = Theme.of(context).platform;
-    return platform == TargetPlatform.android ||
-        platform == TargetPlatform.iOS ||
-        platform == TargetPlatform.fuchsia;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isMobile = _isMobile(context);
-
     if (relatives.isEmpty) {
       return _buildEmptyState(context);
     }
@@ -55,14 +45,15 @@ class RelativeReorderableList extends StatelessWidget {
         return AnimatedBuilder(
           animation: animation,
           builder: (context, child) {
-            final elevation = Tween<double>(begin: 2, end: 12).evaluate(animation);
-            final scale = Tween<double>(begin: 1, end: 1.02).evaluate(animation);
+            final elevation = Tween<double>(begin: 2, end: 24).evaluate(animation);
+            final scale = Tween<double>(begin: 1, end: 1.03).evaluate(animation);
             return Transform.scale(
               scale: scale,
               child: Material(
                 elevation: elevation,
                 borderRadius: BorderRadius.circular(16),
                 color: Colors.transparent,
+                shadowColor: Colors.black.withValues(alpha: 0.35),
                 clipBehavior: Clip.none,
                 child: child,
               ),
@@ -87,22 +78,16 @@ class RelativeReorderableList extends StatelessWidget {
         final card = ElderlyListCard(
           key: ValueKey(r.id),
           elderly: r,
-          reorderIndex: index,
-          showDragHandle: !isMobile,
           isSelected: selectedElderlyId == r.id,
           onTap: () => onTap(r.id),
         );
 
-        // Mobile: long-press toàn bộ card. Desktop: chỉ kéo qua handle bên phải
-        // vì chuột không có UX nhấn giữ toàn card như mobile.
-        if (isMobile) {
-          return ReorderableDelayedDragStartListener(
-            key: ValueKey('drag_listener_${r.id}'),
-            index: index,
-            child: card,
-          );
-        }
-        return card;
+        // Nhấn giữ bất kỳ vị trí nào trên card để bắt đầu kéo thả.
+        return ReorderableDelayedDragStartListener(
+          key: ValueKey('drag_listener_${r.id}'),
+          index: index,
+          child: card,
+        );
       },
     );
   }

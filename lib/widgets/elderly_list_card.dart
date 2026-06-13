@@ -5,10 +5,8 @@ import 'elderly_card_content.dart';
 
 /// Card hiển thị thông tin người cao tuổi trong danh sách Home.
 ///
-/// Trên mobile, card được bọc trong [ReorderableDelayedDragStartListener] ở
-/// ngoài, nên người dùng có thể nhấn giữ bất kỳ đâu trên thẻ để kéo thả.
-/// Trên desktop/web, handle kéo ([ReorderableDragStartListener]) hiển thị bên
-/// phải thẻ vì chuột không có UX nhấn giữ toàn card như mobile.
+/// Card được bọc trong [ReorderableDelayedDragStartListener] ở ngoài, nên
+/// người dùng có thể nhấn giữ bất kỳ đâu trên thẻ để bắt đầu kéo thả.
 ///
 /// Phần nội dung dùng [GestureDetector] với [HitTestBehavior.translucent] để
 /// tap mở chi tiết mà không cạnh tranh gesture nhấn giữ của listener cha.
@@ -16,16 +14,12 @@ class ElderlyListCard extends StatelessWidget {
   final ElderlyModel elderly;
   final bool isSelected;
   final VoidCallback onTap;
-  final int? reorderIndex;
-  final bool showDragHandle;
 
   const ElderlyListCard({
     super.key,
     required this.elderly,
     required this.isSelected,
     required this.onTap,
-    this.reorderIndex,
-    this.showDragHandle = false,
   });
 
   @override
@@ -48,7 +42,7 @@ class ElderlyListCard extends StatelessWidget {
           behavior: HitTestBehavior.translucent,
           onTap: onTap,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(16, 14, showDragHandle ? 48 : 16, 14),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
             child: ElderlyCardContent(
               elderly: elderly,
               statusDotColor: statusDotColor,
@@ -59,28 +53,7 @@ class ElderlyListCard extends StatelessWidget {
       ),
     );
 
-    if (!showDragHandle || reorderIndex == null) {
-      return content;
-    }
-
-    return Stack(
-      key: key,
-      children: [
-        content,
-        Positioned.fill(
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ReorderableDragStartListener(
-                index: reorderIndex!,
-                child: const Icon(Icons.drag_handle, color: Colors.grey),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
+    return content;
   }
 
   (Color, Color, String) _resolveStatus() {
