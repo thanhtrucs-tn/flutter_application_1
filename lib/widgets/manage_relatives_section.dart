@@ -11,12 +11,12 @@ import 'settings_section_card.dart';
 /// xóa (chỉ admin) qua popup menu `⋮`.
 class ManageRelativesSection extends StatelessWidget {
   final List<ElderlyModel> relatives;
-  final bool isAdmin;
+  final bool canDelete;
 
   const ManageRelativesSection({
     super.key,
     required this.relatives,
-    required this.isAdmin,
+    required this.canDelete,
   });
 
   @override
@@ -84,7 +84,7 @@ class ManageRelativesSection extends StatelessWidget {
               shape: BoxShape.circle,
             ),
           ),
-          if (isAdmin)
+          if (canDelete)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: Colors.grey),
               tooltip: Localization.translate('manageRelatives'),

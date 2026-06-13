@@ -117,7 +117,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // 2. DANH SÁCH NGƯỜI THÂN ĐANG GIÁM SÁT
                 ManageRelativesSection(
                   relatives: state.relatives,
-                  isAdmin: RoleUtils.isAdmin(state.userProfile.role),
+                  canDelete: RoleUtils.canDeleteRelative(state.userProfile.role),
                 ),
                 const SizedBox(height: 16),
 
