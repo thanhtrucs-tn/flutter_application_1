@@ -42,6 +42,11 @@
   - `lib/utils/localization.dart`: thêm khóa `fillAllFields` cho màn hình đăng
     nhập.
   - `lib/screens/login_screen.dart`: dùng key `fillAllFields` thay vì hardcode.
+  - `lib/screens/settings_screen.dart`: thay đổi mục ngôn ngữ từ `Switch`
+    (bật/tắt Vi/En) thành `ListTile` mở hộp thoại chọn ngôn ngữ, cho phép
+    user/admin chọn giữa Tiếng Việt và English.
+  - `lib/utils/localization.dart`: thêm các khóa `selectLanguage`, `vietnamese`,
+    `english` cho tiếng Việt và tiếng Anh.
   - `test/relatives_reorder_test.dart`: 4 unit test cho `deleteElderly`.
 
 ### Fixed

@@ -29,6 +29,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  String _languageDisplayName(String code) {
+    switch (code) {
+      case 'en':
+        return Localization.translate('english');
+      case 'vi':
+      default:
+        return Localization.translate('vietnamese');
+    }
+  }
+
+  Future<void> _showLanguagePicker(
+    BuildContext context,
+    AppState state,
+    String currentCode,
+  ) async {
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(Localization.translate('selectLanguage')),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildLanguageOption(context, 'vi', currentCode),
+              _buildLanguageOption(context, 'en', currentCode),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selected != null && selected != currentCode) {
+      await state.toggleLanguage(selected);
+    }
+  }
+
+  Widget _buildLanguageOption(BuildContext context, String code, String currentCode) {
+    final isSelected = code == currentCode;
+    return ListTile(
+      title: Text(_languageDisplayName(code)),
+      trailing: isSelected ? const Icon(Icons.check, color: Color(0xFFE53935)) : null,
+      onTap: () => Navigator.of(context).pop(code),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = AppState();
@@ -142,10 +187,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const Divider(height: 1),
                     ListTile(
                       title: Text(Localization.translate('language'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                      trailing: Switch(
-                        value: settings.languageCode == 'en',
-                        onChanged: (v) => state.toggleLanguage(v ? 'en' : 'vi'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _languageDisplayName(settings.languageCode),
+                            style: const TextStyle(fontSize: 15, color: Colors.grey),
+                          ),
+                          const Icon(Icons.chevron_right, color: Colors.grey),
+                        ],
                       ),
+                      onTap: () => _showLanguagePicker(context, state, settings.languageCode),
                     ),
                     const Divider(height: 1),
                     ListTile(
