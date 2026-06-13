@@ -88,7 +88,7 @@ void main() {
       expect(e1.age, isNull, reason: 'bản gốc không đổi');
     });
 
-    test('toMap → fromMap bảo toàn age', () {
+    test('toMap → fromMap bảo toàn age và avatarLocalPath', () {
       final e1 = ElderlyModel(
         id: 1,
         name: 'Test',
@@ -108,10 +108,38 @@ void main() {
         safeZoneLng: 106,
         emergencyContacts: const [],
         age: 88,
+        avatarLocalPath: '/data/avatar.jpg',
       );
       final map = e1.toMap();
       final e2 = ElderlyModel.fromMap(map);
       expect(e2.age, 88);
+      expect(e2.avatarLocalPath, '/data/avatar.jpg');
+    });
+
+    test('copyWith cập nhật avatarLocalPath', () {
+      final e1 = ElderlyModel(
+        id: 1,
+        name: 'Test',
+        avatar: 'https://example.com/old.jpg',
+        battery: 80,
+        lastUpdated: DateTime.now(),
+        status: 'safe',
+        latitude: 10,
+        longitude: 106,
+        heartRate: 75,
+        spo2: 98,
+        isOffline: false,
+        wearableDevice: 'ESP32',
+        isFallen: false,
+        safeZoneRadius: 300,
+        safeZoneLat: 10,
+        safeZoneLng: 106,
+        emergencyContacts: const [],
+      );
+      final e2 = e1.copyWith(avatarLocalPath: '/data/new.jpg');
+      expect(e2.avatarLocalPath, '/data/new.jpg');
+      expect(e2.avatar, 'https://example.com/old.jpg');
+      expect(e1.avatarLocalPath, '');
     });
 
     test('fromMap với dữ liệu cũ KHÔNG có field age → age = null', () {

@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(32) NOT NULL UNIQUE,
     password VARCHAR(64) NOT NULL,
+    name VARCHAR(100),
+    email VARCHAR(48) UNIQUE,
+    phone VARCHAR(10),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -63,7 +66,8 @@ CREATE TABLE IF NOT EXISTS alerts (
 
 -- Chèn tài khoản đăng nhập mẫu (Tên đăng nhập: admin / Mật khẩu: admin123)
 -- Nếu đã có tài khoản, MySQL sẽ bỏ qua lệnh này do ràng buộc UNIQUE
-INSERT IGNORE INTO users (username, password) VALUES ('admin', 'admin123');
+INSERT IGNORE INTO users (username, password, name, email, phone)
+VALUES ('admin', 'admin123', 'Quản trị viên', 'admin@soscare.local', '0901234567');
 
 -- Chèn dữ liệu người cao tuổi mẫu
 INSERT IGNORE INTO elderly (id, name, avatar, battery, status, latitude, longitude, heart_rate, spo2, is_offline, wearable_device, is_fallen, safe_zone_radius, safe_zone_lat, safe_zone_lng, emergency_contacts)
@@ -78,3 +82,12 @@ VALUES
 ('alert_101', 1, 'Bà Nguyễn Thị A', NOW() - INTERVAL 1 DAY - INTERVAL 2 HOUR, '268 Lý Thường Kiệt, Q.10, TP.HCM', 'warning', 'Nhịp tim cao bất thường (115 bpm)', 1, 10.762622, 106.660172),
 ('alert_102', 2, 'Ông Trần Văn B', NOW() - INTERVAL 3 DAY, 'Công viên Lê Thị Riêng, Q.10, TP.HCM', 'critical', 'Phát hiện Té Ngã (Fall Detected)', 1, 10.764000, 106.661000),
 ('alert_103', 1, 'Bà Nguyễn Thị A', NOW() - INTERVAL 5 DAY, 'Ngoài Vùng An Toàn (Out of Safe Zone)', 'critical', 'Vượt ra ngoài khu vực an toàn (> 300m)', 1, 10.768000, 106.665000);
+
+-- ==========================================
+-- MIGRATION NOTE
+-- ==========================================
+-- Nếu bảng users đã được tạo từ phiên bản cũ (chỉ có id, username, password)
+-- và ứng dụng báo lỗi Error 1054 (42S22): Unknown column 'name' in 'field list',
+-- hãy chạy file db-migration-001-add-user-profile-columns.sql thay vì file này.
+-- Câu lệnh ALTER TABLE trong file đó thêm các cột name/email/phone với NULL,
+-- không làm mất dữ liệu cũ và giữ nguyên thứ tự cột như định nghĩa CREATE TABLE.

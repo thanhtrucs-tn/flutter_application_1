@@ -251,4 +251,56 @@ void main() {
       expect(state.userProfile.phone, '0901234567');
     });
   });
+
+  group('Per-account profile', () {
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    test('mỗi tài khoản có profile riêng, độc lập và persist', () async {
+      final state = AppState();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      await state.setCurrentAccount(
+        'alice',
+        displayName: 'Alice A',
+        email: 'alice@example.com',
+        phone: '0901111111',
+      );
+      expect(state.userProfile.name, 'Alice A');
+
+      await state.updateUserProfile(
+        state.userProfile.copyWith(name: 'Alice B'),
+      );
+      expect(state.userProfile.name, 'Alice B');
+
+      await state.setCurrentAccount(
+        'bob',
+        displayName: 'Bob A',
+        email: 'bob@example.com',
+        phone: '0902222222',
+      );
+      expect(state.userProfile.name, 'Bob A');
+
+      // Quay lại alice → phải thấy tên đã lưu, không bị bob ghi đè.
+      await state.setCurrentAccount('alice');
+      expect(state.userProfile.name, 'Alice B');
+    });
+
+    test('setCurrentAccount dùng displayName từ DB khi chưa có profile cục bộ', () async {
+      final state = AppState();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      await state.setCurrentAccount(
+        'carol',
+        displayName: 'Carol Carol',
+        email: 'carol@example.com',
+        phone: '0903333333',
+      );
+      expect(state.userProfile.id, 'carol');
+      expect(state.userProfile.name, 'Carol Carol');
+      expect(state.userProfile.email, 'carol@example.com');
+      expect(state.userProfile.phone, '0903333333');
+    });
+  });
 }

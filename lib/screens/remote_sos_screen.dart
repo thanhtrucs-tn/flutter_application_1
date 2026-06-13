@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/elderly_model.dart';
 import '../utils/app_state.dart';
+import '../widgets/profile_avatar.dart';
 
 /// Màn hình BÁO ĐỘNG TỪ XA — gửi tín hiệu SOS khẩn cấp từ xa.
 /// Hiển thị:
@@ -137,10 +138,10 @@ class _RemoteSosScreenState extends State<RemoteSosScreen>
                                 width: 4,
                               ),
                             ),
-                            child: CircleAvatar(
+                            child: ProfileAvatar(
+                              avatarUrl: widget.elderly.avatar,
+                              avatarLocalPath: widget.elderly.avatarLocalPath,
                               radius: 70,
-                              backgroundImage:
-                                  NetworkImage(widget.elderly.avatar),
                               backgroundColor: Colors.red.shade100,
                             ),
                           ),

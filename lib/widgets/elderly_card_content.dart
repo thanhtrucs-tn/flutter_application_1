@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/elderly_model.dart';
 import '../utils/localization.dart';
+import 'elderly_avatar.dart';
 import 'vital_badge.dart';
 
 /// Phần nội dung hiển thị bên trong card người cao tuổi.
@@ -23,10 +24,7 @@ class ElderlyCardContent extends StatelessWidget {
       children: [
         Row(
           children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundImage: NetworkImage(elderly.avatar),
-            ),
+            ElderlyAvatar(elderly: elderly, radius: 28),
             const SizedBox(width: 14),
             Expanded(
               child: Column(

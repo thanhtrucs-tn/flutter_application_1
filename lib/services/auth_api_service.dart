@@ -38,14 +38,27 @@ class AuthApiService {
   }
 
   /// Gọi API đăng ký tài khoản.
+  ///
+  /// [email] là địa chỉ email của người dùng, bắt buộc với form đăng ký mới.
+  /// [name] giữ lại để tương thích, không còn bắt buộc.
   /// Trả về `null` nếu thành công, ngược lại trả về thông báo lỗi.
-  static Future<String?> register(String username, String password) async {
+  static Future<String?> register(
+    String username,
+    String password, {
+    String? email,
+    String? name,
+  }) async {
     try {
       final response = await http
           .post(
             Uri.parse('$baseUrl/api/register'),
             headers: {'Content-Type': 'application/json'},
-            body: json.encode({'username': username, 'password': password}),
+            body: json.encode({
+              'username': username,
+              'password': password,
+              'email':? email,
+              'name':? name,
+            }),
           )
           .timeout(const Duration(seconds: 10));
 
@@ -64,8 +77,10 @@ class AuthApiService {
   }
 
   /// Gọi API đăng nhập.
-  /// Trả về `true` nếu thành công, `false` nếu sai tài khoản.
-  static Future<bool> login(String username, String password) async {
+  ///
+  /// Trả về thông tin tài khoản nếu thành công, ngược lại `null`.
+  static Future<Map<String, String>?> login(
+      String username, String password) async {
     try {
       final response = await http
           .post(
@@ -79,10 +94,48 @@ class AuthApiService {
       final success = response.statusCode == 200 && data['success'] == true;
       if (success) {
         debugPrint('✅ Đăng nhập thành công qua API: $username');
+        final user = data['user'] as Map<String, dynamic>? ?? {};
+        return {
+          'id': (user['id'] ?? '').toString(),
+          'username': (user['username'] ?? username).toString(),
+          'name': (user['name'] ?? username).toString(),
+          'email': (user['email'] ?? '').toString(),
+          'phone': (user['phone'] ?? '').toString(),
+        };
       }
-      return success;
+      return null;
     } catch (e) {
       debugPrint('❌ Lỗi đăng nhập qua API: $e');
+      return null;
+    }
+  }
+
+  /// Gọi API cập nhật thông tin cá nhân.
+  ///
+  /// Trả về `true` nếu thành công.
+  static Future<bool> updateProfile(
+    String username, {
+    required String name,
+    required String email,
+    required String phone,
+  }) async {
+    try {
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/api/users/$username'),
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({
+              'name': name,
+              'email': email,
+              'phone': phone,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (e) {
+      debugPrint('❌ Lỗi cập nhật profile qua API: $e');
       return false;
     }
   }

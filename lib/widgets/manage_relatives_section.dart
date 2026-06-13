@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/elderly_model.dart';
+import '../utils/app_state.dart';
 import '../utils/localization.dart';
 import 'add_relative_dialog.dart';
+import 'avatar_picker.dart';
 import 'delete_relative_confirmation_dialog.dart';
+import 'elderly_avatar.dart';
 import 'settings_section_card.dart';
 
 /// Section "Quản lý người thân" dùng chung trong SettingsScreen.
@@ -61,9 +64,23 @@ class ManageRelativesSection extends StatelessWidget {
 
     return ListTile(
       contentPadding: const EdgeInsets.only(left: 16, right: 4, top: 4, bottom: 4),
-      leading: CircleAvatar(
-        backgroundImage: NetworkImage(r.avatar),
-        radius: 20,
+      leading: Stack(
+        alignment: Alignment.bottomRight,
+        children: [
+          ElderlyAvatar(
+            elderly: r,
+            radius: 20,
+            onTap: () => _showAvatarPicker(context, r),
+          ),
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: const BoxDecoration(
+              color: Color(0xFFE53935),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.camera_alt, color: Colors.white, size: 10),
+          ),
+        ],
       ),
       title: Text(
         r.name,
@@ -93,5 +110,41 @@ class ManageRelativesSection extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Mở dialog cho phép chọn ảnh đại diện mới cho người thân.
+  Future<void> _showAvatarPicker(BuildContext context, ElderlyModel r) async {
+    final newPath = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${Localization.translate('changeAvatar')} ${r.name}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AvatarPicker(
+              avatarUrl: r.avatar,
+              avatarLocalPath: r.avatarLocalPath,
+              radius: 56,
+              onPicked: (path) => Navigator.of(context).pop(path),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              Localization.translate('tapAvatarToPickFromGallery'),
+              style: const TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(Localization.translate('cancel')),
+          ),
+        ],
+      ),
+    );
+
+    if (newPath != null && newPath.isNotEmpty) {
+      AppState().updateElderly(r.copyWith(avatarLocalPath: newPath));
+    }
   }
 }

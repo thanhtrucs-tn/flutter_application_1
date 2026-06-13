@@ -81,8 +81,11 @@ class DbHelper {
     }
   }
 
-  /// Hàm đăng nhập
-  static Future<bool> loginUser(String username, String password) async {
+  /// Hàm đăng nhập.
+  ///
+  /// Trả về thông tin tài khoản nếu thành công, ngược lại trả về `null`.
+  /// Thông tin trả về gồm: `id`, `username`, `name`, `email`, `phone`.
+  static Future<Map<String, String>?> loginUser(String username, String password) async {
     // Trên web (Chrome): Ưu tiên gọi Backend API để xác thực với MySQL thật
     if (kIsWeb && backendAvailable) {
       return await AuthApiService.login(username, password);
@@ -91,12 +94,18 @@ class DbHelper {
     try {
       final conn = await getConnection();
       if (conn != null) {
-        // Sử dụng MySQL thực tế
+        // Sử dụng MySQL thực tế; hỗ trợ đăng nhập bằng username hoặc email
+        final isEmail = _isValidEmail(username);
+        final column = isEmail ? 'email' : 'username';
         var results = await conn.query(
-            'SELECT id FROM users WHERE username = ? AND password = ?',
+            'SELECT id, username, name, email, phone FROM users WHERE $column = ? AND password = ?',
             [username, password]);
         await conn.close();
-        return results.isNotEmpty;
+        if (results.isNotEmpty) {
+          final row = results.first;
+          return _rowToUserInfo(row);
+        }
+        return null;
       } else {
         // Fallback: Sử dụng SharedPreferences lưu cục bộ
         return await _loginOffline(username, password);
@@ -107,11 +116,31 @@ class DbHelper {
     }
   }
 
-  /// Hàm đăng ký
-  static Future<String?> registerUser(String username, String password) async {
+  /// Kiểm tra định dạng email cơ bản.
+  static bool _isValidEmail(String value) {
+    return RegExp(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+        .hasMatch(value.trim());
+  }
+
+  /// Hàm đăng ký.
+  ///
+  /// [email] là địa chỉ email, bắt buộc với form đăng ký mới.
+  /// [name] là họ tên hiển thị (không còn dùng trong đăng ký, giữ lại để
+  /// tương thích). Trả về `null` nếu thành công, ngược lại trả về thông báo lỗi.
+  static Future<String?> registerUser(
+    String username,
+    String password, {
+    String? email,
+    String? name,
+  }) async {
     // Trên web (Chrome): Ưu tiên gọi Backend API để insert vào MySQL thật
     if (kIsWeb && backendAvailable) {
-      return await AuthApiService.register(username, password);
+      return await AuthApiService.register(
+        username,
+        password,
+        email: email,
+        name: name,
+      );
     }
 
     try {
@@ -119,8 +148,8 @@ class DbHelper {
       if (conn != null) {
         // Sử dụng MySQL thực tế
         var result = await conn.query(
-            'INSERT INTO users (username, password) VALUES (?, ?)',
-            [username, password]);
+            'INSERT INTO users (username, password, email, name) VALUES (?, ?, ?, ?)',
+            [username, password, email ?? '', name ?? '']);
         await conn.close();
 
         if (result.affectedRows! > 0) {
@@ -129,11 +158,57 @@ class DbHelper {
         return 'Không có dữ liệu nào được ghi.';
       } else {
         // Fallback: Lưu tài khoản offline
-        return await _registerOffline(username, password);
+        return await _registerOffline(
+          username,
+          password,
+          email: email,
+          name: name,
+        );
       }
     } catch (e) {
       print('Lỗi đăng ký: $e. Thử đăng ký offline...');
-      return await _registerOffline(username, password);
+      return await _registerOffline(
+        username,
+        password,
+        email: email,
+        name: name,
+      );
+    }
+  }
+
+  /// Cập nhật thông tin cá nhân (họ tên, email, SĐT) của một tài khoản.
+  ///
+  /// Trả về `true` nếu cập nhật thành công.
+  static Future<bool> updateUserProfile(
+    String username,
+    String name,
+    String email,
+    String phone,
+  ) async {
+    if (kIsWeb && backendAvailable) {
+      return await AuthApiService.updateProfile(
+        username,
+        name: name,
+        email: email,
+        phone: phone,
+      );
+    }
+
+    try {
+      final conn = await getConnection();
+      if (conn != null) {
+        var result = await conn.query(
+          'UPDATE users SET name = ?, email = ?, phone = ? WHERE username = ?',
+          [name, email, phone, username],
+        );
+        await conn.close();
+        return result.affectedRows! >= 0;
+      } else {
+        return await _updateOfflineUserProfile(username, name, email, phone);
+      }
+    } catch (e) {
+      print('Lỗi cập nhật profile: $e. Thử cập nhật offline...');
+      return await _updateOfflineUserProfile(username, name, email, phone);
     }
   }
 
@@ -141,51 +216,109 @@ class DbHelper {
   //
   // Dữ liệu được lưu dưới dạng JSON Array để tránh lỗi khi username/password
   // chứa ký tự đặc biệt (đặc biệt là dấu ':').
-  // Ví dụ lưu: [{"u":"admin","p":"admin123"},{"u":"an","p":"1:2"}]
+  // Ví dụ lưu: [{"u":"admin","p":"admin123","e":"admin@example.com","n":"Quản trị viên"}]
   //
   // Mỗi nền tảng (web vs native) có key lưu trữ riêng, đảm bảo tài khoản
   // đăng ký ở Chrome chỉ dùng được trên Chrome, và tài khoản ở Windows
   // chỉ dùng được trên Windows — đúng theo yêu cầu "Giữ tách biệt".
 
-  static Future<bool> _loginOffline(String username, String password) async {
+  static Future<Map<String, String>?> _loginOffline(
+      String username, String password) async {
     final prefs = await SharedPreferences.getInstance();
     // Tài khoản admin mặc định — luôn hoạt động trên mọi nền tảng
     if (username == 'admin' && password == 'admin123') {
-      return true;
+      return {
+        'id': '1',
+        'username': 'admin',
+        'name': 'Quản trị viên',
+        'email': 'admin@soscare.local',
+        'phone': '0901234567',
+      };
     }
 
     final List<dynamic> userList = _readOfflineUsers(prefs);
     for (final item in userList) {
       if (item is Map &&
-          item['u'].toString() == username &&
-          item['p'].toString() == password) {
-        return true;
+          item['p'].toString() == password &&
+          (item['u'].toString() == username ||
+              item['e'].toString() == username)) {
+        return _offlineUserToInfo(item);
       }
     }
-    return false;
+    return null;
   }
 
-  static Future<String?> _registerOffline(String username, String password) async {
+  static Future<String?> _registerOffline(
+    String username,
+    String password, {
+    String? email,
+    String? name,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final List<dynamic> userList = _readOfflineUsers(prefs);
 
     // Kiểm tra trùng username
     for (final item in userList) {
       if (item is Map && item['u'].toString() == username) {
-        return 'Tài khoản này đã tồn tại.';
+        return 'Tên tài khoản này đã tồn tại.';
+      }
+    }
+
+    // Kiểm tra trùng email (nếu có)
+    if (email != null && email.trim().isNotEmpty) {
+      for (final item in userList) {
+        if (item is Map && (item['e'] ?? '').toString() == email.trim()) {
+          return 'Email này đã được sử dụng.';
+        }
       }
     }
 
     // Thêm user mới
-    userList.add({'u': username, 'p': password});
+    userList.add({
+      'u': username,
+      'p': password,
+      'e': email ?? '',
+      'n': name ?? username,
+    });
     await prefs.setString(_offlineUsersKey, json.encode(userList));
     return null; // Đăng ký thành công
+  }
+
+  static Future<bool> _updateOfflineUserProfile(
+    String username,
+    String name,
+    String email,
+    String phone,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<dynamic> userList = _readOfflineUsers(prefs);
+
+    bool found = false;
+    for (int i = 0; i < userList.length; i++) {
+      final item = userList[i];
+      if (item is Map && item['u'].toString() == username) {
+        userList[i] = {
+          ...item,
+          'n': name,
+          'e': email,
+          'ph': phone,
+        };
+        found = true;
+        break;
+      }
+    }
+
+    // Nếu không tìm thấy user trong danh sách offline (ví dụ tài khoản admin
+    // mặc định), vẫn coi là thành công để cho phép lưu profile cục bộ.
+    if (!found) return true;
+    await prefs.setString(_offlineUsersKey, json.encode(userList));
+    return true;
   }
 
   /// Đọc danh sách user offline từ SharedPreferences.
   /// Hỗ trợ cả 2 format:
   /// - Cũ (lỗi): "username:password" phân cách bằng dấu ':'
-  /// - Mới: JSON Array [{"u":"...","p":"..."}]
+  /// - Mới: JSON Array [{"u":"...","p":"...","n":"..."}]
   /// Nếu dữ liệu cũ tồn tại, tự động migrate sang format mới.
   static List<dynamic> _readOfflineUsers(SharedPreferences prefs) {
     final raw = prefs.getString(_offlineUsersKey);
@@ -209,9 +342,41 @@ class DbHelper {
     for (final entry in raw.split(',')) {
       final parts = entry.split(':');
       if (parts.length >= 2) {
-        legacy.add({'u': parts[0], 'p': parts.sublist(1).join(':')});
+        legacy.add({
+          'u': parts[0],
+          'p': parts.sublist(1).join(':'),
+          'e': '',
+        });
       }
     }
     return legacy;
+  }
+
+  /// Chuyển một dòng user offline thành thông tin tài khoản chuẩn.
+  static Map<String, String> _offlineUserToInfo(Map<dynamic, dynamic> item) {
+    return {
+      'id': item['u'].toString(),
+      'username': item['u'].toString(),
+      'name': (item['n'] ?? item['u']).toString(),
+      'email': (item['e'] ?? '').toString(),
+      'phone': (item['ph'] ?? '').toString(),
+    };
+  }
+
+
+  /// Chuyển một dòng kết quả MySQL thành thông tin tài khoản chuẩn.
+  static Map<String, String> _rowToUserInfo(ResultRow row) {
+    String value(dynamic field) {
+      final v = row[field];
+      return v == null ? '' : v.toString();
+    }
+
+    return {
+      'id': value('id'),
+      'username': value('username'),
+      'name': value('name'),
+      'email': value('email'),
+      'phone': value('phone'),
+    };
   }
 }

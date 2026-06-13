@@ -60,6 +60,7 @@ class HealthTrackingScreen extends StatelessWidget {
               children: [
                 ProfileHeader(
                   avatarUrl: elderly.avatar,
+                  avatarLocalPath: elderly.avatarLocalPath,
                   name: elderly.name,
                   statusColor: color,
                   statusText: _statusText(elderly),

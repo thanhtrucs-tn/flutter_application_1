@@ -12,8 +12,6 @@ class UserProfile {
   /// Nếu khác rỗng thì ưu tiên hiển thị ảnh local.
   final String avatarLocalPath;
 
-  final String role;
-
   const UserProfile({
     required this.id,
     required this.name,
@@ -21,7 +19,6 @@ class UserProfile {
     required this.phone,
     required this.avatarUrl,
     required this.avatarLocalPath,
-    required this.role,
   });
 
   /// Tạo bản sao với một số trường được thay đổi
@@ -32,7 +29,6 @@ class UserProfile {
     String? phone,
     String? avatarUrl,
     String? avatarLocalPath,
-    String? role,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -41,7 +37,6 @@ class UserProfile {
       phone: phone ?? this.phone,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       avatarLocalPath: avatarLocalPath ?? this.avatarLocalPath,
-      role: role ?? this.role,
     );
   }
 
@@ -54,7 +49,6 @@ class UserProfile {
       phone: '0901234567',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
       avatarLocalPath: '',
-      role: 'Tài khoản giám sát',
     );
   }
 
@@ -68,7 +62,6 @@ class UserProfile {
       avatarUrl: map['avatarUrl'] as String? ??
           'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
       avatarLocalPath: map['avatarLocalPath'] as String? ?? '',
-      role: map['role'] as String? ?? 'Tài khoản giám sát',
     );
   }
 
@@ -81,7 +74,6 @@ class UserProfile {
       'phone': phone,
       'avatarUrl': avatarUrl,
       'avatarLocalPath': avatarLocalPath,
-      'role': role,
     };
   }
 }

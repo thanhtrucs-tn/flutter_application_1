@@ -86,6 +86,7 @@ class _DetailScreenState extends State<DetailScreen> {
               children: [
                 ProfileHeader(
                   avatarUrl: elderly.avatar,
+                  avatarLocalPath: elderly.avatarLocalPath,
                   name: elderly.name,
                   age: elderly.age != null
                       ? '${elderly.age} ${Localization.translate('age')}'

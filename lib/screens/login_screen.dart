@@ -112,22 +112,22 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    bool success = await DbHelper.loginUser(username, password);
+    final user = await DbHelper.loginUser(username, password);
 
     setState(() {
       _isLoading = false;
     });
 
-    if (success) {
+    if (user != null) {
       await _saveOrClearCredentials(username, password);
 
-      // Cập nhật vai trò người dùng theo tài khoản đăng nhập.
-      // Tài khoản admin mặc định được cấp vai trò quản trị viên.
-      final role = username.toLowerCase() == 'admin'
-          ? 'Quản trị viên'
-          : 'Tài khoản giám sát';
-      final profile = AppState().userProfile.copyWith(role: role);
-      await AppState().updateUserProfile(profile);
+      // Tải hồ sơ riêng của tài khoản vừa đăng nhập.
+      await AppState().setCurrentAccount(
+        user['username']!,
+        displayName: user['name'],
+        email: user['email'],
+        phone: user['phone'],
+      );
 
       // Hiển thị thông báo trạng thái kết nối database
       String statusMsg;
@@ -163,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Sai tài khoản hoặc mật khẩu (Mặc định dùng admin / admin123)'),
+            content: Text('Sai email/tên tài khoản hoặc mật khẩu (Mặc định dùng admin / admin123)'),
             backgroundColor: Colors.red,
           ),
         );
@@ -255,13 +255,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 24),
                             
-                            // Input Tài khoản
+                            // Input Email / Tên tài khoản
                             TextField(
                               controller: _usernameController,
-                              maxLength: 32,
+                              maxLength: 48,
                               style: const TextStyle(fontSize: 18),
                               decoration: InputDecoration(
-                                labelText: Localization.translate('username'),
+                                labelText: Localization.translate('emailOrUsername'),
                                 prefixIcon: const Icon(Icons.person_outline),
                                 counterText: '',
                               ),

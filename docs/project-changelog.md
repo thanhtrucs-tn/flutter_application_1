@@ -1,5 +1,133 @@
 # Project Changelog
 
+## 2026-06-14 (relative avatar picker)
+
+### Added
+- Cho phép đổi ảnh đại diện của người thân trong màn hình Cài đặt.
+  - `lib/models/elderly_model.dart`: thêm `avatarLocalPath` để lưu đường dẫn
+    ảnh local; cập nhật `copyWith`, `fromMap`, `toMap`.
+  - `lib/widgets/elderly_avatar.dart` (file mới): widget hiển thị avatar người
+    thân, ưu tiên ảnh local, fallback về URL, cuối cùng là icon mặc định.
+  - `lib/widgets/manage_relatives_section.dart`: tap vào avatar trong danh sách
+    quản lý người thân mở dialog `AvatarPicker`; sau khi chọn ảnh gọi
+    `AppState().updateElderly(...)` để lưu.
+  - `lib/widgets/elderly_card_content.dart`: dùng `ElderlyAvatar` thay vì
+    `CircleAvatar` với `NetworkImage` cố định.
+  - `lib/widgets/profile_header.dart`: hỗ trợ `avatarLocalPath`, ưu tiên ảnh
+    local trước URL.
+  - `lib/screens/detail_screen.dart` và `lib/screens/health_tracking_screen.dart`:
+    truyền `avatarLocalPath` xuống `ProfileHeader`.
+  - `lib/screens/remote_sos_screen.dart`: dùng `ProfileAvatar` để hiển thị ảnh
+    local nếu có.
+  - `lib/utils/localization.dart`: thêm `changeAvatar` và
+    `tapAvatarToPickFromGallery` cho tiếng Việt và tiếng Anh.
+  - `test/elderly_add_test.dart`: test round-trip `avatarLocalPath` qua
+    `toMap`/`fromMap` và `copyWith`.
+
+### Changed
+- `lib/models/elderly_model.dart`: `avatarLocalPath` mặc định rỗng để tương
+  thích với dữ liệu elderly đã lưu trước đó.
+
+## 2026-06-14 (per-account data isolation)
+
+### Added
+- Cô lập toàn bộ dữ liệu ứng dụng theo tài khoản đăng nhập.
+  - `lib/utils/app_state.dart`: danh sách người thân (`_offlineElderlyKey`) và
+    lịch sử cảnh báo SOS (`_offlineAlertHistoryKey`) giờ là account-scoped:
+    mỗi tài khoản có key riêng (`offline_elderly_<username>_v2`,
+    `offline_alert_history_<username>_v1`).
+  - `lib/utils/app_state.dart`: thêm `_saveAlertHistory()` để persist lịch sử
+    cảnh báo theo tài khoản; được gọi khi `triggerSOS`, `acknowledgeAlert`,
+    `clearAlertHistory`, `addAlert`, `deleteElderly`.
+  - `lib/utils/app_state.dart`: `setCurrentAccount(...)` tải lại danh sách
+    người thân và lịch sử cảnh báo của tài khoản vừa đăng nhập, đồng thời xóa
+    active alert của tài khoản trước.
+  - Dữ liệu demo MockData chỉ được seed cho tài khoản `admin` hoặc khi chưa
+    đăng nhập; các tài khoản khác bắt đầu với danh sách rỗng.
+  - `test/per_account_data_test.dart` (file mới): 4 test kiểm tra cô lập dữ
+    liệu giữa các tài khoản và chuyển đổi account tải đúng dữ liệu riêng.
+
+### Changed
+- `lib/utils/app_state.dart`: `_loadElderlyData` và `_loadAlertHistory` tải theo
+  `_currentAccountId` thay vì dùng key chung; `_saveElderlyData` và
+  `_saveAlertHistory` chụp snapshot accountId + danh sách trước await để tránh
+  ghi nhầm khi đổi account giữa chừng.
+
+### Security / Isolation
+- Thêm `AppState.logout()` để xóa `current_account_id_v1` và tải lại trạng thái
+  mặc định (dữ liệu demo chung) khi đăng xuất; `lib/screens/profile_screen.dart`
+  và `lib/screens/settings_screen.dart` gọi `logout()` trước khi navigate về
+  LoginScreen, ngăn dữ liệu tài khoản trước bị lộ sau đăng xuất.
+
+## 2026-06-14 (registration with email)
+
+### Added
+- Cập nhật form đăng ký: thay thế trường "Họ và tên" bằng "Email"; đổi nhãn
+  trường tài khoản thành "Tên tài khoản (Username)" và nhập lại mật khẩu thành
+  "Xác nhận mật khẩu".
+  - `lib/screens/register_screen.dart`: bỏ `_fullNameController`, thêm
+    `_emailController`; validate không rỗng, email đúng định dạng, mật khẩu
+    và xác nhận mật khẩu trùng khớp; gọi `DbHelper.registerUser` với `email`.
+  - `lib/screens/login_screen.dart`: nhãn input đăng nhập là
+    "Email / Tên tài khoản"; thông báo lỗi đề cập email/username.
+  - `lib/utils/localization.dart`: cập nhật `username`, `confirmPassword`;
+    thêm `email`, `invalidEmail`, `passwordMismatch`, `emailOrUsername` cho
+    cả tiếng Việt và tiếng Anh.
+
+### Changed
+- `lib/services/auth_api_service.dart`: `register` nhận thêm `email` và gửi lên
+  backend; `name` không còn bắt buộc.
+- `lib/database/db_helper.dart`:
+  - `registerUser` nhận `email`, lưu email vào MySQL và offline
+    SharedPreferences.
+  - `loginUser` hỗ trợ đăng nhập bằng username hoặc email.
+  - `_registerOffline` kiểm tra trùng username và email.
+  - `_loginOffline` cho phép đăng nhập bằng username hoặc email.
+  - `_offlineUserToInfo` trả về email đã lưu.
+- `backend/server.js`:
+  - `/api/register` nhận `email`, validate định dạng và độ dài, kiểm tra trùng
+    username và trùng email, lưu `username`, `password`, `email`.
+  - `/api/login` cho phép đăng nhập bằng username hoặc email.
+- `db_script.sql`: thêm ràng buộc `UNIQUE(email)` cho bảng `users`.
+
+### Tests
+- `test/account_db_test.dart`: cập nhật test đăng ký dùng `email`; thêm test
+  đăng nhập bằng email và test không cho phép trùng email ở chế độ offline.
+
+## 2026-06-13 (per-account profile)
+
+### Added
+- Thông tin cá nhân được lưu theo tài khoản đăng nhập, không còn dùng chung.
+  - `lib/utils/app_state.dart`: thêm `_currentAccountId` và phương thức
+    `setCurrentAccount(...)` để tải profile riêng của tài khoản sau đăng nhập;
+    key lưu profile giờ chứa username (`offline_user_profile_<username>_v1`).
+  - `lib/utils/app_state.dart`: `updateUserProfile` đồng bộ họ tên/email/SĐT
+    lên cơ sở dữ liệu (MySQL / backend API / offline SharedPreferences) trước
+    khi persist cục bộ.
+  - `lib/database/db_helper.dart`: `loginUser` trả về `Map<String,String>?`
+    chứa `id`, `username`, `name`, `email`, `phone`; `registerUser` nhận thêm
+    `name` để lưu họ tên; thêm `updateUserProfile` để cập nhật thông tin.
+  - `lib/services/auth_api_service.dart`: `register` gửi `name`; `login` trả về
+    thông tin user; thêm `updateProfile` gọi `PUT /api/users/:username`.
+  - `backend/server.js`: bảng `users` mở rộng cột `name`, `email`, `phone`;
+    endpoint `/api/register` nhận và lưu `name`; `/api/login` trả về các cột
+    mới; thêm `PUT /api/users/:username` để cập nhật profile.
+  - `db_script.sql`: thêm cột `name`, `email`, `phone` cho bảng `users`; cập
+    nhật bản ghi `admin` với họ tên "Quản trị viên".
+  - `lib/screens/register_screen.dart`: thêm trường "Họ và tên" và validate
+    bắt buộc nhập.
+  - `lib/screens/login_screen.dart`: sau đăng nhập gọi
+    `AppState().setCurrentAccount(...)` với thông tin lấy từ DB.
+  - `lib/utils/localization.dart`: thêm khóa `fullName` cho tiếng Việt và
+    tiếng Anh.
+  - `test/user_profile_test.dart`: 2 test cho profile độc lập theo tài khoản.
+  - `test/account_db_test.dart` (file mới): test đăng ký/cập nhật/lấy họ tên
+    qua `DbHelper` ở chế độ offline.
+
+### Changed
+- `lib/database/db_helper.dart`: đổi signature `loginUser` từ `Future<bool>`
+  sang `Future<Map<String,String>?>`.
+
 ## 2026-06-13
 
 ### Added
@@ -29,8 +157,6 @@
   - `lib/utils/localization.dart`: bổ sung thêm các khóa `noRelatives`,
     `noRelativesHint`, `addFirstRelative`, `deleteRelativeFailed` cho tiếng
     Việt và tiếng Anh.
-  - `lib/utils/role_utils.dart` (file mới): helper `RoleUtils.isAdmin()` dùng
-    chung cho `HomeScreen` và `SettingsScreen`.
   - `lib/widgets/developer_tools_section.dart` (file mới): tách section
     "Developer Tools" từ `SettingsScreen`, giúp màn hình này dưới 200 dòng.
   - `lib/widgets/delete_relative_confirmation_dialog.dart`: chuyển sang
@@ -67,6 +193,14 @@
   - Cập nhật title section dùng `Localization.translate('relativeList')` thay vì
     hardcode tiếng Việt.
   - Cập nhật plan ghi nhận độ lệch so với thiết kế ban đầu.
+
+### Removed
+- Gỡ bỏ trường `role` khỏi `UserProfile` (`lib/models/user_profile.dart`); ứng
+  dụng chỉ có một tài khoản giám sát chính nên vai trò được hiển thị tĩnh là
+  "Quản trị viên" / "Tài khoản giám sát" ở các widget thay vì lưu trong model.
+  - Xóa file `lib/utils/role_utils.dart` (dead code).
+  - `lib/screens/login_screen.dart`: bỏ logic cập nhật `UserProfile.role` sau
+    đăng nhập.
 
 ### Tests
 - `test/relatives_reorder_test.dart`: 3 unit test cho `AppState.reorderRelatives`

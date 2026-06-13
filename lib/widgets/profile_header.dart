@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'profile_avatar.dart';
 
 /// Header hiển thị avatar lớn, tên, tuổi, địa chỉ và trạng thái.
 class ProfileHeader extends StatelessWidget {
   final String avatarUrl;
+  final String? avatarLocalPath;
   final String name;
   final String? age;
   final String? address;
@@ -12,6 +14,7 @@ class ProfileHeader extends StatelessWidget {
   const ProfileHeader({
     super.key,
     required this.avatarUrl,
+    this.avatarLocalPath,
     required this.name,
     this.age,
     this.address,
@@ -27,9 +30,10 @@ class ProfileHeader extends StatelessWidget {
         Stack(
           alignment: Alignment.bottomRight,
           children: [
-            CircleAvatar(
+            ProfileAvatar(
+              avatarUrl: avatarUrl,
+              avatarLocalPath: avatarLocalPath ?? '',
               radius: 44,
-              backgroundImage: NetworkImage(avatarUrl),
               backgroundColor: Colors.grey.shade200,
             ),
             Container(

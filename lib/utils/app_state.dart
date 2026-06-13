@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../database/db_helper.dart';
 import '../database/mock_data.dart';
 import '../models/elderly_model.dart';
 import '../models/alert_model.dart';
@@ -32,6 +33,7 @@ class AppState extends ChangeNotifier {
   bool _isWebSocketConnected = true; // Trạng thái kết nối realtime với ESP32/Backend
   Timer? _simulationTimer;
   int _currentNavIndex = 0; // Chỉ số tab bottom navigation hiện tại
+  String? _currentAccountId; // Tài khoản đang đăng nhập (username)
 
   // Getters
   List<ElderlyModel> get relatives => _relatives;
@@ -41,6 +43,7 @@ class AppState extends ChangeNotifier {
   AlertModel? get activeAlert => _activeAlert;
   bool get isWebSocketConnected => _isWebSocketConnected;
   int get currentNavIndex => _currentNavIndex;
+  String? get currentAccountId => _currentAccountId;
 
   /// Đổi tab bottom navigation
   void setNavIndex(int index) {
@@ -88,37 +91,127 @@ class AppState extends ChangeNotifier {
 
   // --- QUẢN LÝ HỒ SƠ NGƯỜI DÙNG ---
 
-  /// Khóa lưu trữ hồ sơ người dùng offline
-  static const String _offlineUserProfileKey = 'offline_user_profile_v1';
+  /// Khóa lưu trữ ID tài khoản hiện tại.
+  static const String _currentAccountKey = 'current_account_id_v1';
 
-  /// Tải hồ sơ người dùng từ SharedPreferences
-  Future<void> _loadUserProfile() async {
+  /// Khóa lưu trữ hồ sơ người dùng offline.
+  /// Mỗi tài khoản có một profile riêng biệt, key được gắn với username.
+  static String _offlineUserProfileKey(String? accountId) =>
+      accountId == null || accountId.isEmpty
+          ? 'offline_user_profile_v1'
+          : 'offline_user_profile_${accountId}_v1';
+
+  /// Tải ID tài khoản đang đăng nhập.
+  Future<void> _loadCurrentAccount() async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString(_offlineUserProfileKey);
+    _currentAccountId = prefs.getString(_currentAccountKey);
+  }
+
+  /// Tải hồ sơ người dùng từ SharedPreferences theo tài khoản hiện tại.
+  Future<void> _loadUserProfile() async {
+    await _loadCurrentAccount();
+    final prefs = await SharedPreferences.getInstance();
+    final key = _offlineUserProfileKey(_currentAccountId);
+    final jsonStr = prefs.getString(key);
     if (jsonStr != null && jsonStr.isNotEmpty) {
       try {
         final map = json.decode(jsonStr) as Map<String, dynamic>;
         _userProfile = UserProfile.fromMap(map);
       } catch (e) {
         print('Lỗi đọc user profile: $e');
-        _userProfile = UserProfile.defaultProfile();
+        _userProfile = _defaultProfileForAccount(_currentAccountId);
       }
     } else {
-      _userProfile = UserProfile.defaultProfile();
+      _userProfile = _defaultProfileForAccount(_currentAccountId);
     }
     notifyListeners();
   }
 
-  /// Lưu hồ sơ người dùng xuống SharedPreferences
+  /// Tạo profile mặc định cho một tài khoản.
+  /// [accountId] thường là username; nếu chưa đăng nhập thì dùng profile mặc định.
+  UserProfile _defaultProfileForAccount(String? accountId) {
+    final base = UserProfile.defaultProfile();
+    if (accountId == null || accountId.isEmpty) return base;
+    return base.copyWith(
+      id: accountId,
+      name: accountId,
+    );
+  }
+
+  /// Lưu hồ sơ người dùng xuống SharedPreferences theo tài khoản hiện tại.
   Future<void> _saveUserProfile() async {
+    final accountId = _currentAccountId;
     final prefs = await SharedPreferences.getInstance();
+    final key = _offlineUserProfileKey(accountId);
     await prefs.setString(
-      _offlineUserProfileKey,
+      key,
       json.encode(_userProfile.toMap()),
     );
   }
 
-  /// Cập nhật thông tin hồ sơ người dùng (validate trước khi gọi)
+  /// Đặt tài khoản hiện tại sau đăng nhập và tải profile riêng của tài khoản đó.
+  ///
+  /// [accountId] thường là username. [displayName], [email], [phone] là thông
+  /// tin lấy từ cơ sở dữ liệu khi đăng nhập; nếu chưa có thì dùng profile đã
+  /// lưu hoặc khởi tạo mặc định.
+  Future<void> setCurrentAccount(
+    String accountId, {
+    String? displayName,
+    String? email,
+    String? phone,
+  }) async {
+    _currentAccountId = accountId;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_currentAccountKey, accountId);
+
+    final key = _offlineUserProfileKey(accountId);
+    final jsonStr = prefs.getString(key);
+    if (jsonStr != null && jsonStr.isNotEmpty) {
+      try {
+        _userProfile = UserProfile.fromMap(
+            json.decode(jsonStr) as Map<String, dynamic>);
+      } catch (e) {
+        print('Lỗi đọc user profile cho $accountId: $e');
+        _userProfile = _defaultProfileForAccount(accountId);
+      }
+    } else {
+      _userProfile = _defaultProfileForAccount(accountId).copyWith(
+        name: displayName?.trim().isNotEmpty == true ? displayName : null,
+        email: email?.trim().isNotEmpty == true ? email : null,
+        phone: phone?.trim().isNotEmpty == true ? phone : null,
+      );
+      await _saveUserProfile();
+    }
+
+    // Tải lại dữ liệu người thân + cảnh báo của tài khoản vừa đăng nhập,
+    // đồng thời xóa cảnh báo đang active của tài khoản trước.
+    _activeAlert = null;
+    await _loadElderlyData();
+    await _loadAlertHistory();
+
+    notifyListeners();
+  }
+
+  /// Đăng xuất: xóa tài khoản hiện tại, tải lại trạng thái mặc định (dữ liệu
+  /// demo chung khi chưa đăng nhập) để tránh lộ dữ liệu của tài khoản trước.
+  Future<void> logout() async {
+    _currentAccountId = null;
+    _currentNavIndex = 0;
+    _activeAlert = null;
+    _userProfile = UserProfile.defaultProfile();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_currentAccountKey);
+
+    await _loadElderlyData();
+    await _loadAlertHistory();
+
+    notifyListeners();
+  }
+
+  /// Cập nhật thông tin hồ sơ người dùng (validate trước khi gọi).
+  /// Dữ liệu được cập nhật vào cơ sở dữ liệu trước, sau đó mới persist cục bộ.
   Future<bool> updateUserProfile(UserProfile updated) async {
     print('[DEBUG] updateUserProfile được gọi với: name="${updated.name}", email="${updated.email}", phone="${updated.phone}"');
     if (updated.name.trim().isEmpty) {
@@ -137,6 +230,21 @@ class AppState extends ChangeNotifier {
       print('[DEBUG] updateUserProfile FAIL: phone sai format ("${updated.phone}", length=${updated.phone.trim().length})');
       return false;
     }
+
+    // Nếu đã đăng nhập, đồng bộ lên cơ sở dữ liệu trước.
+    if (_currentAccountId != null && _currentAccountId!.isNotEmpty) {
+      final dbOk = await DbHelper.updateUserProfile(
+        _currentAccountId!,
+        updated.name,
+        updated.email,
+        updated.phone,
+      );
+      if (!dbOk) {
+        print('[DEBUG] updateUserProfile FAIL: lỗi cập nhật DB');
+        return false;
+      }
+    }
+
     _userProfile = updated;
     await _saveUserProfile();
     notifyListeners();
@@ -155,15 +263,21 @@ class AppState extends ChangeNotifier {
 
   // --- QUẢN LÝ DỮ LIỆU NGƯỜI THÂN ---
 
-  /// Khóa lưu trữ danh sách người thân offline
-  /// v2: thêm trường address (địa chỉ chữ)
-  static const String _offlineElderlyKey = 'offline_elderly_v2';
+  /// Khóa lưu trữ danh sách người thân offline.
+  /// v2: thêm trường address (địa chỉ chữ).
+  /// Mỗi tài khoản có key riêng để cô lập dữ liệu.
+  static String _offlineElderlyKey(String? accountId) =>
+      accountId == null || accountId.isEmpty
+          ? 'offline_elderly_v2'
+          : 'offline_elderly_${accountId}_v2';
 
   Future<void> _loadElderlyData() async {
+    final accountId = _currentAccountId;
     final prefs = await SharedPreferences.getInstance();
     // Xóa cache cũ (v1) để buộc load lại từ MockData mới có address
     await prefs.remove('offline_elderly_v1');
-    final jsonStr = prefs.getString(_offlineElderlyKey);
+    final key = _offlineElderlyKey(accountId);
+    final jsonStr = prefs.getString(key);
     if (jsonStr != null && jsonStr.isNotEmpty) {
       try {
         final decoded = json.decode(jsonStr) as List<dynamic>;
@@ -172,10 +286,10 @@ class AppState extends ChangeNotifier {
             .toList();
       } catch (e) {
         print('Lỗi đọc elderly data: $e');
-        _relatives = List.from(MockData.initialElderly);
+        _relatives = _defaultElderlyForAccount(accountId);
       }
     } else {
-      _relatives = List.from(MockData.initialElderly);
+      _relatives = _defaultElderlyForAccount(accountId);
     }
     // Tự động fill địa chỉ nếu elderly chưa có (migrate từ phiên bản cũ)
     bool hasMigration = false;
@@ -198,11 +312,26 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Lưu danh sách người thân xuống SharedPreferences
+  /// Dữ liệu người thân mặc định cho một tài khoản.
+  /// - Tài khoản `admin` hoặc chưa đăng nhập nhận MockData demo.
+  /// - Các tài khoản khác bắt đầu rỗng.
+  List<ElderlyModel> _defaultElderlyForAccount(String? accountId) {
+    if (accountId == null || accountId.isEmpty || accountId == 'admin') {
+      return List.from(MockData.initialElderly);
+    }
+    return <ElderlyModel>[];
+  }
+
+  /// Lưu danh sách người thân xuống SharedPreferences theo tài khoản hiện tại.
   Future<void> _saveElderlyData() async {
+    // Chụp accountId và danh sách hiện tại trước khi await để tránh ghi nhầm
+    // sang tài khoản khác hoặc ghi đè dữ liệu mới nếu account đổi trong khi save.
+    final accountId = _currentAccountId;
+    final relativesToSave = _relatives;
     final prefs = await SharedPreferences.getInstance();
-    final data = _relatives.map((e) => e.toMap()).toList();
-    await prefs.setString(_offlineElderlyKey, json.encode(data));
+    final key = _offlineElderlyKey(accountId);
+    final data = relativesToSave.map((e) => e.toMap()).toList();
+    await prefs.setString(key, json.encode(data));
   }
 
   /// Public entry để lưu danh sách người thân hiện tại xuống SharedPreferences.
@@ -265,6 +394,7 @@ class AppState extends ChangeNotifier {
 
     try {
       await _saveElderlyData();
+      await _saveAlertHistory();
       notifyListeners();
       return true;
     } catch (e) {
@@ -283,11 +413,53 @@ class AppState extends ChangeNotifier {
 
   // --- QUẢN LÝ CẢNH BÁO SOS ---
 
+  /// Khóa lưu trữ lịch sử cảnh báo SOS, mỗi tài khoản có key riêng.
+  static String _offlineAlertHistoryKey(String? accountId) =>
+      accountId == null || accountId.isEmpty
+          ? 'offline_alert_history_v1'
+          : 'offline_alert_history_${accountId}_v1';
+
   Future<void> _loadAlertHistory() async {
-    _alerts = List.from(MockData.initialAlerts);
+    final accountId = _currentAccountId;
+    final prefs = await SharedPreferences.getInstance();
+    final key = _offlineAlertHistoryKey(accountId);
+    final jsonStr = prefs.getString(key);
+    if (jsonStr != null && jsonStr.isNotEmpty) {
+      try {
+        final decoded = json.decode(jsonStr) as List<dynamic>;
+        _alerts = decoded
+            .map((e) => AlertModel.fromMap(e as Map<String, dynamic>))
+            .toList();
+      } catch (e) {
+        print('Lỗi đọc alert history: $e');
+        _alerts = _defaultAlertsForAccount(accountId);
+      }
+    } else {
+      _alerts = _defaultAlertsForAccount(accountId);
+    }
     // Sắp xếp cảnh báo gần nhất lên đầu
     _alerts.sort((a, b) => b.time.compareTo(a.time));
     notifyListeners();
+  }
+
+  /// Lưu lịch sử cảnh báo xuống SharedPreferences theo tài khoản hiện tại.
+  Future<void> _saveAlertHistory() async {
+    final accountId = _currentAccountId;
+    final alertsToSave = _alerts;
+    final prefs = await SharedPreferences.getInstance();
+    final key = _offlineAlertHistoryKey(accountId);
+    final data = alertsToSave.map((a) => a.toMap()).toList();
+    await prefs.setString(key, json.encode(data));
+  }
+
+  /// Dữ liệu cảnh báo mặc định cho một tài khoản.
+  /// - Tài khoản `admin` hoặc chưa đăng nhập nhận MockData demo.
+  /// - Các tài khoản khác bắt đầu rỗng.
+  List<AlertModel> _defaultAlertsForAccount(String? accountId) {
+    if (accountId == null || accountId.isEmpty || accountId == 'admin') {
+      return List.from(MockData.initialAlerts);
+    }
+    return <AlertModel>[];
   }
 
   /// Kích hoạt cảnh báo SOS mới
@@ -322,12 +494,15 @@ class AppState extends ChangeNotifier {
 
     // Thêm vào danh sách lịch sử
     _alerts.insert(0, newAlert);
-    
+
     // Đặt làm cảnh báo khẩn cấp đang kích hoạt (để bật popup cảnh báo đẩy)
     if (urgency == 'critical') {
       _activeAlert = newAlert;
     }
-    
+
+    _saveAlertHistory().catchError((e) {
+      debugPrint('Lỗi lưu lịch sử cảnh báo: $e');
+    });
     notifyListeners();
   }
 
@@ -353,18 +528,27 @@ class AppState extends ChangeNotifier {
     if (_activeAlert?.id == alertId) {
       _activeAlert = null;
     }
+    _saveAlertHistory().catchError((e) {
+      debugPrint('Lỗi lưu lịch sử sau acknowledge: $e');
+    });
     notifyListeners();
   }
 
   /// Xóa toàn bộ lịch sử cảnh báo
   void clearAlertHistory() {
     _alerts.clear();
+    _saveAlertHistory().catchError((e) {
+      debugPrint('Lỗi lưu lịch sử sau clear: $e');
+    });
     notifyListeners();
   }
 
   /// Thêm cảnh báo thủ công từ form
   void addAlert(AlertModel alert) {
     _alerts.insert(0, alert);
+    _saveAlertHistory().catchError((e) {
+      debugPrint('Lỗi lưu lịch sử sau add alert: $e');
+    });
     notifyListeners();
   }
 

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
-import '../utils/role_utils.dart';
 import '../widgets/sos_app_header.dart';
 import '../widgets/settings_section_card.dart';
 import '../widgets/profile_avatar.dart';
@@ -19,8 +18,9 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  void _logout(BuildContext context) {
+  Future<void> _logout(BuildContext context) async {
     final navigator = Navigator.of(context);
+    await AppState().logout();
     // Đảm bảo Navigator còn khả dụng và có route để pop.
     if (!navigator.mounted) return;
     navigator.pushAndRemoveUntil(
@@ -139,9 +139,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     color: const Color(0xFFE53935).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: Text(
-                                    profile.role,
-                                    style: const TextStyle(
+                                  child: const Text(
+                                    'Quản trị viên',
+                                    style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
                                       color: Color(0xFFE53935),
@@ -162,7 +162,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // 2. DANH SÁCH NGƯỜI THÂN ĐANG GIÁM SÁT
                 ManageRelativesSection(
                   relatives: state.relatives,
-                  canDelete: RoleUtils.canDeleteRelative(state.userProfile.role),
+                  canDelete: true,
                 ),
                 const SizedBox(height: 16),
 

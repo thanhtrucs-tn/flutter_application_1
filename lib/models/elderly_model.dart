@@ -22,6 +22,10 @@ class ElderlyModel {
   final String address; // Địa chỉ chữ (ví dụ: "268 Lý Thường Kiệt, Q.10, TP.HCM")
   final int? age; // Tuổi (năm). Null nếu elderly cũ chưa cập nhật hoặc chưa nhập.
 
+  /// Đường dẫn file ảnh đại diện local do người dùng chọn.
+  /// Nếu khác rỗng thì ưu tiên hiển thị ảnh local thay vì URL.
+  final String avatarLocalPath;
+
   ElderlyModel({
     required this.id,
     required this.name,
@@ -42,6 +46,7 @@ class ElderlyModel {
     required this.emergencyContacts,
     this.address = '',
     this.age,
+    this.avatarLocalPath = '',
   });
 
   /// Tạo một bản sao mới với các trường thay đổi
@@ -65,6 +70,7 @@ class ElderlyModel {
     List<String>? emergencyContacts,
     String? address,
     int? age,
+    String? avatarLocalPath,
   }) {
     return ElderlyModel(
       id: id ?? this.id,
@@ -86,6 +92,7 @@ class ElderlyModel {
       emergencyContacts: emergencyContacts ?? this.emergencyContacts,
       address: address ?? this.address,
       age: age ?? this.age,
+      avatarLocalPath: avatarLocalPath ?? this.avatarLocalPath,
     );
   }
 
@@ -113,6 +120,7 @@ class ElderlyModel {
           : List<String>.from(map['emergencyContacts'] as List? ?? []),
       address: map['address'] as String? ?? '',
       age: map['age'] as int?,
+      avatarLocalPath: map['avatarLocalPath'] as String? ?? '',
     );
   }
 
@@ -150,6 +158,7 @@ class ElderlyModel {
       'emergencyContacts': json.encode(emergencyContacts),
       'address': address,
       'age': age,
+      'avatarLocalPath': avatarLocalPath,
     };
   }
 }

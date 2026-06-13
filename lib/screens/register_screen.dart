@@ -13,6 +13,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
@@ -20,6 +21,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void dispose() {
     _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -28,13 +30,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
   /// Xử lý logic khi người dùng nhấn nút đăng ký
   Future<void> _handleRegister() async {
     final username = _usernameController.text.trim();
+    final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (username.isEmpty || password.isEmpty) {
+    if (username.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng nhập tài khoản và mật khẩu.'),
+        SnackBar(
+          content: Text(Localization.translate('fillAllFields')),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (!_isValidEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(Localization.translate('invalidEmail')),
           backgroundColor: Colors.red,
         ),
       );
@@ -43,8 +56,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Mật khẩu nhập lại không khớp.'),
+        SnackBar(
+          content: Text(Localization.translate('passwordMismatch')),
           backgroundColor: Colors.red,
         ),
       );
@@ -55,7 +68,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _isLoading = true;
     });
 
-    String? errorMessage = await DbHelper.registerUser(username, password);
+    String? errorMessage = await DbHelper.registerUser(
+      username,
+      password,
+      email: email,
+    );
 
     setState(() {
       _isLoading = false;
@@ -82,18 +99,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } else {
       if (mounted) {
-        String displayError = errorMessage.contains('Duplicate entry')
-            ? 'Tài khoản này đã tồn tại.'
-            : 'Lỗi đăng ký: $errorMessage';
-            
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(displayError),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
           ),
         );
       }
     }
+  }
+
+  /// Kiểm tra định dạng email cơ bản.
+  bool _isValidEmail(String value) {
+    return RegExp(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+        .hasMatch(value.trim());
   }
 
   @override
@@ -149,8 +168,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 24),
-                            
-                            // Input Tài khoản
+
+                            // Input Tên tài khoản
                             TextField(
                               controller: _usernameController,
                               maxLength: 32,
@@ -162,7 +181,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                             const SizedBox(height: 20),
-                            
+
+                            // Input Email
+                            TextField(
+                              controller: _emailController,
+                              maxLength: 48,
+                              keyboardType: TextInputType.emailAddress,
+                              style: const TextStyle(fontSize: 18),
+                              decoration: InputDecoration(
+                                labelText: Localization.translate('email'),
+                                prefixIcon: const Icon(Icons.email_outlined),
+                                counterText: "",
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
                             // Input Mật khẩu
                             TextField(
                               controller: _passwordController,
@@ -176,8 +209,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                             const SizedBox(height: 20),
-                            
-                            // Nhập lại mật khẩu
+
+                            // Xác nhận mật khẩu
                             TextField(
                               controller: _confirmPasswordController,
                               obscureText: true,

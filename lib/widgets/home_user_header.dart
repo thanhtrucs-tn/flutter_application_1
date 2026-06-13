@@ -61,7 +61,7 @@ class HomeUserHeader extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      profile.role,
+                      'Tài khoản giám sát',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

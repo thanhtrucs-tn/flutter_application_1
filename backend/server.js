@@ -3,7 +3,7 @@
  * --------------------
  * Mục đích: Cho phép Flutter Web (Chrome) đăng ký/đăng nhập qua MySQL.
  * Vì trình duyệt không thể kết nối TCP trực tiếp tới MySQL, cần có
- * backend trung gian xử lý HTTP request từ Chrome.
+ * backend Node.js trung gian xử lý HTTP request từ Chrome.
  *
  * Cài đặt:
  *   cd backend
@@ -71,6 +71,7 @@ app.get('/', (req, res) => {
       health: 'GET /api/health',
       register: 'POST /api/register',
       login: 'POST /api/login',
+      updateUser: 'PUT /api/users/:username',
       listUsers: 'GET /api/users',
     },
   });
@@ -94,18 +95,27 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// ===== HELPER =====
+function isValidEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  // RFC 5322 simplified regex cho định dạng email cơ bản
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
 // ===== ĐĂNG KÝ TÀI KHOẢN =====
 app.post('/api/register', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, email } = req.body;
 
     // Validate input
-    if (!username || !password) {
+    if (!username || !password || !email) {
       return res.status(400).json({
         success: false,
-        error: 'Thiếu username hoặc password.',
+        error: 'Vui lòng nhập đầy đủ username, email và password.',
       });
     }
+
+    const trimmedEmail = email.trim();
 
     if (username.length > 32) {
       return res.status(400).json({
@@ -121,25 +131,51 @@ app.post('/api/register', async (req, res) => {
       });
     }
 
+    if (trimmedEmail.length > 48) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email tối đa 48 ký tự.',
+      });
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email không đúng định dạng.',
+      });
+    }
+
     // Kiểm tra trùng username
-    const [existing] = await pool.query(
+    const [existingUser] = await pool.query(
       'SELECT id FROM users WHERE username = ?',
       [username]
     );
-    if (existing.length > 0) {
+    if (existingUser.length > 0) {
       return res.status(409).json({
         success: false,
-        error: 'Tài khoản này đã tồn tại.',
+        error: 'Tên tài khoản này đã tồn tại.',
+      });
+    }
+
+    // Kiểm tra trùng email
+    const [existingEmail] = await pool.query(
+      'SELECT id FROM users WHERE email = ?',
+      [trimmedEmail]
+    );
+    if (existingEmail.length > 0) {
+      return res.status(409).json({
+        success: false,
+        error: 'Email này đã được sử dụng.',
       });
     }
 
     // Lưu vào MySQL (chưa hash password để tương thích với code Flutter cũ)
     const [result] = await pool.query(
-      'INSERT INTO users (username, password) VALUES (?, ?)',
-      [username, password]
+      'INSERT INTO users (username, password, email) VALUES (?, ?, ?)',
+      [username, password, trimmedEmail]
     );
 
-    console.log(`✅ Đăng ký mới: username="${username}", id=${result.insertId}`);
+    console.log(`✅ Đăng ký mới: username="${username}", email="${trimmedEmail}", id=${result.insertId}`);
 
     res.json({
       success: true,
@@ -163,19 +199,22 @@ app.post('/api/login', async (req, res) => {
     if (!username || !password) {
       return res.status(400).json({
         success: false,
-        error: 'Thiếu username hoặc password.',
+        error: 'Thiếu username/email hoặc password.',
       });
     }
 
-    const [rows] = await pool.query(
-      'SELECT id, username FROM users WHERE username = ? AND password = ?',
-      [username, password]
-    );
+    // Hỗ trợ đăng nhập bằng username hoặc email
+    const isEmail = isValidEmail(username);
+    const query = isEmail
+      ? 'SELECT id, username, name, email, phone FROM users WHERE email = ? AND password = ?'
+      : 'SELECT id, username, name, email, phone FROM users WHERE username = ? AND password = ?';
+
+    const [rows] = await pool.query(query, [username, password]);
 
     if (rows.length === 0) {
       return res.status(401).json({
         success: false,
-        error: 'Sai tài khoản hoặc mật khẩu.',
+        error: 'Sai tài khoản/email hoặc mật khẩu.',
       });
     }
 
@@ -185,6 +224,9 @@ app.post('/api/login', async (req, res) => {
       user: {
         id: rows[0].id,
         username: rows[0].username,
+        name: rows[0].name || rows[0].username,
+        email: rows[0].email || '',
+        phone: rows[0].phone || '',
       },
     });
   } catch (err) {
@@ -196,11 +238,49 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// ===== CẬP NHẬT THÔNG TIN CÁ NHÂN =====
+app.put('/api/users/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const { name, email, phone } = req.body;
+
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        error: 'Thiếu username.',
+      });
+    }
+
+    const [result] = await pool.query(
+      'UPDATE users SET name = ?, email = ?, phone = ? WHERE username = ?',
+      [name || username, email || '', phone || '', username]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Không tìm thấy tài khoản.',
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Cập nhật thông tin thành công!',
+    });
+  } catch (err) {
+    console.error('❌ Lỗi PUT /api/users/:username:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Lỗi server: ' + err.message,
+    });
+  }
+});
+
 // ===== LIỆT KÊ USERS (DEBUG) =====
 app.get('/api/users', async (req, res) => {
   try {
     const [rows] = await pool.query(
-      'SELECT id, username, created_at FROM users ORDER BY id ASC'
+      'SELECT id, username, name, email, phone, created_at FROM users ORDER BY id ASC'
     );
     res.json({
       success: true,
@@ -229,6 +309,7 @@ initPool().then(() => {
     console.log(`   GET  http://localhost:${PORT}/api/health`);
     console.log(`   POST http://localhost:${PORT}/api/register`);
     console.log(`   POST http://localhost:${PORT}/api/login`);
+    console.log(`   PUT  http://localhost:${PORT}/api/users/:username`);
     console.log(`   GET  http://localhost:${PORT}/api/users`);
     console.log('');
   });
