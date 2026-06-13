@@ -205,6 +205,27 @@ class AppState extends ChangeNotifier {
     await prefs.setString(_offlineElderlyKey, json.encode(data));
   }
 
+  /// Public entry để lưu danh sách người thân hiện tại xuống SharedPreferences.
+  Future<void> persistRelatives() => _saveElderlyData();
+
+  /// Sắp xếp lại thứ tự người thân trong danh sách.
+  ///
+  /// [oldIndex] là vị trí cũ của item. [newIndex] là vị trí cuối cùng item
+  /// cần được chèn vào, đã được điều chỉnh theo quy ước của [ReorderableListView.onReorderItem].
+  void reorderRelatives(int oldIndex, int newIndex) {
+    if (oldIndex < 0 || oldIndex >= _relatives.length) return;
+    if (newIndex < 0 || newIndex > _relatives.length) return;
+    if (oldIndex == newIndex) return;
+
+    final moved = _relatives.removeAt(oldIndex);
+    _relatives.insert(newIndex, moved);
+
+    notifyListeners();
+    persistRelatives().catchError((e) {
+      debugPrint('Lỗi lưu thứ tự người thân: $e');
+    });
+  }
+
   /// Thêm người thân mới
   void addElderly(ElderlyModel newRelative) {
     _relatives.add(newRelative);
@@ -219,6 +240,44 @@ class AppState extends ChangeNotifier {
       _relatives[index] = updated;
       _saveElderlyData();
       notifyListeners();
+    }
+  }
+
+  /// Xóa người thân khỏi danh sách theo dõi, đồng thời dọn dẹp cảnh báo liên kết.
+  ///
+  /// Trả về `true` nếu tìm thấy và lưu thành công, `false` nếu không tìm thấy
+  /// hoặc lưu thất bại. Nếu lưu thất bại, danh sách trong bộ nhớ được khôi
+  /// phục để đồng bộ với dữ liệu persist.
+  Future<bool> deleteElderly(int id) async {
+    final index = _relatives.indexWhere((e) => e.id == id);
+    if (index == -1) return false;
+
+    final removedRelative = _relatives[index];
+    final removedAlerts = _alerts.where((a) => a.elderlyId == id).toList();
+    final previousActiveAlert = _activeAlert;
+
+    _relatives.removeAt(index);
+    _alerts.removeWhere((a) => a.elderlyId == id);
+
+    if (_activeAlert?.elderlyId == id) {
+      _activeAlert = null;
+    }
+
+    try {
+      await _saveElderlyData();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Lỗi lưu danh sách sau xóa: $e');
+
+      // Khôi phục trạng thái trong bộ nhớ khi lưu thất bại.
+      _relatives.insert(index, removedRelative);
+      _alerts.addAll(removedAlerts);
+      _alerts.sort((a, b) => b.time.compareTo(a.time));
+      _activeAlert = previousActiveAlert;
+
+      notifyListeners();
+      return false;
     }
   }
 

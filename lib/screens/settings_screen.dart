@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
+import '../utils/role_utils.dart';
 import '../widgets/sos_app_header.dart';
 import '../widgets/settings_section_card.dart';
 import '../widgets/profile_avatar.dart';
-import '../widgets/add_relative_dialog.dart';
+import '../widgets/manage_relatives_section.dart';
+import '../widgets/developer_tools_section.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
 
@@ -113,64 +115,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 16),
 
                 // 2. DANH SÁCH NGƯỜI THÂN ĐANG GIÁM SÁT
-                SettingsSectionCard(
-                  title: Localization.translate('manageRelatives'),
-                  children: [
-                    ...state.relatives.map((r) {
-                      final statusColor = r.isOffline
-                          ? Colors.grey
-                          : (r.status == 'critical'
-                              ? const Color(0xFFEF4444)
-                              : (r.status == 'warning' ? const Color(0xFFF59E0B) : const Color(0xFF10B981)));
-
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        leading: CircleAvatar(
-                          backgroundImage: NetworkImage(r.avatar),
-                          radius: 20,
-                        ),
-                        title: Text(
-                          r.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        subtitle: Text(
-                          '${r.wearableDevice} • Pin ${r.battery}%',
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                        trailing: Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: statusColor,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      );
-                    }),
-                    if (state.relatives.isNotEmpty) const Divider(height: 1),
-                    ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE53935).withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.person_add_alt_1, color: Color(0xFFE53935), size: 22),
-                      ),
-                      title: const Text(
-                        'Thêm người thân',
-                        style: TextStyle(
-                          color: Color(0xFFE53935),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                      trailing: const Icon(Icons.add, color: Color(0xFFE53935)),
-                      onTap: () => AddRelativeDialog.show(context),
-                    ),
-                  ],
+                ManageRelativesSection(
+                  relatives: state.relatives,
+                  isAdmin: RoleUtils.isAdmin(state.userProfile.role),
                 ),
                 const SizedBox(height: 16),
 
@@ -248,44 +195,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // 5. CÔNG CỤ PHÁT TRIỂN / MÔ PHỎNG (Ẩn dưới menu mở rộng)
-                ExpansionTile(
-                  shape: const Border(),
-                  title: const Text(
-                    'Developer Tools',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
-                  ),
-                  childrenPadding: const EdgeInsets.all(8),
-                  children: [
-                    _buildDevButton('MÔ PHỎNG TÉ NGÃ (BÀ A)', Icons.personal_injury, Colors.red, () => state.simulateFall(1)),
-                    const SizedBox(height: 8),
-                    _buildDevButton('MÔ PHỎNG VƯỢT VÙNG AN TOÀN (ÔNG B)', Icons.directions_walk, Colors.deepOrange, () => state.simulateExitSafeZone(2)),
-                    const SizedBox(height: 8),
-                    _buildDevButton('MÔ PHỎNG NHỊP TIM/SPO2 XẤU (BÀ A)', Icons.heart_broken, Colors.amber.shade800, () => state.simulateHeartRateSpike(1)),
-                    const SizedBox(height: 8),
-                    _buildDevButton('MÔ PHỎNG THIẾT BỊ ONLINE (BÀ A)', Icons.wifi_tethering, Colors.teal, () => state.simulateDeviceOnline(1)),
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        final elderly = state.relatives.firstWhere((e) => e.id == 1);
-                        final updated = elderly.copyWith(
-                          isOffline: !elderly.isOffline,
-                          battery: elderly.isOffline ? 90 : 0,
-                          heartRate: elderly.isOffline ? 75 : 0,
-                          spo2: elderly.isOffline ? 98 : 0,
-                        );
-                        state.updateElderly(updated);
-                      },
-                      icon: const Icon(Icons.wifi_off, color: Colors.teal),
-                      label: const Text('ĐỔI ONLINE/OFFLINE THIẾT BỊ BÀ A'),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.teal, width: 1.5),
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                  ],
-                ),
+                // 5. CÔNG CỤ PHÁT TRIỂN / MÔ PHỎNG
+                DeveloperToolsSection(relatives: state.relatives),
               ],
             ),
           ),
@@ -294,19 +205,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildDevButton(String label, IconData icon, Color color, VoidCallback onPressed) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, color: Colors.white, size: 20),
-      label: Text(
-        label,
-        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
 }

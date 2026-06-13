@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/db_helper.dart';
 import '../services/auth_api_service.dart';
+import '../utils/app_state.dart';
 import '../utils/localization.dart';
 import 'main_shell.dart';
 import 'register_screen.dart';
@@ -100,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(Localization.translate('Vui lòng nhập đầy đủ thông tin.')),
+          content: Text(Localization.translate('fillAllFields')),
           backgroundColor: Colors.red,
         ),
       );
@@ -119,6 +120,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (success) {
       await _saveOrClearCredentials(username, password);
+
+      // Cập nhật vai trò người dùng theo tài khoản đăng nhập.
+      // Tài khoản admin mặc định được cấp vai trò quản trị viên.
+      final role = username.toLowerCase() == 'admin'
+          ? 'Quản trị viên'
+          : 'Tài khoản giám sát';
+      final profile = AppState().userProfile.copyWith(role: role);
+      await AppState().updateUserProfile(profile);
 
       // Hiển thị thông báo trạng thái kết nối database
       String statusMsg;
