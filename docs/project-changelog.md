@@ -45,11 +45,12 @@
 ### Fixed
 - Sửa lỗi không thể kéo thả sắp xếp người thân trên HomeScreen.
   - `lib/widgets/relative_reorderable_list.dart`: dùng `ReorderableListView.builder`,
-    tắt `buildDefaultDragHandles`. Tùy theo platform:
-    - **Mobile**: bọc toàn bộ card trong `ReorderableDelayedDragStartListener`,
-      nhấn giữ bất kỳ đâu trên thẻ để kéo thả.
-    - **Desktop/Web**: hiển thị handle kéo (dấu =) bên phải thẻ, dùng
-      `ReorderableDragStartListener` vì chuột không có UX nhấn giữ toàn card.
+    tắt `buildDefaultDragHandles`. Toàn bộ card là vùng kéo thả:
+    - **Mobile**: bọc card trong `ReorderableDelayedDragStartListener`, nhấn giữ
+      ~300-500ms bất kỳ đâu trên thẻ để bắt đầu kéo thả.
+    - **Desktop/Web**: bọc card trong `ReorderableDragStartListener`, nhấn và
+      kéo card để sắp xếp lại.
+    - Không hiển thị biểu tượng drag handle (=).
   - `lib/widgets/elderly_list_card.dart`: gỡ drag handle tùy chỉnh cũ, gỡ callback
     `onLocateTap` không dùng, thay `InkWell` bằng `GestureDetector` với
     `HitTestBehavior.translucent` để tap mở detail không cạnh tranh gesture

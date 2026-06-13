@@ -12,9 +12,13 @@ import '../widgets/status_banner.dart';
 /// Widget này sử dụng [ReorderableListView] với header cố định (user header,
 /// status banner, section title). Mỗi item là một card người thân.
 ///
-/// Người dùng nhấn giữ (~300-500ms) vào bất kỳ vị trí nào bên trong card
-/// để bắt đầu kéo thả. Card được nâng lên với hiệu ứng elevation/shadow trong
-/// khi kéo. Thứ tự mới được lưu qua [AppState] ngay sau khi thả.
+/// Toàn bộ thẻ người thân (Family Card) là vùng kéo thả:
+/// - Trên mobile: nhấn giữ (~300-500ms) vào bất kỳ vị trí nào bên trong card
+///   (avatar, tên, thông tin thiết bị, vùng trống...) để bắt đầu kéo thả.
+/// - Trên desktop/web: nhấn và kéo card để sắp xếp lại.
+///
+/// Card được nâng lên với hiệu ứng elevation/shadow trong khi kéo. Thứ tự mới
+/// được lưu qua [AppState] ngay sau khi thả.
 class RelativeReorderableList extends StatelessWidget {
   final List<ElderlyModel> relatives;
   final String overallStatus;
@@ -29,8 +33,17 @@ class RelativeReorderableList extends StatelessWidget {
     required this.onTap,
   });
 
+  bool _isMobile(BuildContext context) {
+    final platform = Theme.of(context).platform;
+    return platform == TargetPlatform.android ||
+        platform == TargetPlatform.iOS ||
+        platform == TargetPlatform.fuchsia;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isMobile = _isMobile(context);
+
     if (relatives.isEmpty) {
       return _buildEmptyState(context);
     }
@@ -82,8 +95,16 @@ class RelativeReorderableList extends StatelessWidget {
           onTap: () => onTap(r.id),
         );
 
-        // Nhấn giữ bất kỳ vị trí nào trên card để bắt đầu kéo thả.
-        return ReorderableDelayedDragStartListener(
+        // Toàn bộ card là vùng kéo thả, không cần drag handle.
+        // Mobile dùng nhấn giữ; desktop dùng kéo ngay để phù hợp chuột.
+        if (isMobile) {
+          return ReorderableDelayedDragStartListener(
+            key: ValueKey('drag_listener_${r.id}'),
+            index: index,
+            child: card,
+          );
+        }
+        return ReorderableDragStartListener(
           key: ValueKey('drag_listener_${r.id}'),
           index: index,
           child: card,
