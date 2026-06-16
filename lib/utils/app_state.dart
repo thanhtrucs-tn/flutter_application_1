@@ -30,7 +30,8 @@ class AppState extends ChangeNotifier {
   AppSettings _settings = AppSettings.defaultSettings();
   UserProfile _userProfile = UserProfile.defaultProfile();
   AlertModel? _activeAlert; // Cảnh báo nguy cấp đang diễn ra
-  bool _isWebSocketConnected = true; // Trạng thái kết nối realtime với ESP32/Backend
+  bool _isWebSocketConnected =
+      true; // Trạng thái kết nối realtime với ESP32/Backend
   Timer? _simulationTimer;
   int _currentNavIndex = 0; // Chỉ số tab bottom navigation hiện tại
   String? _currentAccountId; // Tài khoản đang đăng nhập (username)
@@ -83,7 +84,7 @@ class AppState extends ChangeNotifier {
   Future<void> updateSettings(AppSettings newSettings) async {
     _settings = newSettings;
     Localization.currentLanguage = _settings.languageCode;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('app_settings', json.encode(_settings.toMap()));
     notifyListeners();
@@ -108,8 +109,8 @@ class AppState extends ChangeNotifier {
   /// Mỗi tài khoản có một profile riêng biệt, key được gắn với username.
   static String _offlineUserProfileKey(String? accountId) =>
       accountId == null || accountId.isEmpty
-          ? 'offline_user_profile_v1'
-          : 'offline_user_profile_${accountId}_v1';
+      ? 'offline_user_profile_v1'
+      : 'offline_user_profile_${accountId}_v1';
 
   /// Tải ID tài khoản đang đăng nhập.
   Future<void> _loadCurrentAccount() async {
@@ -142,10 +143,7 @@ class AppState extends ChangeNotifier {
   UserProfile _defaultProfileForAccount(String? accountId) {
     final base = UserProfile.defaultProfile();
     if (accountId == null || accountId.isEmpty) return base;
-    return base.copyWith(
-      id: accountId,
-      name: accountId,
-    );
+    return base.copyWith(id: accountId, name: accountId);
   }
 
   /// Lưu hồ sơ người dùng xuống SharedPreferences theo tài khoản hiện tại.
@@ -153,10 +151,7 @@ class AppState extends ChangeNotifier {
     final accountId = _currentAccountId;
     final prefs = await SharedPreferences.getInstance();
     final key = _offlineUserProfileKey(accountId);
-    await prefs.setString(
-      key,
-      json.encode(_userProfile.toMap()),
-    );
+    await prefs.setString(key, json.encode(_userProfile.toMap()));
   }
 
   /// Đặt tài khoản hiện tại sau đăng nhập và tải profile riêng của tài khoản đó.
@@ -180,7 +175,8 @@ class AppState extends ChangeNotifier {
     if (jsonStr != null && jsonStr.isNotEmpty) {
       try {
         _userProfile = UserProfile.fromMap(
-            json.decode(jsonStr) as Map<String, dynamic>);
+          json.decode(jsonStr) as Map<String, dynamic>,
+        );
       } catch (e) {
         print('Lỗi đọc user profile cho $accountId: $e');
         _userProfile = _defaultProfileForAccount(accountId);
@@ -223,7 +219,9 @@ class AppState extends ChangeNotifier {
   /// Cập nhật thông tin hồ sơ người dùng (validate trước khi gọi).
   /// Dữ liệu được cập nhật vào cơ sở dữ liệu trước, sau đó mới persist cục bộ.
   Future<bool> updateUserProfile(UserProfile updated) async {
-    print('[DEBUG] updateUserProfile được gọi với: name="${updated.name}", email="${updated.email}", phone="${updated.phone}"');
+    print(
+      '[DEBUG] updateUserProfile được gọi với: name="${updated.name}", email="${updated.email}", phone="${updated.phone}"',
+    );
     if (updated.name.trim().isEmpty) {
       print('[DEBUG] updateUserProfile FAIL: name rỗng ("${updated.name}")');
       return false;
@@ -233,11 +231,15 @@ class AppState extends ChangeNotifier {
       return false;
     }
     if (updated.email.trim().length > 48) {
-      print('[DEBUG] updateUserProfile FAIL: email dài ${updated.email.trim().length} ký tự > 48 ("${updated.email}")');
+      print(
+        '[DEBUG] updateUserProfile FAIL: email dài ${updated.email.trim().length} ký tự > 48 ("${updated.email}")',
+      );
       return false;
     }
     if (!RegExp(r'^[0-9]{10}$').hasMatch(updated.phone.trim())) {
-      print('[DEBUG] updateUserProfile FAIL: phone sai format ("${updated.phone}", length=${updated.phone.trim().length})');
+      print(
+        '[DEBUG] updateUserProfile FAIL: phone sai format ("${updated.phone}", length=${updated.phone.trim().length})',
+      );
       return false;
     }
 
@@ -278,8 +280,8 @@ class AppState extends ChangeNotifier {
   /// Mỗi tài khoản có key riêng để cô lập dữ liệu.
   static String _offlineElderlyKey(String? accountId) =>
       accountId == null || accountId.isEmpty
-          ? 'offline_elderly_v2'
-          : 'offline_elderly_${accountId}_v2';
+      ? 'offline_elderly_v2'
+      : 'offline_elderly_${accountId}_v2';
 
   Future<void> _loadElderlyData() async {
     final accountId = _currentAccountId;
@@ -426,8 +428,8 @@ class AppState extends ChangeNotifier {
   /// Khóa lưu trữ lịch sử cảnh báo SOS, mỗi tài khoản có key riêng.
   static String _offlineAlertHistoryKey(String? accountId) =>
       accountId == null || accountId.isEmpty
-          ? 'offline_alert_history_v1'
-          : 'offline_alert_history_${accountId}_v1';
+      ? 'offline_alert_history_v1'
+      : 'offline_alert_history_${accountId}_v1';
 
   Future<void> _loadAlertHistory() async {
     final accountId = _currentAccountId;
@@ -529,13 +531,19 @@ class AppState extends ChangeNotifier {
   /// Phân loại cảnh báo từ nội dung tin nhắn.
   static String _inferAlertType(String message) {
     final lower = message.toLowerCase();
-    if (lower.contains('té') || lower.contains('fall') || lower.contains('ngã')) {
+    if (lower.contains('té') ||
+        lower.contains('fall') ||
+        lower.contains('ngã')) {
       return 'fall';
     }
-    if (lower.contains('vùng an toàn') || lower.contains('ngoài') || lower.contains('safe zone')) {
+    if (lower.contains('vùng an toàn') ||
+        lower.contains('ngoài') ||
+        lower.contains('safe zone')) {
       return 'geofence';
     }
-    if (lower.contains('nhịp tim') || lower.contains('spo2') || lower.contains('bpm')) {
+    if (lower.contains('nhịp tim') ||
+        lower.contains('spo2') ||
+        lower.contains('bpm')) {
       return 'vital';
     }
     return 'manual';
@@ -623,7 +631,7 @@ class AppState extends ChangeNotifier {
     _simulationTimer?.cancel();
     _simulationTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
       final random = Random();
-      
+
       // Thi thoảng mô phỏng kết nối WebSocket chập chờn
       if (random.nextInt(100) < 5) {
         _isWebSocketConnected = !_isWebSocketConnected;
@@ -635,7 +643,7 @@ class AppState extends ChangeNotifier {
 
       for (int i = 0; i < _relatives.length; i++) {
         final elderly = _relatives[i];
-        
+
         // Nếu thiết bị đang offline (hết pin), không có dữ liệu cập nhật
         if (elderly.isOffline) continue;
 
@@ -663,7 +671,7 @@ class AppState extends ChangeNotifier {
         // 4. Mô phỏng di chuyển nhẹ (GPS)
         double newLat = elderly.latitude;
         double newLng = elderly.longitude;
-        
+
         // Tỷ lệ di chuyển nhỏ (chỉ đổi tọa độ nhỏ)
         if (random.nextInt(10) < 4) {
           newLat += (random.nextDouble() - 0.5) * 0.0006;
@@ -671,7 +679,12 @@ class AppState extends ChangeNotifier {
         }
 
         // 5. Kiểm tra khoảng cách tới Tâm vùng an toàn để cảnh báo Geofence
-        double distance = _calculateDistance(newLat, newLng, elderly.safeZoneLat, elderly.safeZoneLng);
+        double distance = _calculateDistance(
+          newLat,
+          newLng,
+          elderly.safeZoneLat,
+          elderly.safeZoneLng,
+        );
         bool isOutsideSafeZone = distance > elderly.safeZoneRadius;
 
         // Tính trạng thái vùng an toàn TRƯỚC khi cập nhật, dựa trên tọa độ thực tế
@@ -689,7 +702,8 @@ class AppState extends ChangeNotifier {
         // phải giữ critical cho đến khi người dùng xác nhận, không tự động hạ cấp.
         String newStatus = elderly.status;
         if (elderly.isFallen ||
-            (_activeAlert?.elderlyId == elderly.id && _activeAlert?.type == 'geofence')) {
+            (_activeAlert?.elderlyId == elderly.id &&
+                _activeAlert?.type == 'geofence')) {
           newStatus = 'critical';
         } else if (newHeart > 100 || newSpo2 < 93) {
           newStatus = 'warning';
@@ -731,7 +745,8 @@ class AppState extends ChangeNotifier {
           // Đã quay về vùng an toàn, chỉ tự động reset active alert nếu đó là
           // cảnh báo geofence. Cảnh báo té ngã hoặc sinh tồn phải do người dùng
           // xác nhận thủ công.
-          if (_activeAlert?.elderlyId == elderly.id && _activeAlert?.type == 'geofence') {
+          if (_activeAlert?.elderlyId == elderly.id &&
+              _activeAlert?.type == 'geofence') {
             acknowledgeAlert(_activeAlert!.id);
           }
         }
@@ -799,6 +814,28 @@ class AppState extends ChangeNotifier {
     return true;
   }
 
+  /// Giả lập thiết bị của người thân đang OFFLINE (hết pin, mất tín hiệu).
+  /// - Nếu người thân không tồn tại → bỏ qua (không throw).
+  /// - Đặt pin về 0%, isOffline = true, nhịp tim/SpO2 về 0, cập nhật lastUpdated.
+  /// - Trả về true nếu cập nhật thành công, false nếu elderlyId không tồn tại.
+  bool simulateDeviceOffline(int elderlyId) {
+    final index = _relatives.indexWhere((e) => e.id == elderlyId);
+    if (index == -1) return false;
+
+    final elderly = _relatives[index];
+    final updated = elderly.copyWith(
+      isOffline: true,
+      battery: 0,
+      heartRate: 0,
+      spo2: 0,
+      lastUpdated: DateTime.now(),
+    );
+    _relatives[index] = updated;
+    _saveElderlyData();
+    notifyListeners();
+    return true;
+  }
+
   /// Giả lập Nhịp tim & SpO2 bất thường (Cần lưu ý)
   void simulateHeartRateSpike(int elderlyId) {
     final elderly = _relatives.firstWhere((e) => e.id == elderlyId);
@@ -822,11 +859,17 @@ class AppState extends ChangeNotifier {
   }
 
   /// Công thức Haversine tính khoảng cách (mét) giữa 2 tọa độ GPS
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
     const p = 0.017453292519943295; // Math.PI / 180
-    final a = 0.5 - cos((lat2 - lat1) * p) / 2 +
-        cos(lat1 * p) * cos(lat2 * p) *
-            (1 - cos((lon2 - lon1) * p)) / 2;
+    final a =
+        0.5 -
+        cos((lat2 - lat1) * p) / 2 +
+        cos(lat1 * p) * cos(lat2 * p) * (1 - cos((lon2 - lon1) * p)) / 2;
     return 12742 * asin(sqrt(a)) * 1000; // 2 * R * 1000 m
   }
 

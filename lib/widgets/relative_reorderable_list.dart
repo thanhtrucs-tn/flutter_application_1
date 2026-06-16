@@ -8,7 +8,6 @@ import '../widgets/add_relative_dialog.dart';
 import '../widgets/elderly_list_card.dart';
 import '../widgets/home_user_header.dart';
 import '../widgets/sos_latest_alert_banner.dart';
-import '../widgets/status_banner.dart';
 
 /// Danh sách người thân có hỗ trợ kéo thả sắp xếp lại thứ tự.
 ///
@@ -24,14 +23,12 @@ import '../widgets/status_banner.dart';
 /// được lưu qua [AppState] ngay sau khi thả.
 class RelativeReorderableList extends StatelessWidget {
   final List<ElderlyModel> relatives;
-  final String overallStatus;
   final int selectedElderlyId;
   final ValueChanged<int> onTap;
 
   const RelativeReorderableList({
     super.key,
     required this.relatives,
-    required this.overallStatus,
     required this.selectedElderlyId,
     required this.onTap,
   });
@@ -87,8 +84,6 @@ class RelativeReorderableList extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const HomeUserHeader(),
-          const SizedBox(height: 18),
-          StatusBanner(status: overallStatus),
           const SizedBox(height: 18),
           SosLatestAlertBanner(
             alert: _latestUnacknowledgedAlert(),
@@ -153,8 +148,6 @@ class RelativeReorderableList extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const HomeUserHeader(),
-          const SizedBox(height: 18),
-          StatusBanner(status: overallStatus),
           const SizedBox(height: 48),
           Center(
             child: Icon(

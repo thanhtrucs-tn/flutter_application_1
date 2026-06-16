@@ -65,11 +65,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Widget _buildLanguageOption(BuildContext context, String code, String currentCode) {
+  Widget _buildLanguageOption(
+    BuildContext context,
+    String code,
+    String currentCode,
+  ) {
     final isSelected = code == currentCode;
     return ListTile(
       title: Text(_languageDisplayName(code)),
-      trailing: isSelected ? const Icon(Icons.check, color: Color(0xFFE53935)) : null,
+      trailing: isSelected
+          ? const Icon(Icons.check, color: Color(0xFFE53935))
+          : null,
       onTap: () => Navigator.of(context).pop(code),
     );
   }
@@ -98,7 +104,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   elevation: 1,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(color: isDark ? Colors.grey.shade800 : Colors.grey.shade200),
+                    side: BorderSide(
+                      color: isDark
+                          ? Colors.grey.shade800
+                          : Colors.grey.shade200,
+                    ),
                   ),
                   color: isDark ? const Color(0xFF1E293B) : Colors.white,
                   child: InkWell(
@@ -106,7 +116,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const ProfileScreen(),
+                        ),
                       );
                     },
                     child: Padding(
@@ -125,18 +137,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               children: [
                                 Text(
                                   profile.name,
-                                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   profile.email,
-                                  style: TextStyle(fontSize: 14, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDark
+                                        ? Colors.grey.shade400
+                                        : Colors.grey.shade600,
+                                  ),
                                 ),
                                 const SizedBox(height: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFE53935).withValues(alpha: 0.1),
+                                    color: const Color(
+                                      0xFFE53935,
+                                    ).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: const Text(
@@ -174,34 +199,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       leading: const Icon(Icons.person, color: Colors.blue),
                       title: Text(
                         Localization.translate('profile'),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const ProfileScreen(),
+                          ),
                         );
                       },
                     ),
                     const Divider(height: 1),
                     ListTile(
-                      title: Text(Localization.translate('language'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                      title: Text(
+                        Localization.translate('language'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             _languageDisplayName(settings.languageCode),
-                            style: const TextStyle(fontSize: 15, color: Colors.grey),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Colors.grey,
+                            ),
                           ),
                           const Icon(Icons.chevron_right, color: Colors.grey),
                         ],
                       ),
-                      onTap: () => _showLanguagePicker(context, state, settings.languageCode),
+                      onTap: () => _showLanguagePicker(
+                        context,
+                        state,
+                        settings.languageCode,
+                      ),
                     ),
                     const Divider(height: 1),
                     ListTile(
-                      title: Text(Localization.translate('darkMode'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                      title: Text(
+                        Localization.translate('darkMode'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       trailing: Switch(
                         value: settings.isDarkMode,
                         onChanged: (v) => state.toggleDarkMode(v),
@@ -209,19 +258,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const Divider(height: 1),
                     ListTile(
-                      title: Text(Localization.translate('soundAlert'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                      title: Text(
+                        Localization.translate('soundAlert'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       trailing: Switch(
                         value: settings.isSoundAlertEnabled,
-                        onChanged: (v) => state.updateSettings(settings.copyWith(isSoundAlertEnabled: v)),
+                        onChanged: (v) => state.updateSettings(
+                          settings.copyWith(isSoundAlertEnabled: v),
+                        ),
                       ),
                     ),
                     const Divider(height: 1),
                     ListTile(
-                      title: Text(Localization.translate('autoCall'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                      subtitle: Text('${settings.autoCallTimeoutSeconds}s', style: const TextStyle(fontSize: 13)),
+                      title: Text(
+                        Localization.translate('autoCall'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '${settings.autoCallTimeoutSeconds}s',
+                        style: const TextStyle(fontSize: 13),
+                      ),
                       trailing: Switch(
                         value: settings.isAutoCallEnabled,
-                        onChanged: (v) => state.updateSettings(settings.copyWith(isAutoCallEnabled: v)),
+                        onChanged: (v) => state.updateSettings(
+                          settings.copyWith(isAutoCallEnabled: v),
+                        ),
                       ),
                     ),
                   ],
@@ -232,14 +300,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SettingsSectionCard(
                   children: [
                     ListTile(
-                      title: Text(Localization.translate('version'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                      trailing: const Text('1.0.0', style: TextStyle(color: Colors.grey, fontSize: 15, fontWeight: FontWeight.bold)),
+                      title: Text(
+                        Localization.translate('version'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      trailing: const Text(
+                        '1.0.0',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     const Divider(height: 1),
                     ListTile(
                       title: Text(
                         Localization.translate('logout'),
-                        style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                       onTap: () => _logout(context),
                     ),
@@ -248,7 +333,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 12),
 
                 // 5. CÔNG CỤ PHÁT TRIỂN / MÔ PHỎNG
-                DeveloperToolsSection(relatives: state.relatives),
+                const DeveloperToolsSection(),
               ],
             ),
           ),
@@ -256,5 +341,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
-
 }

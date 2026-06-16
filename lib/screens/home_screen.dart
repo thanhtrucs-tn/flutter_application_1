@@ -69,15 +69,6 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         }
 
-        // Tổng hợp trạng thái banner: xét CÃ elderly.status VÃ  alerts chưa acknowledge.
-        // (Vì alert "Nhịp tim 115 bpm" có thể được trigger cho elderly đang offline
-        // do simulator test, hoặc elderly đã acknowledge alert cũ nhưng vẫn ở critical.)
-        bool hasCritical = relatives.any((e) => e.status == 'critical' && !e.isOffline) ||
-            state.alerts.any((a) => !a.acknowledged && a.urgency == 'critical');
-        bool hasWarning = relatives.any((e) => e.status == 'warning' && !e.isOffline) ||
-            state.alerts.any((a) => !a.acknowledged && a.urgency == 'warning');
-        String overallStatus = hasCritical ? 'critical' : (hasWarning ? 'warning' : 'safe');
-
         return Scaffold(
           appBar: SosAppHeader(
             title: Localization.translate('appName'),
@@ -91,7 +82,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           body: RelativeReorderableList(
             relatives: relatives,
-            overallStatus: overallStatus,
             selectedElderlyId: _defaultSelectedElderlyId,
             onTap: (id) {
               Navigator.push(
