@@ -119,8 +119,18 @@ class SosSimulatorRemoteDataSource implements SosSimulatorRepository {
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
           e.type == DioExceptionType.connectionError) {
-        return Left(NetworkFailure(message: e.message ?? 'Kết nối mạng bị lỗi'));
+        final message = switch (e.type) {
+          DioExceptionType.connectionTimeout =>
+            'Kết nối đến server quá chậm, vui lòng thử lại',
+          DioExceptionType.receiveTimeout =>
+            'Server phản hồi quá chậm, vui lòng thử lại',
+          DioExceptionType.sendTimeout =>
+            'Gửi dữ liệu đến server quá chậm, vui lòng thử lại',
+          _ => e.message ?? 'Kết nối mạng bị lỗi',
+        };
+        return Left(NetworkFailure(message: message));
       }
       return Left(
         ServerFailure(

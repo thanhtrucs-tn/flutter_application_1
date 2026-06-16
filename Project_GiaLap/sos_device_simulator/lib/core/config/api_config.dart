@@ -16,8 +16,14 @@ class ApiConfig {
   /// Default connection timeout for Dio.
   static const Duration connectTimeout = Duration(seconds: 5);
 
+  /// Default send timeout for Dio.
+  static const Duration sendTimeout = Duration(seconds: 10);
+
   /// Default receive timeout for Dio.
-  static const Duration receiveTimeout = Duration(seconds: 10);
+  ///
+  /// Raised from 10s to 30s because the SOS Care backend can take a while
+  /// to process emergency alerts during high load.
+  static const Duration receiveTimeout = Duration(seconds: 30);
 
   /// Socket.IO server URL.
   static const String socketUrl = 'http://localhost:8080';
