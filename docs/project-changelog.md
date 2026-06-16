@@ -1,5 +1,103 @@
 # Project Changelog
 
+## 2026-06-17 (SOS Home latest banner + alert tab badge)
+
+### Added
+- Trạng thái `read` cho cảnh báo để phân biệt "chưa đọc" và "chưa xử lý".
+  - `lib/models/alert_model.dart`: thêm trường `read` với giá trị mặc định
+    `false`; cập nhật `copyWith`, `fromMap`, `toMap` tương thích ngược.
+  - `lib/utils/app_state.dart`: thêm `alertBadgeCount` đếm cảnh báo chưa đọc
+    hoặc chưa xử lý; thêm `markAllAlertsRead()` để xóa cờ `read` khi mở tab
+    Thông báo; `acknowledgeAlert` tự động đánh dấu `read` luôn.
+- Badge số lượng cảnh báo trên tab Thông báo ở bottom navigation.
+  - `lib/widgets/sos_bottom_nav.dart`: nhận `alertBadgeCount`, bọc icon
+    `notifications` trong `Badge` khi count > 0; giới hạn hiển thị tối đa `99+`.
+  - `lib/screens/main_shell.dart`: truyền count xuống `SosBottomNav` và gọi
+    `markAllAlertsRead()` khi chuyển sang tab Thông báo (index 1).
+- Banner SOS mới nhất trên trang chủ, thay thế danh sách 5 thông báo cũ.
+  - `lib/widgets/sos_latest_alert_banner.dart` (file mới): hiển thị tối đa 1
+    cảnh báo chưa xử lý mới nhất; dùng `AnimatedSwitcher` để banner cũ trượt
+    xuống biến mất và banner mới thay thế khi có cảnh báo mới.
+  - `lib/widgets/relative_reorderable_list.dart`: thay `SosNotificationList`
+    bằng `SosLatestAlertBanner`.
+
+### Removed
+- Xóa file `lib/widgets/sos_notification_list.dart` không còn được sử dụng.
+
+### Fixed
+- Số lượng người thân ONLINE/OFFLINE ở lobby cập nhật realtime mà không cần
+  chuyển tab.
+  - `lib/widgets/home_user_header.dart`: bọc toàn bộ nội dung trong
+    `AnimatedBuilder` lắng nghe `AppState()` trực tiếp, giúp count cập nhật ngay
+    khi `ElderlyModel.isOffline` thay đổi ngay cả khi parent list reference
+    không đổi.
+
+### Tests
+- `test/alert_badge_test.dart` (file mới): test `alertBadgeCount`,
+  `markAllAlertsRead`, và `acknowledgeAlert` đồng thời đánh dấu `read`.
+- `test/sos_latest_alert_banner_test.dart` (file mới): test banner ẩn khi
+  không có cảnh báo, nhấn mở chi tiết, và thay thế alert kích hoạt animation.
+- `test/home_user_header_realtime_count_test.dart` (file mới): test count
+  online/offline cập nhật ngay khi thay đổi trạng thái thiết bị mà không cần
+  tab switching.
+
+## 2026-06-17 (SOS alerts sorting, auto-acknowledge fix, realtime device badge)
+
+### Fixed
+- Sửa lỗi cảnh báo té ngã tự động bị đánh dấu "ĐÃ XỬ LÝ" dù người dùng chưa động vào.
+  - `lib/utils/app_state.dart`: không còn dùng `elderly.status == 'critical'` làm
+    proxy cho "vừa ở ngoài vùng an toàn"; thay bằng khoảng cách GPS thực tế so
+    với tâm vùng an toàn.
+  - `lib/utils/app_state.dart`: chỉ tự động acknowledge khi active alert thuộc
+    loại `geofence` và người thân quay về vùng an toàn. Cảnh báo `fall` và `vital`
+    luôn yêu cầu xác nhận thủ công.
+  - `lib/models/alert_model.dart`: thêm trường `type` (`fall` | `geofence` |
+    `vital` | `manual`), cập nhật `copyWith`, `fromMap`, `toMap` với giá trị mặc
+    định tương thích ngược.
+  - `lib/utils/app_state.dart`: các hàm `simulateFall`, `simulateExitSafeZone`,
+    `simulateHeartRateSpike` truyền đúng `type`.
+  - `lib/database/mock_data.dart`: cập nhật các cảnh báo mẫu với `type` phù hợp.
+  - `lib/screens/home_screen.dart`: gỡ bỏ nhánh tự động acknowledge khi user đang
+    ở ngoài Home.
+- Sửa lỗi compile `lib/screens/alerts_screen.dart`: di chuyển `topAlertId` ra ngoài
+  danh sách `children` của `ListView`.
+- `lib/utils/app_state.dart`: tự động acknowledge cảnh báo geofence khi người thân
+  đã ở trong vùng an toàn ngay cả khi tọa độ trước đó (do `updateElderly`) cũng đã
+  ở trong vùng — giúp realtime hơn khi GPS được cập nhật từ backend.
+- `lib/utils/app_state.dart`: `acknowledgeAlert` chỉ reset `isFallen` khi xác nhận
+  đúng cảnh báo `fall`, tránh xóa nhầm cờ té ngã khi một cảnh báo geofence tự
+  động acknowledge.
+- `lib/screens/alerts_screen.dart`: đổi tên `latestAlertId` → `topAlertId` cho đúng
+  ngữ nghĩa (top của danh sách chưa-xử-lý-ưu-tiên), và thay chuỗi empty-state cứng
+  bằng `Localization.translate('noAlerts')`.
+
+### Added
+- Sắp xếp danh sách cảnh báo: chưa xử lý mới nhất lên đầu, sau đó đã xử lý mới nhất.
+  - `lib/utils/app_state.dart`: thêm getter `sortedAlerts`.
+  - `lib/screens/alerts_screen.dart`: dùng `sortedAlerts` và truyền `isLatest`
+    cho thông báo mới nhất.
+- Badge thời gian chi tiết trên mỗi thông báo (`dd/mm/yyyy - hh:mm:ss`) ở góc
+  phải.
+  - `lib/widgets/alert_list_item.dart`: hiển thị badge thời gian, hỗ trợ `isLatest`
+    để bật hiệu ứng highlight nhấp nháy chỉ đúng thông báo mới nhất.
+- Danh sách thông báo SOS trên Home với animation mượt mà.
+  - `lib/widgets/sos_notification_list.dart` (file mới): dùng `AnimatedList`,
+    thông báo mới chèn lên đầu, thông báo cũ/cũ bị xóa trượt xuống/xóa mượt mà.
+  - `lib/widgets/relative_reorderable_list.dart`: chèn `SosNotificationList` giữa
+    `StatusBanner` và section "Danh sách người thân".
+- Badge trạng thái thiết bị ONLINE/OFFLINE cập nhật realtime.
+  - `lib/widgets/device_online_badge.dart` (file mới): chip hiển thị `ONLINE` /
+    `OFFLINE` với màu xanh/xám và đèn hiệu.
+  - `lib/widgets/elderly_card_content.dart`: đặt badge ngay cạnh tên người thân,
+    cập nhật ngay khi `ElderlyModel.isOffline` thay đổi nhờ `AnimatedBuilder` ở
+    `HomeScreen`.
+
+### Tests
+- `test/alert_sorting_and_autoack_test.dart` (file mới): test `sortedAlerts` và
+  fall alert không bị auto-acknowledge.
+- `test/alert_list_item_test.dart` (file mới): test badge thời gian, trạng thái
+  xử lý, highlight khi `isLatest`.
+
 ## 2026-06-14 (relative avatar picker)
 
 ### Added

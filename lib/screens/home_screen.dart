@@ -44,7 +44,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 modalRoute.settings.name != null &&
                 (modalRoute.settings.name == '/' || modalRoute.settings.name == '/home');
             if (!isCurrentHome) {
-              state.acknowledgeAlert(activeAlert.id);
+              // Không tự động acknowledge khi user đang ở màn hình khác;
+              // alert sẽ được đẩy khi user quay lại Home.
               _pushedAlertId = null;
               return;
             }

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import '../models/alert_model.dart';
 import '../models/elderly_model.dart';
+import '../screens/alert_detail_screen.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
 import '../widgets/add_relative_dialog.dart';
 import '../widgets/elderly_list_card.dart';
 import '../widgets/home_user_header.dart';
+import '../widgets/sos_latest_alert_banner.dart';
 import '../widgets/status_banner.dart';
 
 /// Danh sách người thân có hỗ trợ kéo thả sắp xếp lại thứ tự.
@@ -38,6 +41,11 @@ class RelativeReorderableList extends StatelessWidget {
     return platform == TargetPlatform.android ||
         platform == TargetPlatform.iOS ||
         platform == TargetPlatform.fuchsia;
+  }
+
+  AlertModel? _latestUnacknowledgedAlert() {
+    final sorted = AppState().sortedAlerts;
+    return sorted.isNotEmpty && !sorted.first.acknowledged ? sorted.first : null;
   }
 
   @override
@@ -81,7 +89,17 @@ class RelativeReorderableList extends StatelessWidget {
           const HomeUserHeader(),
           const SizedBox(height: 18),
           StatusBanner(status: overallStatus),
-          const SizedBox(height: 24),
+          const SizedBox(height: 18),
+          SosLatestAlertBanner(
+            alert: _latestUnacknowledgedAlert(),
+            onTap: (alert) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => AlertDetailScreen(alert: alert)),
+              );
+            },
+          ),
+          const SizedBox(height: 6),
           _buildSectionHeader(context),
         ],
       ),

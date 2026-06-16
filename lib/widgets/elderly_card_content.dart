@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/elderly_model.dart';
 import '../utils/localization.dart';
+import 'device_online_badge.dart';
 import 'elderly_avatar.dart';
 import 'vital_badge.dart';
 
@@ -39,6 +40,8 @@ class ElderlyCardContent extends StatelessWidget {
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      DeviceOnlineBadge(elderly: elderly),
                       const SizedBox(width: 8),
                       Container(
                         width: 10,

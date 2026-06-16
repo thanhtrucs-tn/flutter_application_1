@@ -26,7 +26,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
     return AnimatedBuilder(
       animation: state,
       builder: (context, child) {
-        final alerts = state.alerts.where((a) {
+        final sorted = state.sortedAlerts;
+        final alerts = sorted.where((a) {
           if (_filter == 'Tất cả') return true;
           if (_filter == 'Khẩn cấp') return a.urgency == 'critical';
           if (_filter == 'Cảnh báo') return a.urgency == 'warning';
@@ -34,10 +35,17 @@ class _AlertsScreenState extends State<AlertsScreen> {
           return true;
         }).toList();
 
+        final topAlertId = sorted.isNotEmpty ? sorted.first.id : null;
+
         return Scaffold(
           appBar: SosAppHeader(title: Localization.translate('alerts')),
           body: alerts.isEmpty
-              ? const Center(child: Text('Không có cảnh báo nào.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)))
+              ? Center(
+                  child: Text(
+                    Localization.translate('noAlerts'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                )
               : ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   children: [
@@ -49,6 +57,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                     const SizedBox(height: 10),
                     ...alerts.map((a) => AlertListItem(
                       alert: a,
+                      isLatest: a.id == topAlertId,
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => AlertDetailScreen(alert: a)),

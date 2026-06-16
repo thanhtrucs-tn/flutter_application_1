@@ -8,6 +8,8 @@ class AlertModel {
   final String urgency; // 'critical' (Đỏ), 'warning' (Vàng)
   final String message; // Ví dụ: "Bà Nguyễn Thị A cần hỗ trợ"
   final bool acknowledged; // Xác nhận đã xử lý
+  final bool read; // Người dùng đã mở/xem qua tab thông báo
+  final String type; // Loại sự cố: 'fall', 'geofence', 'vital', 'manual'
   final double latitude;
   final double longitude;
 
@@ -20,6 +22,8 @@ class AlertModel {
     required this.urgency,
     required this.message,
     required this.acknowledged,
+    this.read = false,
+    this.type = 'manual',
     required this.latitude,
     required this.longitude,
   });
@@ -34,6 +38,8 @@ class AlertModel {
     String? urgency,
     String? message,
     bool? acknowledged,
+    bool? read,
+    String? type,
     double? latitude,
     double? longitude,
   }) {
@@ -46,6 +52,8 @@ class AlertModel {
       urgency: urgency ?? this.urgency,
       message: message ?? this.message,
       acknowledged: acknowledged ?? this.acknowledged,
+      read: read ?? this.read,
+      type: type ?? this.type,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
     );
@@ -62,6 +70,8 @@ class AlertModel {
       urgency: map['urgency'] as String,
       message: map['message'] as String,
       acknowledged: (map['acknowledged'] as int? ?? 0) == 1,
+      read: (map['read'] as int? ?? 0) == 1,
+      type: map['type'] as String? ?? 'manual',
       latitude: (map['latitude'] as num).toDouble(),
       longitude: (map['longitude'] as num).toDouble(),
     );
@@ -78,6 +88,8 @@ class AlertModel {
       'urgency': urgency,
       'message': message,
       'acknowledged': acknowledged ? 1 : 0,
+      'read': read ? 1 : 0,
+      'type': type,
       'latitude': latitude,
       'longitude': longitude,
     };

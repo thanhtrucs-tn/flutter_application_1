@@ -45,6 +45,10 @@ class AppState extends ChangeNotifier {
   int get currentNavIndex => _currentNavIndex;
   String? get currentAccountId => _currentAccountId;
 
+  /// Số cảnh báo chưa đọc hoặc chưa xử lý để hiển thị badge trên tab Thông báo.
+  int get alertBadgeCount =>
+      _alerts.where((a) => !a.read || !a.acknowledged).length;
+
   /// Đổi tab bottom navigation
   void setNavIndex(int index) {
     _currentNavIndex = index;
@@ -469,16 +473,25 @@ class AppState extends ChangeNotifier {
   }
 
   /// Kích hoạt cảnh báo SOS mới
-  void triggerSOS(int elderlyId, String message, String urgency, double lat, double lng) {
+  void triggerSOS(
+    int elderlyId,
+    String message,
+    String urgency,
+    double lat,
+    double lng, {
+    String? type,
+  }) {
     final elderly = _relatives.firstWhere((e) => e.id == elderlyId);
-    
+
+    final inferredType = type ?? _inferAlertType(message);
+
     // Cập nhật trạng thái người cao tuổi thành warning/critical
     final updatedElderly = elderly.copyWith(
       status: urgency == 'critical' ? 'critical' : 'warning',
       lastUpdated: DateTime.now(),
       latitude: lat,
       longitude: lng,
-      isFallen: message.contains('Té') || message.toLowerCase().contains('fall'),
+      isFallen: inferredType == 'fall',
     );
     updateElderly(updatedElderly);
 
@@ -494,6 +507,7 @@ class AppState extends ChangeNotifier {
       urgency: urgency,
       message: message,
       acknowledged: false,
+      type: inferredType,
       latitude: lat,
       longitude: lng,
     );
@@ -512,19 +526,45 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Phân loại cảnh báo từ nội dung tin nhắn.
+  static String _inferAlertType(String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('té') || lower.contains('fall') || lower.contains('ngã')) {
+      return 'fall';
+    }
+    if (lower.contains('vùng an toàn') || lower.contains('ngoài') || lower.contains('safe zone')) {
+      return 'geofence';
+    }
+    if (lower.contains('nhịp tim') || lower.contains('spo2') || lower.contains('bpm')) {
+      return 'vital';
+    }
+    return 'manual';
+  }
+
+  /// Danh sách cảnh báo đã sắp xếp: chưa xử lý mới nhất lên đầu, sau đó đã xử lý mới nhất.
+  List<AlertModel> get sortedAlerts {
+    final unacked = _alerts.where((a) => !a.acknowledged).toList()
+      ..sort((a, b) => b.time.compareTo(a.time));
+    final acked = _alerts.where((a) => a.acknowledged).toList()
+      ..sort((a, b) => b.time.compareTo(a.time));
+    return [...unacked, ...acked];
+  }
+
   /// Xác nhận đã nhận cảnh báo (Acknowledge)
   void acknowledgeAlert(String alertId) {
     // Cập nhật trạng thái trong lịch sử
     final index = _alerts.indexWhere((a) => a.id == alertId);
     if (index != -1) {
       final oldAlert = _alerts[index];
-      _alerts[index] = oldAlert.copyWith(acknowledged: true);
+      _alerts[index] = oldAlert.copyWith(acknowledged: true, read: true);
 
       // Cập nhật trạng thái người già tương ứng về bình thường (safe)
       final elderly = _relatives.firstWhere((e) => e.id == oldAlert.elderlyId);
       final updatedElderly = elderly.copyWith(
         status: 'safe',
-        isFallen: false,
+        // Chỉ xóa cờ té ngã khi đang xác nhận đúng cảnh báo té ngã, tránh
+        // reset nhầm cờ do cảnh báo geofence/sinh tồn khác tự động acknowledge.
+        isFallen: oldAlert.type == 'fall' ? false : elderly.isFallen,
         lastUpdated: DateTime.now(),
       );
       updateElderly(updatedElderly);
@@ -536,6 +576,24 @@ class AppState extends ChangeNotifier {
     }
     _saveAlertHistory().catchError((e) {
       debugPrint('Lỗi lưu lịch sử sau acknowledge: $e');
+    });
+    notifyListeners();
+  }
+
+  /// Đánh dấu toàn bộ cảnh báo đã được mở/xem qua tab Thông báo.
+  /// Giữ nguyên trạng thái `acknowledged`, chỉ xóa cờ `read` khỏi badge count.
+  void markAllAlertsRead() {
+    bool changed = false;
+    for (int i = 0; i < _alerts.length; i++) {
+      if (!_alerts[i].read) {
+        _alerts[i] = _alerts[i].copyWith(read: true);
+        changed = true;
+      }
+    }
+    if (!changed) return;
+
+    _saveAlertHistory().catchError((e) {
+      debugPrint('Lỗi lưu lịch sử sau markAllAlertsRead: $e');
     });
     notifyListeners();
   }
@@ -616,9 +674,27 @@ class AppState extends ChangeNotifier {
         double distance = _calculateDistance(newLat, newLng, elderly.safeZoneLat, elderly.safeZoneLng);
         bool isOutsideSafeZone = distance > elderly.safeZoneRadius;
 
-        String newStatus = 'safe';
-        if (elderly.isFallen || newHeart > 100 || newSpo2 < 93) {
+        // Tính trạng thái vùng an toàn TRƯỚC khi cập nhật, dựa trên tọa độ thực tế
+        // thay vì dùng elderly.status == 'critical' làm proxy (vì critical cũng có thể
+        // do té ngã).
+        final previousDistance = _calculateDistance(
+          elderly.latitude,
+          elderly.longitude,
+          elderly.safeZoneLat,
+          elderly.safeZoneLng,
+        );
+        final wasOutsideSafeZone = previousDistance > elderly.safeZoneRadius;
+
+        // Tính trạng thái sức khỏe mới. Té ngã và cảnh báo geofence đang active
+        // phải giữ critical cho đến khi người dùng xác nhận, không tự động hạ cấp.
+        String newStatus = elderly.status;
+        if (elderly.isFallen ||
+            (_activeAlert?.elderlyId == elderly.id && _activeAlert?.type == 'geofence')) {
+          newStatus = 'critical';
+        } else if (newHeart > 100 || newSpo2 < 93) {
           newStatus = 'warning';
+        } else {
+          newStatus = 'safe';
         }
 
         // Tạo cập nhật cho người cao tuổi
@@ -637,20 +713,25 @@ class AppState extends ChangeNotifier {
 
         // Chỉ trigger SOS khi có sự kiện BIÊN xảy ra:
         //  - Từ trong vùng (status safe/warning) chuyển ra NGOÀI vùng an toàn
-        //  - HOẶC elderly đang ở critical nhưng vừa về trong vùng (để reset)
+        //  - HOẶC elderly đang ở ngoài vùng an toàn nhưng vừa về trong vùng (để reset)
         // Tránh spam alert mỗi 4 giây khi người dùng đã acknowledge nhưng vẫn ở ngoài.
-        final wasOutside = elderly.status == 'critical'; // trước đó đã ở ngoài
-        if (isOutsideSafeZone && !wasOutside) {
+        if (isOutsideSafeZone && !wasOutsideSafeZone) {
           triggerSOS(
             elderly.id,
             'Ra khỏi vùng an toàn (${distance.toStringAsFixed(0)}m > ${elderly.safeZoneRadius.toStringAsFixed(0)}m)',
             'critical',
             newLat,
             newLng,
+            type: 'geofence',
           );
-        } else if (!isOutsideSafeZone && wasOutside) {
-          // Đã quay về vùng an toàn, tự động reset active alert
-          if (_activeAlert?.elderlyId == elderly.id) {
+        } else if (!isOutsideSafeZone &&
+            (wasOutsideSafeZone ||
+                (_activeAlert?.elderlyId == elderly.id &&
+                    _activeAlert?.type == 'geofence'))) {
+          // Đã quay về vùng an toàn, chỉ tự động reset active alert nếu đó là
+          // cảnh báo geofence. Cảnh báo té ngã hoặc sinh tồn phải do người dùng
+          // xác nhận thủ công.
+          if (_activeAlert?.elderlyId == elderly.id && _activeAlert?.type == 'geofence') {
             acknowledgeAlert(_activeAlert!.id);
           }
         }
@@ -675,6 +756,7 @@ class AppState extends ChangeNotifier {
       'critical',
       elderly.latitude + 0.0008,
       elderly.longitude + 0.0008,
+      type: 'fall',
     );
   }
 
@@ -690,6 +772,7 @@ class AppState extends ChangeNotifier {
       'critical',
       newLat,
       newLng,
+      type: 'geofence',
     );
   }
 
@@ -734,6 +817,7 @@ class AppState extends ChangeNotifier {
       'warning',
       elderly.latitude,
       elderly.longitude,
+      type: 'vital',
     );
   }
 

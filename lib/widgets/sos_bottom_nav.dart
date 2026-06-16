@@ -5,11 +5,13 @@ import '../utils/localization.dart';
 class SosBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final int alertBadgeCount;
 
   const SosBottomNav({
     super.key,
     required this.currentIndex,
     required this.onTap,
+    required this.alertBadgeCount,
   });
 
   @override
@@ -34,7 +36,12 @@ class SosBottomNav extends StatelessWidget {
           label: Localization.translate('home'),
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.notifications_rounded),
+          icon: alertBadgeCount > 0
+              ? Badge(
+                  label: Text(alertBadgeCount > 99 ? '99+' : '$alertBadgeCount'),
+                  child: const Icon(Icons.notifications_rounded),
+                )
+              : const Icon(Icons.notifications_rounded),
           label: Localization.translate('alerts'),
         ),
         BottomNavigationBarItem(

@@ -35,7 +35,12 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _onNavTap(int index) {
-    AppState().setNavIndex(index);
+    final state = AppState();
+    state.setNavIndex(index);
+    if (index == 1) {
+      // Tab Thông báo: đánh dấu tất cả cảnh báo đã đọc.
+      state.markAllAlertsRead();
+    }
     _pageController.animateToPage(
       index,
       duration: const Duration(milliseconds: 250),
@@ -71,6 +76,7 @@ class _MainShellState extends State<MainShell> {
           bottomNavigationBar: SosBottomNav(
             currentIndex: currentIndex,
             onTap: _onNavTap,
+            alertBadgeCount: state.alertBadgeCount,
           ),
         );
       },
