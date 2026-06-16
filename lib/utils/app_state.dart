@@ -51,6 +51,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Cập nhật trạng thái kết nối realtime từ backend / thiết bị thật.
+  void setRealtimeConnection(bool connected) {
+    _isWebSocketConnected = connected;
+    notifyListeners();
+  }
+
   // --- CẤU HÌNH & THIẾT LẬP ---
 
   /// Tải cài đặt từ SharedPreferences

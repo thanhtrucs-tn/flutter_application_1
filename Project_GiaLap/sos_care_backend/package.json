@@ -1,0 +1,53 @@
+{
+  "name": "sos-care-backend",
+  "version": "1.0.0",
+  "description": "Node.js + Express + MySQL + Sequelize backend for SOS Care system with JWT auth, Socket.IO realtime, and REST APIs.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "dev:fast": "set NODE_ENV=development&& set DB_SYNC=false&& set LOG_TO_FILE=false&& nodemon src/server.js",
+    "test": "jest --coverage",
+    "migrate": "npx sequelize-cli db:migrate",
+    "migrate:undo": "npx sequelize-cli db:migrate:undo:all",
+    "db:create": "npx sequelize-cli db:create",
+    "db:drop": "npx sequelize-cli db:drop",
+    "seed": "npx sequelize-cli db:seed:all"
+  },
+  "keywords": [
+    "sos",
+    "elderly-care",
+    "express",
+    "sequelize",
+    "mysql",
+    "socketio",
+    "jwt"
+  ],
+  "author": "SOS Care Team",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.12.0",
+    "sequelize": "^6.37.5",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.0.5",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.9",
+    "sequelize-cli": "^6.6.2",
+    "supertest": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

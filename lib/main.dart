@@ -1,15 +1,35 @@
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
+import 'services/device_event_service.dart';
+import 'services/notification_service.dart';
 import 'utils/app_state.dart';
 import 'utils/theme.dart';
 
-void main() {
+/// URL backend SOS Care mặc định. Trên Android emulator sẽ được tự động
+/// thay thành `http://10.0.2.2:8080` bên trong [DeviceEventService].
+const String _kSosBackendUrl = 'http://localhost:8080';
+
+Future<void> main() async {
   // Đảm bảo các dịch vụ Flutter đã được khởi tạo hoàn toàn trước khi chạy app
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // Khởi tạo thông báo nội bộ trước khi chạy UI.
+  try {
+    await NotificationService().initialize();
+  } catch (e) {
+    debugPrint('Không khởi tạo được notification service: $e');
+  }
+
   // Khởi tạo trước AppState singleton để kích hoạt các cài đặt lưu trữ
   AppState();
-  
+
+  // Kết nối realtime tới backend SOS Care.
+  try {
+    DeviceEventService().start(_kSosBackendUrl);
+  } catch (e) {
+    debugPrint('Không kết nối được realtime backend: $e');
+  }
+
   runApp(const MyApp());
 }
 

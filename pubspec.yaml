@@ -42,6 +42,12 @@ dependencies:
   # Chọn ảnh từ thư viện / camera
   image_picker: ^1.1.2
 
+  # Kết nối realtime tới SOS Care backend
+  socket_io_client: ^2.0.3
+
+  # Thông báo đẩy nội bộ cho cảnh báo SOS / té ngã / nhịp tim
+  flutter_local_notifications: ^22.0.1
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8

@@ -910,5 +910,106 @@ if (mounted) setState(() { ... });
 
 ---
 
+## 25. Socket.IO + Local Notifications (SOS device simulator)
+
+### 25.1. Luồng dữ liệu
+
+```
+sos_device_simulator
+       │ socket.io
+       ▼
+sos_care_backend :8080
+       │ socket.io
+       ▼
+flutter_application_1
+   ┌─────────────────┐
+   │ SocketIoService │
+   └────────┬────────┘
+            │ gọi handler
+   ┌────────▼────────┐
+   │ DeviceEventService│
+   └────────┬────────┘
+            ├──► AppState (cập nhật UI)
+            ├──► NotificationService (heads-up nếu SOS/fall/pin thấp)
+            └──► stopSimulation() (dừng giả lập local)
+```
+
+### 25.2. `DeviceEventMapper` — ánh xạ backend → app
+
+```dart
+static int? parseElderlyId(dynamic raw) {
+  final s = raw?.toString();
+  if (s == null) return null;
+  final match = RegExp(r'\d+$').firstMatch(s);
+  if (match == null) return null;
+  return int.tryParse(match.group(0)!);
+}
+```
+
+**Giải thích:**
+- Backend dùng ID dạng chuỗi `ELDERLY-001`.
+- App dùng `int id` (1, 2, 3...).
+- Regex `r'\d+$'` lấy cụm số ở cuối chuỗi, rồi parse thành `int`.
+- Không khớp → tạo temporary elderly với id âm để vẫn hiển thị cảnh báo.
+
+### 25.3. `DeviceEventService` — thứ tự đăng ký listener quan trọng
+
+```dart
+_socket.on('sos:alert', _onSosAlert);
+_socket.on('event:fall', _onFall);
+_socket.on('event:heart_rate', _onHeartRate);
+_socket.on('device:location', _onLocation);
+_socket.on('device:status', _onStatus);
+_socket.on('connect', (_) => AppState().setRealtimeConnection(true));
+_socket.on('disconnect', (_) => AppState().setRealtimeConnection(false));
+_socket.connect(url);
+```
+
+**Giải thích:**
+- **Luôn** đăng ký `on(...)` trước `connect()`.
+- Nếu `connect()` trước, socket có thể emit sự kiện trước khi listener sẵn sàng.
+
+### 25.4. `NotificationService` v22 API
+
+```dart
+await _plugin.initialize(
+  settings: InitializationSettings(...),
+);
+
+await _plugin.show(
+  id: id,
+  title: title,
+  body: body,
+  notificationDetails: details,
+);
+```
+
+**Giải thích:**
+- `flutter_local_notifications` v22 đổi sang **named parameters**.
+- Phiên bản cũ dùng positional → compile error.
+- Kênh `sos_alerts` phải khởi tạo trước khi show notification.
+
+### 25.5. Dừng simulation khi có dữ liệu thật
+
+```dart
+void _onSosAlert(dynamic data) {
+  _stopLocalSimulation();
+  ...
+}
+
+void _stopLocalSimulation() {
+  if (_localSimulationStopped) return;
+  _localSimulationStopped = true;
+  AppState().stopSimulation();
+}
+```
+
+**Giải thích:**
+- `startSimulation()` trong `AppState` tạo dữ liệu giả mỗi 4 giây.
+- Khi backend gửi sự kiện đầu tiên, dừng simulation để không xung đột.
+- Cờ `_localSimulationStopped` đảm bảo chỉ dừng một lần.
+
+---
+
 *File này là tài liệu sống — cập nhật khi codebase thay đổi.*
-*Ngày viết: 07/06/2026*
+*Ngày viết: 07/06/2026; cập nhật 16/06/2026.*

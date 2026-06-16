@@ -206,3 +206,59 @@
 - `test/relatives_reorder_test.dart`: 3 unit test cho `AppState.reorderRelatives`
   pass; widget test đã gỡ bỏ do `AppState` dùng real async trong widget test
   (FakeAsync).
+
+## 2026-06-16 (SOS device simulator integration)
+
+### Added
+- Tích hợp `Project_GiaLap/sos_device_simulator` vào `flutter_application_1`
+  qua `sos_care_backend` (Socket.IO, port 8080) để nhận sự kiện SOS/ngã/nhịp tim/vị trí/pin.
+  - `pubspec.yaml`: thêm `socket_io_client: ^2.0.3` và `flutter_local_notifications: ^22.0.1`.
+  - `lib/services/socket_io_service.dart` (file mới): wrapper quanh `socket_io_client`,
+    hỗ trợ `connect`, `on`, `off`, `dispose`.
+  - `lib/services/notification_service.dart` (file mới): singleton khởi tạo kênh
+    `sos_alerts` và hiển thị local notification với named parameters theo API v22.
+  - `lib/services/device_event_mapper.dart` (file mới): xử lý URL backend, ánh xạ
+    ID người thân (`ELDERLY-001` → `int id`), tạo temporary elderly khi không khớp,
+    parse payload và tạo ID notification ổn định.
+  - `lib/services/device_event_service.dart` (file mới): singleton đăng ký lắng
+    nghe `sos:alert`, `event:fall`, `event:heart_rate`, `device:location`, `device:status`
+    rồi mới `connect`; cập nhật `AppState`, dừng `simulateDeviceOnline`, và đẩy
+    local notification cho sự kiện khẩn cấp.
+  - `lib/utils/app_state.dart`: thêm `setRealtimeConnection(bool)`.
+  - `android/app/src/main/AndroidManifest.xml`: thêm quyền `POST_NOTIFICATIONS`,
+    `VIBRATE`, `WAKE_LOCK`, lock-screen flags cho `MainActivity`.
+  - `android/app/src/main/res/drawable/sos_notification_icon.xml`: icon vector trắng
+    dùng làm small icon cho notification.
+  - `ios/Runner/AppDelegate.swift`: thiết lập delegate cho `flutter_local_notifications`.
+
+### Changed
+- `lib/main.dart`: chuyển sang `Future<void> main() async`, khởi tạo
+  `NotificationService`, `AppState`, rồi `DeviceEventService().start('http://localhost:8080')`
+  trước khi chạy app.
+- `android/app/build.gradle.kts`: nâng `compileSdk` lên 36, bật desugaring
+  (`isCoreLibraryDesugaringEnabled = true`, `desugar_jdk_libs:2.1.4`).
+- `android/build.gradle.kts`: override `compileSdk = 36` cho toàn bộ subproject
+  Android bằng `CommonExtension`.
+- `android/gradle.properties`: thêm `kotlin.compiler.execution.strategy=in-process`,
+  `kotlin.incremental=false`, `org.gradle.caching=false` để ổn định daemon build.
+
+### Fixed
+- Sửa lỗi build Android khi plugin mới yêu cầu `compileSdk >= 34` bằng cách đồng
+  bộ `compileSdk = 36` trên app và mọi module phụ thuộc.
+- Sửa lỗi `flutter_local_notifications` v22 API: dùng named parameters
+  `settings:`, `id:`, `title:`, `body:`, `notificationDetails:`.
+- Sửa lỗi thứ tự đăng ký listener: đăng ký `on('sos:alert')`, `on('connect')`, v.v.
+  trước khi gọi `connect()` để không bỏ lỡ sự kiện đầu tiên.
+- Sửa lỗi hiển thị trùng cảnh báo pin thấp bằng cách lưu trạng thái battery gần
+  nhất và chỉ notify khi chuyển từ ≥ 20% xuống < 20%.
+- Khắc phục lỗi daemon Kotlin incremental cache bằng `flutter clean`, xóa thư
+  mục cache hỏng, và cấu hình in-process compiler.
+
+### Tests / Verification
+- `flutter build apk --debug` pass.
+- `flutter build windows --debug` pass.
+- `flutter test` pass (56/56).
+
+### Pending
+- Chạy end-to-end: backend 8080 → simulator → app, kiểm tra mọi nút simulator
+  đều làm UI hoặc local notification thay đổi.
