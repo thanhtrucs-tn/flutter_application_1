@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import '../services/device_event_service.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
 import '../widgets/sos_app_header.dart';
 import '../widgets/settings_section_card.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/manage_relatives_section.dart';
-import '../widgets/developer_tools_section.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
 
@@ -21,6 +21,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _logout(BuildContext context) async {
     final navigator = Navigator.of(context);
     await AppState().logout();
+    DeviceEventService().reauthenticate(null);
     // Đảm bảo Navigator còn khả dụng và có route để pop.
     if (!navigator.mounted) return;
     navigator.pushAndRemoveUntil(
@@ -165,7 +166,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: const Text(
-                                    'Quản trị viên',
+                                    'Người giám sát',
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
@@ -331,9 +332,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-
-                // 5. CÔNG CỤ PHÁT TRIỂN / MÔ PHỎNG
-                const DeveloperToolsSection(),
               ],
             ),
           ),

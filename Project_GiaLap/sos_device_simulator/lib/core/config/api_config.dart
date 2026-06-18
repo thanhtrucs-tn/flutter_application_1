@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+
 /// Centralized API configuration.
 ///
 /// Toggle [useMock] to switch between the mock data source and the
@@ -39,4 +43,18 @@ class ApiConfig {
 
   /// Endpoint for battery updates.
   static const String batteryEndpoint = '/api/device/battery';
+
+  /// Endpoint for device online/offline status updates.
+  static const String statusEndpoint = '/api/device/status';
+
+  /// Chuyển `localhost` thành `10.0.2.2` khi chạy trên Android emulator để
+  /// simulator kết nối được tới backend đang chạy trên máy host. Giữ nguyên
+  /// trên web/desktop (localhost đã trỏ đúng).
+  static String resolveBackendUrl(String url) {
+    if (kIsWeb) return url;
+    if (Platform.isAndroid) {
+      return url.replaceFirst('localhost', '10.0.2.2');
+    }
+    return url;
+  }
 }

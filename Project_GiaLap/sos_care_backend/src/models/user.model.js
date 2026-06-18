@@ -31,6 +31,19 @@ const User = sequelize.define(
       allowNull: false,
       defaultValue: 'caregiver',
     },
+    name: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    phone: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+    },
+    avatarUrl: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: 'avatar_url',
+    },
   },
   {
     tableName: 'users',

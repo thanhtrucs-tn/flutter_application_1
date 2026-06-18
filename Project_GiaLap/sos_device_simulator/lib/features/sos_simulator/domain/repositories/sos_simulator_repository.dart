@@ -43,4 +43,15 @@ abstract class SosSimulatorRepository {
     required DateTime timestamp,
     required int batteryPercent,
   });
+
+  /// Reports the device online/offline state to the backend so the caregiver
+  /// app's device badge updates in real time.
+  Future<Either<Failure, Unit>> updateStatus({
+    required String deviceId,
+    required String elderlyId,
+    required DateTime timestamp,
+    required int batteryPercent,
+    required bool isOnline,
+    required int heartRateBpm,
+  });
 }

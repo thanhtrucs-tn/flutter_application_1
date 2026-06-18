@@ -6,6 +6,7 @@ import '../../../../core/errors/failure.dart';
 import '../../domain/repositories/sos_simulator_repository.dart';
 import '../models/api_response_model.dart';
 import '../models/battery_payload_model.dart';
+import '../models/device_status_payload_model.dart';
 import '../models/event_payload_model.dart';
 import '../models/location_payload_model.dart';
 import '../models/sos_payload_model.dart';
@@ -92,6 +93,28 @@ class SosSimulatorRemoteDataSource implements SosSimulatorRepository {
         elderlyId: elderlyId,
         timestamp: _formatTimestamp(timestamp),
         batteryPercent: batteryPercent,
+      ).toJson(),
+    );
+  }
+
+  @override
+  Future<Either<Failure, Unit>> updateStatus({
+    required String deviceId,
+    required String elderlyId,
+    required DateTime timestamp,
+    required int batteryPercent,
+    required bool isOnline,
+    required int heartRateBpm,
+  }) async {
+    return _post(
+      ApiConfig.statusEndpoint,
+      DeviceStatusPayloadModel(
+        deviceId: deviceId,
+        elderlyId: elderlyId,
+        timestamp: _formatTimestamp(timestamp),
+        batteryPercent: batteryPercent,
+        isOnline: isOnline,
+        heartRateBpm: heartRateBpm,
       ).toJson(),
     );
   }

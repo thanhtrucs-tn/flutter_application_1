@@ -62,6 +62,19 @@ class FakeRepository implements SosSimulatorRepository {
     calls.add('updateBattery:$batteryPercent');
     return result;
   }
+
+  @override
+  Future<Either<Failure, Unit>> updateStatus({
+    required String deviceId,
+    required String elderlyId,
+    required DateTime timestamp,
+    required int batteryPercent,
+    required bool isOnline,
+    required int heartRateBpm,
+  }) async {
+    calls.add('updateStatus:$isOnline');
+    return result;
+  }
 }
 
 class FakeLocationService implements LocationService {
@@ -122,13 +135,50 @@ void main() {
     expect(repository.calls, contains('sendEvent:HEART_RATE_ALERT'));
   });
 
+  test('setHeartRate pushes status to backend when online (debounced)', () async {
+    // Below the alert threshold so only the debounced status push fires.
+    notifier.setHeartRate(75);
+    expect(notifier.state.heartRateBpm, 75);
+
+    await Future.delayed(
+      AppConstants.heartRateDebounceDelay + const Duration(milliseconds: 50),
+    );
+
+    expect(repository.calls, contains('updateStatus:true'));
+    expect(repository.calls, isNot(contains('sendEvent:HEART_RATE_ALERT')));
+  });
+
+  test('setHeartRate does not push status while offline', () async {
+    notifier.setOnline(false);
+    // Drain the presence report triggered by setOnline(false).
+    await Future.delayed(const Duration(milliseconds: 50));
+    repository.calls.clear();
+
+    notifier.setHeartRate(90);
+    await Future.delayed(
+      AppConstants.heartRateDebounceDelay + const Duration(milliseconds: 50),
+    );
+
+    expect(repository.calls, isNot(contains('updateStatus:true')));
+    expect(repository.calls, isNot(contains('sendEvent:HEART_RATE_ALERT')));
+  });
+
   test('all outgoing calls are blocked when offline', () async {
     notifier.setOnline(false);
     await notifier.sendSosAlert();
     await notifier.sendFallEvent();
     await notifier.sendCurrentLocation();
 
-    expect(repository.calls, isEmpty);
+    // Toggling offline reports the presence change; SOS/event/location stay blocked.
+    expect(repository.calls, ['updateStatus:false']);
     expect(notifier.state.lastOperationResult, isA<OperationFailure>());
+  });
+
+  test('setOnline reports the presence change to the backend', () async {
+    notifier.setOnline(true);
+    expect(repository.calls, contains('updateStatus:true'));
+
+    notifier.setOnline(false);
+    expect(repository.calls, contains('updateStatus:false'));
   });
 }

@@ -16,7 +16,7 @@ class DioClient {
   factory DioClient.create() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: ApiConfig.baseUrl,
+        baseUrl: ApiConfig.resolveBackendUrl(ApiConfig.baseUrl),
         connectTimeout: ApiConfig.connectTimeout,
         sendTimeout: ApiConfig.sendTimeout,
         receiveTimeout: ApiConfig.receiveTimeout,

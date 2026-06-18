@@ -34,7 +34,7 @@ class _AddAlertScreenState extends State<AddAlertScreen> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate() || _relatedId == null) return;
     final state = AppState();
     final elderly = state.relatives.firstWhere((e) => e.id == _relatedId);
@@ -50,11 +50,20 @@ class _AddAlertScreenState extends State<AddAlertScreen> {
       latitude: elderly.latitude,
       longitude: elderly.longitude,
     );
-    state.addAlert(alert);
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã lưu cảnh báo mới'), backgroundColor: Colors.green),
-    );
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await state.addAlert(alert);
+      if (!mounted) return;
+      Navigator.pop(context);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Đã lưu cảnh báo mới'), backgroundColor: Colors.green),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Lưu cảnh báo thất bại'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override

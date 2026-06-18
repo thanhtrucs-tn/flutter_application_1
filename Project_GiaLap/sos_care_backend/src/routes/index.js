@@ -5,6 +5,8 @@ const locationRoutes = require('./location.routes');
 const deviceStatusRoutes = require('./deviceStatus.routes');
 const batteryRoutes = require('./battery.routes');
 const authRoutes = require('./auth.routes');
+const relativeRoutes = require('./relative.routes');
+const alertRoutes = require('./alert.routes');
 const deviceRoutes = require('./device.routes');
 const historyRoutes = require('./history.routes');
 const healthRoutes = require('./health.routes');
@@ -13,6 +15,8 @@ const router = express.Router();
 
 router.use('/health', healthRoutes);
 router.use('/api/auth', authRoutes);
+router.use('/api/relatives', relativeRoutes);
+router.use('/api/alerts', alertRoutes);
 router.use('/api/sos', sosRoutes);
 router.use('/api/events', eventRoutes);
 router.use('/api/location', locationRoutes);

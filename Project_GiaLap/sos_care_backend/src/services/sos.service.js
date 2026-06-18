@@ -1,13 +1,13 @@
 const sosAlertRepository = require('../repositories/sosAlert.repository');
 const deviceRepository = require('../repositories/device.repository');
-const socketService = require('./socket.service');
-const AppError = require('../utils/appError.util');
+const alertService = require('./alert.service');
 
 /**
  * Service for handling SOS emergency alerts.
  *
- * Persists the alert and broadcasts a realtime `sos:alert` event to
- * all connected SOS Care clients.
+ * Persists the raw device SOS row, derives a caregiver-facing alert (so the
+ * Flutter app can list/acknowledge it), and broadcasts a scoped `sos:alert`
+ * realtime event to the owning caregiver's room.
  */
 class SosService {
   async create(payload) {
@@ -20,7 +20,7 @@ class SosService {
 
     await deviceRepository.touchLastSeen(device.id, new Date(timestamp));
 
-    const alert = await sosAlertRepository.create({
+    const sosAlert = await sosAlertRepository.create({
       deviceId: device.id,
       type: type || 'SOS',
       latitude,
@@ -30,21 +30,35 @@ class SosService {
       payloadJson: payload,
     });
 
+    const { alert: caregiverAlert, relative } = await alertService.createFromDeviceEvent({
+      device,
+      type: 'sos',
+      urgency: 'critical',
+      message: `SOS khẩn cấp từ ${device.elderlyName || device.elderlyId}`,
+      latitude,
+      longitude,
+      timestamp,
+      sourceType: 'sos_alert',
+      sourceId: sosAlert.id,
+    });
+
     const realtimePayload = {
-      id: alert.id,
+      id: sosAlert.id,
+      alertId: caregiverAlert.id,
+      relativeId: relative ? relative.id : null,
       deviceId: device.id,
       elderlyId: device.elderlyId,
-      type: alert.type,
-      latitude: parseFloat(alert.latitude),
-      longitude: parseFloat(alert.longitude),
-      timestamp: alert.timestamp,
-      status: alert.status,
-      createdAt: alert.createdAt,
+      type: sosAlert.type,
+      latitude: parseFloat(sosAlert.latitude),
+      longitude: parseFloat(sosAlert.longitude),
+      timestamp: sosAlert.timestamp,
+      status: sosAlert.status,
+      createdAt: sosAlert.createdAt,
     };
 
-    socketService.emit('sos:alert', realtimePayload);
+    alertService.emitCaregiverEvent('sos:alert', realtimePayload, relative ? relative.userId : null);
 
-    return alert;
+    return sosAlert;
   }
 
   async listByDevice(deviceId, pagination) {

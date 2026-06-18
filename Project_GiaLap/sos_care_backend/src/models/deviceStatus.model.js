@@ -35,6 +35,15 @@ const DeviceStatus = sequelize.define(
       allowNull: true,
       field: 'heart_rate_bpm',
     },
+    spo2Percent: {
+      type: DataTypes.TINYINT.UNSIGNED,
+      allowNull: true,
+      field: 'spo2_percent',
+      validate: {
+        min: 0,
+        max: 100,
+      },
+    },
     isOnline: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

@@ -36,28 +36,6 @@ Future<bool> editUserName(BuildContext context, AppState state) async {
   return state.updateUserProfile(state.userProfile.copyWith(name: newName));
 }
 
-Future<bool> editUserEmail(BuildContext context, AppState state) async {
-  final newEmail = await showDialog<String>(
-    context: context,
-    builder: (_) => EditSingleFieldDialog(
-      title: 'Sửa email',
-      label: 'Email',
-      initialValue: state.userProfile.email,
-      keyboardType: TextInputType.emailAddress,
-      maxLength: 48,
-      validator: (v) {
-        if (v == null || v.trim().isEmpty) return 'Vui lòng nhập email';
-        if (v.trim().length > 48) return 'Email tối đa 48 ký tự';
-        final re = RegExp(r'^[\w\.\-\+]+@([\w\-]+\.)+[A-Za-z]{2,}$');
-        if (!re.hasMatch(v.trim())) return 'Email không hợp lệ';
-        return null;
-      },
-    ),
-  );
-  if (newEmail == null) return false;
-  return state.updateUserProfile(state.userProfile.copyWith(email: newEmail));
-}
-
 Future<bool> editUserPhone(BuildContext context, AppState state) async {
   final newPhone = await showDialog<String>(
     context: context,
@@ -102,11 +80,6 @@ void showProfileUpdateResult(
 Future<void> runEditName(BuildContext context, AppState state) {
   return _runEdit(context, state,
       () => editUserName(context, state), 'Đã cập nhật họ tên');
-}
-
-Future<void> runEditEmail(BuildContext context, AppState state) {
-  return _runEdit(context, state,
-      () => editUserEmail(context, state), 'Đã cập nhật email');
 }
 
 Future<void> runEditPhone(BuildContext context, AppState state) {

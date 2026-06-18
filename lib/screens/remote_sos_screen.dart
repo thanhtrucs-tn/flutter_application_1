@@ -70,15 +70,26 @@ class _RemoteSosScreenState extends State<RemoteSosScreen>
     );
     if (confirmed != true || !mounted) return;
 
-    // Gọi AppState để tạo alert critical
+    // Gọi AppState để tạo alert critical (POST /api/alerts type=sos)
     final state = AppState();
-    state.triggerSOS(
-      widget.elderly.id,
-      'BÁO ĐỘNG TỪ XA: Người thân đang cần trợ giúp khẩn cấp!',
-      'critical',
-      widget.elderly.latitude,
-      widget.elderly.longitude,
-    );
+    try {
+      await state.triggerSOS(
+        widget.elderly.id,
+        'BÁO ĐỘNG TỪ XA: Người thân đang cần trợ giúp khẩn cấp!',
+        'critical',
+        widget.elderly.latitude,
+        widget.elderly.longitude,
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gửi báo động thất bại'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
 
     if (!mounted) return;
     // Đóng màn hình này, quay về Home

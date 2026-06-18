@@ -34,4 +34,29 @@ class EmergencyContactModel {
       relationship: map['relationship'] as String? ?? '',
     );
   }
+
+  /// Parse ngược chuỗi lưu trữ "Tên (Quan hệ): SĐT" (hoặc "Tên: SĐT") thành
+  /// structured contact. Dùng khi gửi contacts lên server.
+  factory EmergencyContactModel.fromStorageString(String raw) {
+    final idx = raw.indexOf(':');
+    if (idx < 0) {
+      return EmergencyContactModel(name: raw.trim(), phone: '');
+    }
+    var name = raw.substring(0, idx).trim();
+    final phone = raw.substring(idx + 1).trim();
+    String relationship = '';
+    // Tách "(Quan hệ)" ở cuối phần tên nếu có.
+    if (name.endsWith(')')) {
+      final open = name.lastIndexOf('(');
+      if (open > 0) {
+        relationship = name.substring(open + 1, name.length - 1).trim();
+        name = name.substring(0, open).trim();
+      }
+    }
+    return EmergencyContactModel(
+      name: name,
+      phone: phone,
+      relationship: relationship,
+    );
+  }
 }

@@ -5,7 +5,16 @@ class SafeZoneSlider extends StatelessWidget {
   final double value;
   final ValueChanged<double> onChanged;
 
-  const SafeZoneSlider({super.key, required this.value, required this.onChanged});
+  /// Callback khi người dùng thả tay (kết thúc kéo) — dùng để persist lên server
+  /// (tránh spam API trên mỗi tick kéo).
+  final ValueChanged<double>? onChangeEnd;
+
+  const SafeZoneSlider({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.onChangeEnd,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +32,7 @@ class SafeZoneSlider extends StatelessWidget {
             inactiveColor: Colors.grey.shade300,
             label: '${value.toStringAsFixed(0)}m',
             onChanged: onChanged,
+            onChangeEnd: onChangeEnd,
           ),
         ),
         Text(

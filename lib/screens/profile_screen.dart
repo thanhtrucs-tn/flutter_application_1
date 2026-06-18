@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/device_event_service.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
 import '../widgets/sos_app_header.dart';
@@ -14,6 +15,7 @@ class ProfileScreen extends StatelessWidget {
 
   Future<void> _logout(BuildContext context) async {
     await AppState().logout();
+    DeviceEventService().reauthenticate(null);
     if (!context.mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
@@ -128,7 +130,7 @@ class ProfileScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: const Text(
-                'Quản trị viên',
+                'Người giám sát',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
@@ -157,13 +159,12 @@ class ProfileScreen extends StatelessWidget {
       color: isDark ? const Color(0xFF1E293B) : Colors.white,
       child: Column(
         children: [
-          // Email — bấm để sửa email
-          _EditableInfoTile(
+          // Email — khóa đăng nhập, không sửa được
+          _ReadOnlyInfoTile(
             icon: Icons.email,
             color: Colors.purple,
             label: 'Email',
             value: profile.email,
-            onEdit: () => runEditEmail(context, state),
           ),
           const Divider(height: 1),
           // SĐT — bấm để sửa SĐT (hiển thị kèm tên tài khoản để biết SĐT này của ai)

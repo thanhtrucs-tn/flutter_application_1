@@ -1,9 +1,9 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import '../database/db_helper.dart';
+import '../services/api_client.dart';
+import '../services/auth_service.dart';
 import '../utils/localization.dart';
 
-/// Trang đăng ký tài khoản cho ứng dụng SOS Care
+/// Trang đăng ký tài khoản cho ứng dụng SOS Care (REST/JWT tới backend :8080).
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -27,14 +27,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  /// Xử lý logic khi người dùng nhấn nút đăng ký
+  /// Xử lý đăng ký: gửi name(email→login)+email+password lên backend.
   Future<void> _handleRegister() async {
-    final username = _usernameController.text.trim();
+    final name = _usernameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (username.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(Localization.translate('fillAllFields')),
@@ -64,44 +64,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
-    String? errorMessage = await DbHelper.registerUser(
-      username,
-      password,
-      email: email,
-    );
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (errorMessage == null) {
+    try {
+      await AuthService.instance.register(
+        email: email,
+        password: password,
+        name: name,
+      );
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đăng ký thành công. Vui lòng đăng nhập.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      Navigator.pop(context); // Quay lại trang đăng nhập
+    } on ApiException catch (e) {
       if (mounted) {
-        String regSuccessMsg;
-        if (kIsWeb) {
-          regSuccessMsg = 'Đăng ký tài khoản thành công trên Chrome (Web)!';
-        } else if (DbHelper.isUsingMock) {
-          regSuccessMsg = 'Đăng ký tài khoản offline thành công!';
-        } else {
-          regSuccessMsg = 'Đăng ký tài khoản MySQL thành công!';
-        }
-
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(regSuccessMsg),
-            backgroundColor: Colors.green,
-          ),
+          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
         );
-        Navigator.pop(context); // Quay lại trang đăng nhập
       }
-    } else {
+    } catch (_) {
       if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
+          const SnackBar(
+            content: Text('Không kết nối được tới máy chủ'),
             backgroundColor: Colors.red,
           ),
         );
@@ -111,8 +103,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   /// Kiểm tra định dạng email cơ bản.
   bool _isValidEmail(String value) {
-    return RegExp(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
-        .hasMatch(value.trim());
+    return RegExp(r"^[^\s@]+@[^\s@]+\.[^\s@]+$").hasMatch(value.trim());
   }
 
   @override
@@ -162,14 +153,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           children: [
                             Text(
                               Localization.translate('register'),
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                fontSize: 26,
-                              ),
+                              style: theme.textTheme.headlineMedium?.copyWith(fontSize: 26),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 24),
 
-                            // Input Tên tài khoản
+                            // Input Họ tên (gửi lên backend dưới dạng `name`)
                             TextField(
                               controller: _usernameController,
                               maxLength: 32,
@@ -223,7 +212,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                             const SizedBox(height: 32),
-                            
+
                             // Nút Đăng ký
                             _isLoading
                                 ? const Center(child: CircularProgressIndicator())

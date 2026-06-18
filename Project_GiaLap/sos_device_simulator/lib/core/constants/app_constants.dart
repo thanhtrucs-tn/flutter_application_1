@@ -29,4 +29,9 @@ class AppConstants {
 
   /// Throttle interval for automatic heart rate alerts.
   static const Duration heartRateAlertThrottle = Duration(seconds: 5);
+
+  /// Debounce delay for heart-rate slider status pushes. Keeps the caregiver
+  /// app's heart-rate vital realtime without spamming the backend while the
+  /// slider is dragged.
+  static const Duration heartRateDebounceDelay = Duration(milliseconds: 500);
 }

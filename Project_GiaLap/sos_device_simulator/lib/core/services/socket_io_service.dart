@@ -13,7 +13,7 @@ class SocketIOService {
     if (_socket != null) return;
 
     _socket = io.io(
-      ApiConfig.socketUrl,
+      ApiConfig.resolveBackendUrl(ApiConfig.socketUrl),
       io.OptionBuilder()
           .setTransports(['websocket'])
           .enableAutoConnect()

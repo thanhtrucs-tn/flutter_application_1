@@ -22,7 +22,7 @@ const Event = sequelize.define(
       },
     },
     type: {
-      type: DataTypes.ENUM('FALL_DETECTED', 'HEART_RATE_ALERT'),
+      type: DataTypes.ENUM('FALL_DETECTED', 'HEART_RATE_ALERT', 'SPO2_ALERT'),
       allowNull: false,
     },
     latitude: {

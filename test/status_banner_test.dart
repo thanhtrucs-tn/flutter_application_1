@@ -1,4 +1,5 @@
-// Unit test cho StatusBanner sau refactor - widget tóm tắt bất thường + điều hướng.
+// Unit + widget test cho StatusBanner sau refactor (dữ liệu thật từ AppState,
+// không còn simulation). Alert được seed qua upsertAlert (in-memory, sync).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,34 +15,33 @@ AlertModel _makeAlert({
   required String urgency,
   required String message,
   required DateTime time,
+  String type = 'vital',
   bool acknowledged = false,
-}) {
-  return AlertModel(
-    id: id,
-    elderlyId: elderlyId,
-    elderlyName: name,
-    time: time,
-    locationName: 'Test',
-    urgency: urgency,
-    message: message,
-    acknowledged: acknowledged,
-    latitude: 10.0,
-    longitude: 106.0,
-  );
-}
+}) =>
+    AlertModel(
+      id: id,
+      elderlyId: elderlyId,
+      elderlyName: name,
+      time: time,
+      locationName: 'Test',
+      urgency: urgency,
+      message: message,
+      acknowledged: acknowledged,
+      type: type,
+      latitude: 10.0,
+      longitude: 106.0,
+    );
 
 void main() {
-  setUp(() {
+  setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    await AppState().logout(); // reset singleton về rỗng
   });
 
   group('StatusBanner.getUnackedAlerts', () {
-    test('chỉ trả về alert chưa acknowledge, sắp xếp giảm dần', () async {
+    test('chỉ trả về alert chưa acknowledge, sắp xếp giảm dần', () {
       final state = AppState();
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      state.stopSimulation();
-
-      state.addAlert(_makeAlert(
+      state.upsertAlert(_makeAlert(
         id: 'a1',
         elderlyId: 1,
         name: 'A',
@@ -49,57 +49,33 @@ void main() {
         message: 'msg 1',
         time: DateTime.now(),
       ));
-      state.addAlert(_makeAlert(
+      state.upsertAlert(_makeAlert(
         id: 'a2',
         elderlyId: 1,
         name: 'A',
         urgency: 'critical',
         message: 'msg 2',
+        type: 'sos',
         time: DateTime.now().subtract(const Duration(hours: 1)),
         acknowledged: true,
       ));
 
       final unacked = StatusBanner.getUnackedAlerts(state);
       expect(unacked.every((a) => !a.acknowledged), isTrue);
-      expect(unacked.first.id, 'a1');
+      expect(unacked.first.id, 'a1'); // a1 mới hơn a2
     });
 
-    test('trả về list rỗng khi không có alert unacked', () async {
-      final state = AppState();
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      state.stopSimulation();
-      state.clearAlertHistory();
-
-      // Clear alert history để chỉ còn lại alert acknowledged (nếu có)
-      // hoặc empty → expect rỗng
-      final unacked = StatusBanner.getUnackedAlerts(state);
-      expect(unacked, isEmpty);
+    test('trả về list rỗng khi không có alert unacked', () {
+      expect(StatusBanner.getUnackedAlerts(AppState()), isEmpty);
     });
   });
 
   group('StatusBanner widget', () {
-    Future<AppState> freshState(WidgetTester tester) async {
-      // Reset SharedPreferences để AppState load clean
-      SharedPreferences.setMockInitialValues({});
-      final state = AppState();
-      // Dùng runAsync để await thật sự cho async load + timer của simulation
-      await tester.runAsync(() async {
-        await Future<void>.delayed(const Duration(milliseconds: 100));
-      });
-      state.stopSimulation();
-      // Clear alerts sau khi load xong để đảm bảo state sạch
-      state.clearAlertHistory();
-      await tester.pump();
-      return state;
-    }
-
-    testWidgets('Khi status = safe → banner màu xanh, không bấm được', (tester) async {
-      final state = await freshState(tester);
-
+    testWidgets('Khi status = safe → banner xanh, không bấm được', (tester) async {
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
           body: AnimatedBuilder(
-            animation: state,
+            animation: AppState(),
             builder: (context, _) => const StatusBanner(status: 'safe'),
           ),
         ),
@@ -112,10 +88,9 @@ void main() {
       expect(find.text('BẤM ĐỂ XEM CHI TIẾT'), findsNothing);
     });
 
-    testWidgets('Khi status = warning + 1 alert → banner vàng, tóm tắt 1 tên', (tester) async {
-      final state = await freshState(tester);
-
-      state.addAlert(_makeAlert(
+    testWidgets('Khi status = warning + 1 alert → banner vàng, tóm tắt message',
+        (tester) async {
+      AppState().upsertAlert(_makeAlert(
         id: 'w1',
         elderlyId: 1,
         name: 'Bà A',
@@ -127,7 +102,7 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
           body: AnimatedBuilder(
-            animation: state,
+            animation: AppState(),
             builder: (context, _) => const StatusBanner(status: 'warning'),
           ),
         ),
@@ -140,10 +115,8 @@ void main() {
       expect(find.text('BẤM ĐỂ XEM CHI TIẾT'), findsOneWidget);
     });
 
-    testWidgets('Khi status = warning + nhiều alert → banner vàng, liệt kê tên', (tester) async {
-      final state = await freshState(tester);
-
-      state.addAlert(_makeAlert(
+    testWidgets('Khi status = warning + nhiều alert → liệt kê tên', (tester) async {
+      AppState().upsertAlert(_makeAlert(
         id: 'm1',
         elderlyId: 1,
         name: 'Bà A',
@@ -151,19 +124,19 @@ void main() {
         message: 'HR 115',
         time: DateTime.now(),
       ));
-      state.addAlert(_makeAlert(
+      AppState().upsertAlert(_makeAlert(
         id: 'm2',
         elderlyId: 2,
         name: 'Ông B',
         urgency: 'warning',
         message: 'SpO2 90%',
-        time: DateTime.now(),
+        time: DateTime.now().subtract(const Duration(minutes: 1)),
       ));
 
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
           body: AnimatedBuilder(
-            animation: state,
+            animation: AppState(),
             builder: (context, _) => const StatusBanner(status: 'warning'),
           ),
         ),
@@ -177,21 +150,20 @@ void main() {
     });
 
     testWidgets('Khi status = critical + 1 alert → banner đỏ', (tester) async {
-      final state = await freshState(tester);
-
-      state.addAlert(_makeAlert(
+      AppState().upsertAlert(_makeAlert(
         id: 'c1',
         elderlyId: 1,
         name: 'Bà A',
         urgency: 'critical',
         message: 'Té ngã',
+        type: 'fall',
         time: DateTime.now(),
       ));
 
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
           body: AnimatedBuilder(
-            animation: state,
+            animation: AppState(),
             builder: (context, _) => const StatusBanner(status: 'critical'),
           ),
         ),
@@ -201,22 +173,6 @@ void main() {
       expect(find.text('SOS KHẨN CẤP!'), findsOneWidget);
       expect(find.text('Té ngã'), findsOneWidget);
       expect(find.byIcon(Icons.error_rounded), findsOneWidget);
-    });
-
-    testWidgets('Banner safe hiển thị số lượng 0 (không có badge)', (tester) async {
-      final state = await freshState(tester);
-
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: AnimatedBuilder(
-            animation: state,
-            builder: (context, _) => const StatusBanner(status: 'safe'),
-          ),
-        ),
-      ));
-      await tester.pump();
-
-      expect(find.text('BẤM ĐỂ XEM CHI TIẾT'), findsNothing);
     });
   });
 }

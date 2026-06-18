@@ -45,3 +45,23 @@ describe('Auth middleware', () => {
     expect(res.body.success).toBe(false);
   });
 });
+
+describe('Protected routes require JWT', () => {
+  it('GET /api/relatives returns 401 without token', async () => {
+    const res = await request(app).get('/api/relatives');
+    expect(res.statusCode).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('GET /api/alerts returns 401 without token', async () => {
+    const res = await request(app).get('/api/alerts');
+    expect(res.statusCode).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('POST /api/relatives returns 401 without token', async () => {
+    const res = await request(app).post('/api/relatives').send({ name: 'x' });
+    expect(res.statusCode).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
+});

@@ -41,10 +41,22 @@ class _AlertDetailScreenState extends State<AlertDetailScreen> with SingleTicker
 
   /// Xử lý thoát màn hình: xác nhận alert + pop về home.
   /// Dùng cho cả nút X, nút "Đã xử lý" và phím Back hệ thống.
-  void _confirmAndClose() {
-    AppState().acknowledgeAlert(widget.alert.id);
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
+  Future<void> _confirmAndClose() async {
+    final nav = Navigator.of(context);
+    try {
+      await AppState().acknowledgeAlert(widget.alert.id);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Xác nhận thất bại, vui lòng thử lại'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+    if (nav.mounted && nav.canPop()) {
+      nav.pop();
     }
   }
 

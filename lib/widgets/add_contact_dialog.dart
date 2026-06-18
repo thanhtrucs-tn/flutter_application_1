@@ -44,7 +44,7 @@ class _AddContactDialogState extends State<AddContactDialog> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
     final state = AppState();
@@ -56,16 +56,28 @@ class _AddContactDialogState extends State<AddContactDialog> {
     );
 
     final updatedList = [...relative.emergencyContacts, newContact.toStorageString()];
-    state.updateElderly(relative.copyWith(emergencyContacts: updatedList));
-
-    if (!mounted) return;
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Đã thêm liên hệ: ${newContact.name}'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await state.updateElderly(
+        relative.copyWith(emergencyContacts: updatedList),
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Đã thêm liên hệ: ${newContact.name}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Thêm liên hệ thất bại'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override

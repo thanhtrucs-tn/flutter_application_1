@@ -88,6 +88,27 @@ class SosSimulatorMockDataSource implements SosSimulatorRepository {
     return const Right(unit);
   }
 
+  @override
+  Future<Either<Failure, Unit>> updateStatus({
+    required String deviceId,
+    required String elderlyId,
+    required DateTime timestamp,
+    required int batteryPercent,
+    required bool isOnline,
+    required int heartRateBpm,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    _log('STATUS', {
+      'deviceId': deviceId,
+      'elderlyId': elderlyId,
+      'timestamp': timestamp.toIso8601String(),
+      'batteryPercent': batteryPercent,
+      'isOnline': isOnline,
+      'heartRateBpm': heartRateBpm,
+    });
+    return const Right(unit);
+  }
+
   void _log(String tag, Map<String, dynamic> payload) {
     // ignore: avoid_print
     print('🧪 MOCK $tag: $payload');

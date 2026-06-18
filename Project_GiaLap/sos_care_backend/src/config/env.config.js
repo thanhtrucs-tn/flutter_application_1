@@ -12,7 +12,11 @@ const env = {
   db: {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '3306', 10),
-    name: process.env.DB_NAME || 'sos_care_db',
+    // Môi trường test dùng DB riêng (<DB_NAME>_test) để khớp với sequelize-cli
+    // test config — tránh ghi đè dữ liệu dev/prod khi chạy jest.
+    name: process.env.NODE_ENV === 'test'
+      ? `${process.env.DB_NAME || 'sos_care_db'}_test`
+      : (process.env.DB_NAME || 'sos_care_db'),
     user: process.env.DB_USER || 'root',
     pass: process.env.DB_PASS || '',
   },

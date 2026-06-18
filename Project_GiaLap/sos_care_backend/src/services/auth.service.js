@@ -5,11 +5,24 @@ const { User } = require('../models');
 const AppError = require('../utils/appError.util');
 
 /**
- * Service for caregiver/admin authentication.
+ * Service for caregiver/admin authentication and profile management.
+ * Register and login both return the public profile plus a JWT so the Flutter
+ * client can enter the app immediately after either flow.
  */
 class AuthService {
+  _profile(user) {
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name,
+      phone: user.phone,
+      avatarUrl: user.avatarUrl,
+    };
+  }
+
   async register(payload) {
-    const { email, password, role } = payload;
+    const { email, password, role, name, phone } = payload;
 
     const existing = await User.findOne({ where: { email } });
     if (existing) {
@@ -17,13 +30,21 @@ class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const user = await User.create({ email, passwordHash, role });
+    const user = await User.create({
+      email,
+      passwordHash,
+      role,
+      name: name || null,
+      phone: phone || null,
+    });
 
-    return {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    };
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      env.jwt.secret,
+      { expiresIn: env.jwt.expiresIn },
+    );
+
+    return { user: this._profile(user), token };
   }
 
   async login(payload) {
@@ -45,14 +66,25 @@ class AuthService {
       { expiresIn: env.jwt.expiresIn },
     );
 
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
-      token,
-    };
+    return { user: this._profile(user), token };
+  }
+
+  async getProfile(id) {
+    const user = await User.findByPk(id);
+    if (!user) throw new AppError('Không tìm thấy người dùng', 404);
+    return this._profile(user);
+  }
+
+  async updateProfile(id, payload) {
+    const user = await User.findByPk(id);
+    if (!user) throw new AppError('Không tìm thấy người dùng', 404);
+    const { name, phone, avatarUrl } = payload;
+    await user.update({
+      ...(name !== undefined ? { name: name || null } : {}),
+      ...(phone !== undefined ? { phone: phone || null } : {}),
+      ...(avatarUrl !== undefined ? { avatarUrl: avatarUrl || null } : {}),
+    });
+    return this._profile(user);
   }
 }
 

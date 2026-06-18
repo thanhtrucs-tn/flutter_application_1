@@ -47,6 +47,15 @@ const Device = sequelize.define(
         key: 'id',
       },
     },
+    relativeId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: 'relative_id',
+      references: {
+        model: 'relatives',
+        key: 'id',
+      },
+    },
   },
   {
     tableName: 'devices',

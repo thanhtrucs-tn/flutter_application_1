@@ -1,104 +1,57 @@
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../database/db_helper.dart';
-import '../services/auth_api_service.dart';
+import '../services/api_client.dart';
+import '../services/auth_service.dart';
+import '../services/device_event_service.dart';
+import '../services/token_storage.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
 import 'main_shell.dart';
 import 'register_screen.dart';
 
-/// Trang đăng nhập cho ứng dụng SOS Care
+/// Trang đăng nhập cho ứng dụng SOS Care (REST/JWT tới backend :8080).
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();                            
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _usernameController = TextEditingController();        //  Điều khiển input tài khoản
-  final TextEditingController _passwordController = TextEditingController();      //  Điều khiển input mật khẩu
-  bool _rememberMe = false;                                                 //  Trạng thái ghi nhớ đăng nhập
-  bool _isLoading = false;                                             //  Trạng thái đang xử lý đăng nhập
-  bool _dbStatusChecked = false;                                     //  Đã kiểm tra trạng thái database chưa
-  bool _isDbOnline = false;                                          //  Trạng thái kết nối database thực tế (MySQL online hay Mock offline)
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _rememberMe = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _loadSavedCredentials();
-    _checkDatabaseStatus();
   }
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  /// Kiểm tra trạng thái Database thực tế để hiển thị Badge cho lập trình viên
-  Future<void> _checkDatabaseStatus() async {
-    if (kIsWeb) {
-      // Trên web (Chrome): Gọi backend health check trước
-      // Nếu backend sẵn sàng → dùng API gọi MySQL
-      // Nếu không → fallback localStorage
-      final backendOk = await AuthApiService.healthCheck();
-      DbHelper.backendAvailable = backendOk;
-      setState(() {
-        _isDbOnline = backendOk;
-        _dbStatusChecked = true;
-      });
-      return;
-    }
-    // Trên Windows/MySQL: thử kết nối trực tiếp
-    final conn = await DbHelper.getConnection();
-    setState(() {
-      _isDbOnline = conn != null;
-      _dbStatusChecked = true;
-    });
-    if (conn != null) {
-      await conn.close();
-    }
-  }
-
-  /// Tải dữ liệu ghi nhớ đăng nhập
+  /// Tải email đã ghi nhớ (không lưu mật khẩu — chỉ username/email).
   Future<void> _loadSavedCredentials() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedUsername = prefs.getString('saved_username') ?? '';
-    final savedPassword = prefs.getString('saved_password') ?? '';
-    final isRemembered = prefs.getBool('remember_me') ?? false;
-
-    if (isRemembered) {
+    final rm = await TokenStorage.loadRememberMe();
+    if (rm.remember && rm.username.isNotEmpty) {
       setState(() {
-        _usernameController.text = savedUsername;
-        _passwordController.text = savedPassword;
+        _emailController.text = rm.username;
         _rememberMe = true;
       });
     }
   }
 
-  /// Lưu hoặc xóa dữ liệu ghi nhớ
-  Future<void> _saveOrClearCredentials(String username, String password) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (_rememberMe) {
-      await prefs.setString('saved_username', username);
-      await prefs.setString('saved_password', password);
-      await prefs.setBool('remember_me', true);
-    } else {
-      await prefs.remove('saved_username');
-      await prefs.remove('saved_password');
-      await prefs.setBool('remember_me', false);
-    }
-  }
-
-  /// Xử lý logic đăng nhập
+  /// Xử lý đăng nhập: gọi backend, lưu JWT, tải dữ liệu, kết nối realtime.
   Future<void> _handleLogin() async {
-    final username = _usernameController.text.trim();
+    final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
-    if (username.isEmpty || password.isEmpty) {
+    if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(Localization.translate('fillAllFields')),
@@ -108,62 +61,42 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
-    final user = await DbHelper.loginUser(username, password);
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (user != null) {
-      await _saveOrClearCredentials(username, password);
-
-      // Tải hồ sơ riêng của tài khoản vừa đăng nhập.
-      await AppState().setCurrentAccount(
-        user['username']!,
-        displayName: user['name'],
-        email: user['email'],
-        phone: user['phone'],
-      );
-
-      // Hiển thị thông báo trạng thái kết nối database
-      String statusMsg;
-      if (kIsWeb) {
-        statusMsg = "Đăng nhập thành công trên Chrome (Web - Offline Mode)";
-      } else if (DbHelper.isUsingMock) {
-        statusMsg = "Đăng nhập offline thành công (Mock DB)";
-      } else {
-        statusMsg = "Đăng nhập MySQL thành công!";
-      }
+    try {
+      final result = await AuthService.instance.login(email, password);
+      await TokenStorage.saveRememberMe(email, _rememberMe);
+      await AppState().setCurrentAccount(result.profile, result.token);
+      DeviceEventService().reauthenticate(result.token);
 
       if (!mounted) return;
+      setState(() => _isLoading = false);
 
-      // Lưu tham chiếu ScaffoldMessenger TRƯỚC khi navigate
-      // tránh lỗi "Looking up a deactivated widget's ancestor" vì
-      // Navigator.pushReplacement sẽ dispose LoginScreen ngay lập tức.
       final messenger = ScaffoldMessenger.of(context);
-
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainShell()),
+        MaterialPageRoute(builder: (_) => const MainShell()),
       );
-
-      // Hiển thị snackbar trên messenger đã capture (an toàn sau navigate)
       messenger.showSnackBar(
-        SnackBar(
-          content: Text(statusMsg),
-          backgroundColor: (kIsWeb || DbHelper.isUsingMock) ? Colors.amber.shade800 : Colors.green,
-          duration: const Duration(seconds: 2),
+        const SnackBar(
+          content: Text('Đăng nhập thành công'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
         ),
       );
-    } else {
+    } on ApiException catch (e) {
       if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Sai email/tên tài khoản hoặc mật khẩu (Mặc định dùng admin / admin123)'),
+            content: Text('Không kết nối được tới máy chủ'),
             backgroundColor: Colors.red,
           ),
         );
@@ -227,13 +160,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Hệ thống giám sát khẩn cấp cho người cao tuổi',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontSize: 15,
-                      ),
+                      style: theme.textTheme.bodyMedium?.copyWith(fontSize: 15),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Form đăng nhập đặt trong Card sang trọng
                     Card(
                       elevation: 4,
@@ -248,21 +179,20 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             Text(
                               Localization.translate('login'),
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                fontSize: 26,
-                              ),
+                              style: theme.textTheme.headlineMedium?.copyWith(fontSize: 26),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 24),
-                            
-                            // Input Email / Tên tài khoản
+
+                            // Input Email
                             TextField(
-                              controller: _usernameController,
+                              controller: _emailController,
                               maxLength: 48,
+                              keyboardType: TextInputType.emailAddress,
                               style: const TextStyle(fontSize: 18),
                               decoration: InputDecoration(
-                                labelText: Localization.translate('emailOrUsername'),
-                                prefixIcon: const Icon(Icons.person_outline),
+                                labelText: Localization.translate('email'),
+                                prefixIcon: const Icon(Icons.email_outlined),
                                 counterText: '',
                               ),
                             ),
@@ -281,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            
+
                             // Ghi nhớ đăng nhập
                             Row(
                               children: [
@@ -289,9 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   value: _rememberMe,
                                   activeColor: theme.primaryColor,
                                   onChanged: (value) {
-                                    setState(() {
-                                      _rememberMe = value ?? false;
-                                    });
+                                    setState(() => _rememberMe = value ?? false);
                                   },
                                 ),
                                 Text(
@@ -301,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ],
                             ),
                             const SizedBox(height: 20),
-                            
+
                             // Nút đăng nhập
                             _isLoading
                                 ? const Center(child: CircularProgressIndicator())
@@ -316,20 +244,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Chuyển sang màn đăng ký
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
                           Localization.translate('noAccount'),
-                          style: TextStyle(fontSize: 16, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          ),
                         ),
                         TextButton(
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                              MaterialPageRoute(builder: (_) => const RegisterScreen()),
                             );
                           },
                           child: Text(
@@ -343,56 +274,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-
-                    // Trạng thái cơ sở dữ liệu MySQL badge
-                    if (_dbStatusChecked)
-                      Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: _getPlatformBadgeColor().withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: _getPlatformBadgeColor(),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                _getPlatformBadgeIcon(),
-                                size: 14,
-                                color: _getPlatformBadgeColor(),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                _getPlatformBadgeText(),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: _getPlatformBadgeColor(),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 8),
-
-                    // Gợi ý tài khoản mặc định cho chế độ Offline (Web/Windows không có MySQL)
-                    if (_dbStatusChecked && !_isDbOnline)
-                      Center(
-                        child: Text(
-                          'Tài khoản mặc định: admin / admin123',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -401,44 +282,5 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
-  }
-
-  /// Màu sắc của badge trạng thái theo nền tảng
-  Color _getPlatformBadgeColor() {
-    if (kIsWeb) {
-      return _isDbOnline ? Colors.green.shade700 : Colors.blue.shade700;
-    }
-    if (defaultTargetPlatform == TargetPlatform.windows) {
-      return _isDbOnline ? Colors.green.shade700 : Colors.deepPurple;
-    }
-    return _isDbOnline ? Colors.green.shade700 : Colors.amber.shade800;
-  }
-
-  /// Icon của badge trạng thái theo nền tảng
-  IconData _getPlatformBadgeIcon() {
-    if (kIsWeb) {
-      return _isDbOnline ? Icons.cloud_done : Icons.public;
-    }
-    if (defaultTargetPlatform == TargetPlatform.windows) {
-      return _isDbOnline ? Icons.cloud_done : Icons.desktop_windows;
-    }
-    return _isDbOnline ? Icons.cloud_done : Icons.cloud_off;
-  }
-
-  /// Văn bản của badge trạng thái theo nền tảng
-  String _getPlatformBadgeText() {
-    if (kIsWeb) {
-      return _isDbOnline
-          ? 'Chrome (Web): MySQL Synced via API'
-          : 'Chrome (Web): Local Account Ready';
-    }
-    if (defaultTargetPlatform == TargetPlatform.windows) {
-      return _isDbOnline
-          ? 'Windows: MySQL Connected'
-          : 'Windows: Offline Mock DB Active';
-    }
-    return _isDbOnline
-        ? 'MySQL Server: Connected'
-        : 'Offline Mode: Local Mock DB Active';
   }
 }

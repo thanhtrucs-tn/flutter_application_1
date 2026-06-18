@@ -78,7 +78,7 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
     return age;
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_birthDate == null) {
       // Validator đã xử lý, nhưng đề phòng state bị thay đổi
@@ -99,15 +99,14 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
     final contact = _contactController.text.trim();
     final contactName = _contactNameController.text.trim().replaceAll(RegExp(r'\s+'), ' ');
 
-    // Tính ID mới an toàn — lấy max(id) + 1 để không bị trùng khi đã xóa người thân trước đó.
-    final newId = state.relatives.isEmpty
-        ? 1
-        : state.relatives.map((e) => e.id).reduce((a, b) => a > b ? a : b) + 1;
-
-    // Lưu SĐT khẩn cấp theo định dạng "Tên: SĐT" để danh bạ khẩn cấp hiển thị được cả tên.
-    final contactEntry = contact.isEmpty
-        ? <String>['0900000000']
-        : <String>[contactName.isEmpty ? contact : '$contactName: $contact'];
+    // Liên hệ khẩn cấp là tùy chọn: chỉ gửi khi có ĐỦ cả tên + SĐT.
+    // Backend createContactSchema bắt name + phone required (không chấp nhận rỗng),
+    // nên không được gửi placeholder '0900000000' (parse ra phone rỗng → 400).
+    // Định dạng "Tên: SĐT" để EmergencyContactModel.fromStorageString tách đúng
+    // name/phone khi _parseContacts serialize lên server.
+    final contactEntry = (contactName.isNotEmpty && contact.isNotEmpty)
+        ? <String>['$contactName: $contact']
+        : <String>[];
 
     // Tính tuổi từ ngày sinh đã chọn
     final age = _calculateAge(_birthDate!);
@@ -117,7 +116,7 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
     // Tạm thời: lat=0, lng=0, safeZoneLat=0, safeZoneLng=0, isOffline=true.
     // Bản đồ sẽ hiển thị overlay "Chờ GPS" cho tới khi có tín hiệu.
     final newElderly = ElderlyModel(
-      id: newId,
+      id: 0, // placeholder — backend cấp id thật
       name: name,
       avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
       battery: 0, // Chưa có thiết bị, pin = 0
@@ -139,18 +138,28 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
 
     // Lưu messenger TRƯỚC khi pop để tránh dùng context đã unmount
     final messenger = ScaffoldMessenger.of(context);
-    state.addElderly(newElderly);
-    Navigator.pop(context);
-
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          '${Localization.translate('success')}: $name ($age tuổi) — chờ GPS từ thiết bị',
+    try {
+      await state.addElderly(newElderly);
+      if (!mounted) return;
+      Navigator.pop(context);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            '${Localization.translate('success')}: $name ($age tuổi) — chờ GPS từ thiết bị',
+          ),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 4),
         ),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 4),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Thêm người thân thất bại: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -239,7 +248,15 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
                       ),
                       validator: (v) {
                         final t = v?.trim() ?? '';
+                        final phone = _contactController.text.trim();
+                        // Liên hệ khẩn cấp: cả tên + SĐT phải cùng có hoặc cùng trống.
+                        if (phone.isNotEmpty && t.isEmpty) {
+                          return 'Nhập tên liên hệ khi đã nhập SĐT';
+                        }
                         if (t.isNotEmpty && t.length < 2) return 'Tên quá ngắn';
+                        if (t.isNotEmpty && phone.isEmpty) {
+                          return 'Nhập SĐT cho liên hệ này';
+                        }
                         return null;
                       },
                     ),
@@ -259,8 +276,14 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
                         counterText: '',
                       ),
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return null; // optional
-                        if (!RegExp(r'^[0-9]{10}$').hasMatch(v.trim())) {
+                        final t = v?.trim() ?? '';
+                        final name = _contactNameController.text.trim();
+                        // Liên hệ khẩn cấp: cả tên + SĐT phải cùng có hoặc cùng trống.
+                        if (name.isNotEmpty && t.isEmpty) {
+                          return 'Nhập SĐT khi đã nhập tên liên hệ';
+                        }
+                        if (t.isEmpty) return null; // không có liên hệ → OK
+                        if (!RegExp(r'^[0-9]{10}$').hasMatch(t)) {
                           return 'SĐT phải đúng 10 chữ số';
                         }
                         return null;

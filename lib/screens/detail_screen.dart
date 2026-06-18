@@ -13,7 +13,6 @@ import 'ringing_device_screen.dart';
 import 'ambient_listen_screen.dart';
 import 'send_sms_screen.dart';
 import 'remote_sos_screen.dart';
-import 'test_scenario_screen.dart';
 import 'map_view_screen.dart';
 import 'health_tracking_screen.dart';
 import 'emergency_contacts_screen.dart';
@@ -32,7 +31,6 @@ class _DetailScreenState extends State<DetailScreen> {
   void _openAmbientListen(ElderlyModel e) => _push(AmbientListenScreen(elderly: e));
   void _openSendSms(ElderlyModel e) => _push(SendSmsScreen(elderly: e));
   void _openRemoteSos(ElderlyModel e) => _push(RemoteSosScreen(elderly: e));
-  void _openTestScenarios(ElderlyModel e) => _push(TestScenarioScreen(elderly: e));
   void _openMap(ElderlyModel e) => _push(MapViewScreen(elderly: e));
   void _openHealth(ElderlyModel e) => _push(HealthTrackingScreen(elderlyId: e.id));
   void _openContacts(ElderlyModel e) => _push(EmergencyContactsScreen(elderly: e));
@@ -167,20 +165,19 @@ class _DetailScreenState extends State<DetailScreen> {
                 SafeZoneSlider(
                   value: elderly.safeZoneRadius,
                   onChanged: (v) {
-                    state.updateElderly(elderly.copyWith(safeZoneRadius: v, lastUpdated: DateTime.now()));
+                    // Cập nhật in-memory ngay để UI mượt (không gọi API mỗi tick).
+                    state.patchElderlyVitals(
+                      elderly.copyWith(safeZoneRadius: v, lastUpdated: DateTime.now()),
+                    );
+                  },
+                  onChangeEnd: (v) {
+                    // Persist lên server chỉ khi thả tay (tránh spam PUT).
+                    state.updateElderly(
+                      elderly.copyWith(safeZoneRadius: v, lastUpdated: DateTime.now()),
+                    );
                   },
                 ),
                 const SizedBox(height: 16),
-                BigButton(
-                  label: 'KỊCH BẢN KIỂM THỬ',
-                  icon: Icons.science,
-                  color: const Color(0xFF1A1400), // Nền tối giống TestScenarioScreen
-                  height: 60,
-                  iconSize: 26,
-                  fontSize: 17,
-                  onPressed: () => _openTestScenarios(elderly),
-                ),
-                const SizedBox(height: 12),
                 BigButton(
                   label: 'BÁO ĐỘNG TỪ XA',
                   icon: Icons.gpp_maybe,

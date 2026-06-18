@@ -144,7 +144,7 @@ class ManageRelativesSection extends StatelessWidget {
     );
 
     if (newPath != null && newPath.isNotEmpty) {
-      AppState().updateElderly(r.copyWith(avatarLocalPath: newPath));
+      await AppState().patchElderlyLocalAvatar(r.id, newPath);
     }
   }
 }

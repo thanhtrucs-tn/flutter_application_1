@@ -6,6 +6,7 @@ import '../providers/device_status_notifier.dart';
 import '../providers/providers.dart';
 import '../widgets/battery_slider_card.dart';
 import '../widgets/device_info_card.dart';
+import '../widgets/device_identity_editor.dart';
 import '../widgets/function_button_grid.dart';
 import '../widgets/heart_rate_slider_card.dart';
 import '../widgets/online_switch_tile.dart';
@@ -60,7 +61,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    DeviceInfoCard(status: status),
+                    DeviceInfoCard(
+                      status: status,
+                      onEditIdentity: () => DeviceIdentityEditor.show(context),
+                    ),
                     const SizedBox(height: 16),
                     Builder(
                       builder: (context) => _buildSosSection(context, notifier),

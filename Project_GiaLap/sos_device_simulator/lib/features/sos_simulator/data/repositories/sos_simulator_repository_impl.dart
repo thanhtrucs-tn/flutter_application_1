@@ -87,4 +87,23 @@ class SosSimulatorRepositoryImpl implements SosSimulatorRepository {
       batteryPercent: batteryPercent,
     );
   }
+
+  @override
+  Future<Either<Failure, Unit>> updateStatus({
+    required String deviceId,
+    required String elderlyId,
+    required DateTime timestamp,
+    required int batteryPercent,
+    required bool isOnline,
+    required int heartRateBpm,
+  }) {
+    return _dataSource.updateStatus(
+      deviceId: deviceId,
+      elderlyId: elderlyId,
+      timestamp: timestamp,
+      batteryPercent: batteryPercent,
+      isOnline: isOnline,
+      heartRateBpm: heartRateBpm,
+    );
+  }
 }

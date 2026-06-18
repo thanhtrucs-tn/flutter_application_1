@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../domain/entities/device_status.dart';
 
 /// Card that displays the simulated device's current status:
-/// device ID, online/offline badge, battery, GPS coordinates, and last
-/// updated timestamp.
+/// device ID, elderly pairing key, online/offline badge, battery, GPS
+/// coordinates, and last updated timestamp.
 class DeviceInfoCard extends StatelessWidget {
   final DeviceStatus status;
 
-  const DeviceInfoCard({super.key, required this.status});
+  /// Mở dialog chỉnh mã thiết bị (deviceId/elderlyId). Khi null, nút edit bị ẩn.
+  final VoidCallback? onEditIdentity;
+
+  const DeviceInfoCard({
+    super.key,
+    required this.status,
+    this.onEditIdentity,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +33,8 @@ class DeviceInfoCard extends StatelessWidget {
           children: [
             _buildHeader(colorScheme),
             const Divider(height: 24),
+            _buildPairingRow(context, colorScheme),
+            const SizedBox(height: 8),
             _buildInfoRow(
               icon: Icons.battery_full,
               label: 'Pin',
@@ -69,6 +79,13 @@ class DeviceInfoCard extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
+        if (onEditIdentity != null)
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            tooltip: 'Chỉnh mã thiết bị',
+            onPressed: onEditIdentity,
+            visualDensity: VisualDensity.compact,
+          ),
         Chip(
           visualDensity: VisualDensity.compact,
           backgroundColor:
@@ -81,6 +98,43 @@ class DeviceInfoCard extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  /// Dòng mã ghép đôi (elderlyId) — đây là giá trị user phải nhập vào ô
+  /// "Mã/Tên thiết bị" trong app khi thêm người thân. Có nút copy để tiện dán
+  /// sang app.
+  Widget _buildPairingRow(BuildContext context, ColorScheme colorScheme) {
+    return Row(
+      children: [
+        Icon(Icons.link, size: 20, color: colorScheme.primary),
+        const SizedBox(width: 8),
+        const Text(
+          'Mã ghép đôi: ',
+          style: TextStyle(fontWeight: FontWeight.w500),
+        ),
+        Expanded(
+          child: Text(
+            status.elderlyId,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.copy, size: 18),
+          tooltip: 'Sao chép mã ghép đôi để dán vào app',
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: status.elderlyId));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Đã copy mã ghép đôi: ${status.elderlyId}'),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          },
+          visualDensity: VisualDensity.compact,
         ),
       ],
     );
