@@ -23,6 +23,10 @@ class OnlineSwitchTile extends StatelessWidget {
         ),
         value: isOnline,
         onChanged: onChanged,
+        // Online = màu XANH (không theo primary đỏ của theme).
+        activeTrackColor: Colors.green,
+        activeThumbColor: Colors.white,
+        inactiveTrackColor: Colors.grey.shade300,
         secondary: Icon(
           isOnline ? Icons.wifi : Icons.wifi_off,
           color: isOnline ? Colors.green : Colors.red,

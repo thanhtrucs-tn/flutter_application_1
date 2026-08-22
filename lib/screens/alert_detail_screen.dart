@@ -318,7 +318,7 @@ class _AlertDetailScreenState extends State<AlertDetailScreen> with SingleTicker
                 child: BigButton(
                   label: Localization.translate('confirmAlert'),
                   icon: Icons.check_circle_outline,
-                  color: Colors.white,
+                  color: const Color.fromARGB(255, 180, 0, 0),
                   fontSize: 18,
                   iconSize: 32,
                   height: 64,

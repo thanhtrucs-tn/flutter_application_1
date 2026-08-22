@@ -15,7 +15,7 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
-/// Singleton HTTP client tới SOS Care backend (Express + JWT, port 8080).
+/// Singleton HTTP client tới SOS Care backend (Express + JWT, port 8081).
 ///
 /// - Base URL được resolve qua [DeviceEventMapper.resolveBackendUrl]
 ///   (tự đổi `localhost` → `10.0.2.2` trên Android emulator).
@@ -65,6 +65,26 @@ class ApiClient {
     return (await _send('DELETE', path))['data'];
   }
 
+  /// Upload tệp (multipart/form-data) tới backend. Dùng cho ảnh đại diện.
+  /// [filePath] là đường dẫn file local; backend nhận field [fileField] (mặc định "avatar").
+  Future<Map<String, dynamic>> uploadMultipart(
+    String path, {
+    required String filePath,
+    String fileField = 'avatar',
+  }) async {
+    final base = _baseUrl.isEmpty ? path : '$_baseUrl$path';
+    final uri = Uri.parse(base);
+    final token = await TokenStorage.getToken();
+    final req = http.MultipartRequest('PUT', uri);
+    if (token != null && token.isNotEmpty) {
+      req.headers['Authorization'] = 'Bearer $token';
+    }
+    req.files.add(await http.MultipartFile.fromPath(fileField, filePath));
+    final streamed = await _client.send(req).timeout(const Duration(seconds: 60));
+    final res = await http.Response.fromStream(streamed);
+    return _parse(res, path: path);
+  }
+
   Future<Map<String, dynamic>> _send(
     String method,
     String path, {
@@ -86,10 +106,10 @@ class ApiClient {
     }
     final streamed = await _client.send(req).timeout(const Duration(seconds: 15));
     final res = await http.Response.fromStream(streamed);
-    return _parse(res);
+    return _parse(res, path: path);
   }
 
-  Map<String, dynamic> _parse(http.Response res) {
+  Map<String, dynamic> _parse(http.Response res, {String? path}) {
     Map<String, dynamic> data;
     try {
       data = res.body.isEmpty
@@ -98,7 +118,11 @@ class ApiClient {
     } catch (_) {
       data = <String, dynamic>{};
     }
-    if (res.statusCode == 401) {
+    // 401 từ /api/auth (login sai mật khẩu/tài khoản không tồn tại) là lỗi
+    // nghiệp vụ của chính request này — KHÔNG phải session hết hạn: không xóa
+    // token, không gọi onUnauthorized để tránh bị nhầm thành "phiên hết hạn".
+    final isAuthRequest = path != null && path.contains('/auth/');
+    if (res.statusCode == 401 && !isAuthRequest) {
       TokenStorage.clearToken();
       if (onUnauthorized != null) onUnauthorized!();
       throw ApiException(

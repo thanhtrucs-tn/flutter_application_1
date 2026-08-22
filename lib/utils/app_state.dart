@@ -213,6 +213,32 @@ class AppState extends ChangeNotifier {
     return true;
   }
 
+  /// Upload ảnh đại diện lên server (PUT /api/relatives/:id/avatar) và cập
+  /// nhật relative trong bộ nhớ bằng URL server trả về. Giữ nguyên vitals
+  /// realtime; xóa cache ảnh local vì server giờ là nguồn chuẩn. Ném lỗi
+  /// (ApiException) khi upload thất bại để caller hiển thị thông báo.
+  Future<bool> updateElderlyAvatar(int id, String localPath) async {
+    if (localPath.isEmpty) return false;
+    final idx = _relatives.indexWhere((e) => e.id == id);
+    if (idx < 0) return false;
+    final saved = await RelativesApiService.instance.updateAvatar(id, localPath);
+    _relatives[idx] = saved.copyWith(
+      avatarLocalPath: '',
+      battery: _relatives[idx].battery,
+      heartRate: _relatives[idx].heartRate,
+      spo2: _relatives[idx].spo2,
+      isOffline: _relatives[idx].isOffline,
+      latitude: _relatives[idx].latitude,
+      longitude: _relatives[idx].longitude,
+      lastUpdated: _relatives[idx].lastUpdated,
+    );
+    final p = await SharedPreferences.getInstance();
+    await p.remove('rel_avatar_local_$id');
+    _recomputeStatus();
+    notifyListeners();
+    return true;
+  }
+
   /// Xóa người thân (DELETE /api/relatives/:id) + dọn alert liên quan.
   Future<bool> deleteElderly(int id) async {
     final idx = _relatives.indexWhere((e) => e.id == id);

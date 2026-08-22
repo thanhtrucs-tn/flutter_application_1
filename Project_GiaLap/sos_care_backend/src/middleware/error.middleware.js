@@ -2,6 +2,7 @@ const AppError = require('../utils/appError.util');
 const env = require('../config/env.config');
 const response = require('../utils/response.util');
 const logger = require('../utils/logger.util');
+const multer = require('multer');
 
 /**
  * Central Express error handler.
@@ -16,6 +17,16 @@ const errorMiddleware = (err, req, res, next) => {
 
   if (err instanceof AppError) {
     return response.error(res, err.message, err.statusCode, err.errors);
+  }
+
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return response.error(res, 'Ảnh vượt quá giới hạn 5MB', 400);
+    }
+    if (err.code === 'UNSUPPORTED_FILE_TYPE') {
+      return response.error(res, 'Tệp tải lên không phải là ảnh', 400);
+    }
+    return response.error(res, 'Tệp tải lên không hợp lệ', 400);
   }
 
   if (err.name === 'SequelizeValidationError' || err.name === 'SequelizeUniqueConstraintError') {

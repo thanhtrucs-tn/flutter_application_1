@@ -36,6 +36,16 @@ class RelativesApiService {
     return _toElderly(data);
   }
 
+  /// Upload ảnh đại diện mới (multipart PUT /api/relatives/:id/avatar).
+  /// Trả về relative đã cập nhật với `avatar` trỏ tới file đã upload.
+  Future<ElderlyModel> updateAvatar(int id, String localPath) async {
+    final data = await ApiClient.instance.uploadMultipart(
+      '/api/relatives/$id/avatar',
+      filePath: localPath,
+    );
+    return _toElderly(data);
+  }
+
   Future<void> remove(int id) async {
     await ApiClient.instance.delete('/api/relatives/$id');
   }
@@ -91,7 +101,7 @@ class RelativesApiService {
     return ElderlyModel(
       id: (d['id'] as num).toInt(),
       name: (d['name'] as String?) ?? '',
-      avatar: (d['avatar'] as String?) ?? '',
+      avatar: _toAbsoluteUrl((d['avatar'] as String?) ?? ''),
       battery: battery,
       lastUpdated: lastTs != null
           ? DateTime.parse(lastTs.toString()).toLocal()
@@ -138,5 +148,13 @@ class RelativesApiService {
     if (v is bool) return v;
     if (v is num) return v != 0;
     return v.toString().toLowerCase() == 'true';
+  }
+
+  /// Backend lưu avatar dưới dạng đường dẫn tương đối `/uploads/...` — chuyển
+  /// thành URL tuyệt đối theo base URL của client (tự đổi host trên Android).
+  String _toAbsoluteUrl(String url) {
+    if (url.isEmpty) return '';
+    if (url.startsWith('/')) return '${ApiClient.instance.baseUrl}$url';
+    return url;
   }
 }

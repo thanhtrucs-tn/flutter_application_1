@@ -40,3 +40,6 @@ Thumbs.db
 # Build
 build/
 dist/
+
+# Uploaded user files
+public/uploads/

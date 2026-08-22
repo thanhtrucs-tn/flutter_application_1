@@ -52,12 +52,12 @@ class AuthService {
 
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      throw new AppError('Email hoặc mật khẩu không đúng', 401);
+      throw new AppError('Tài khoản không tồn tại', 401);
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      throw new AppError('Email hoặc mật khẩu không đúng', 401);
+      throw new AppError('Mật khẩu không đúng', 401);
     }
 
     const token = jwt.sign(

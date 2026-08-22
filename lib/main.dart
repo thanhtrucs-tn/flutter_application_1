@@ -7,8 +7,8 @@ import 'utils/app_state.dart';
 import 'utils/theme.dart';
 
 /// URL backend SOS Care mặc định. Trên Android emulator sẽ được tự động
-/// thay thành `http://10.0.2.2:8080` (xem [DeviceEventMapper.resolveBackendUrl]).
-const String _kSosBackendUrl = 'http://localhost:8080';
+/// thay thành `http://10.0.2.2:8081` (xem [DeviceEventMapper.resolveBackendUrl]).
+const String _kSosBackendUrl = 'http://localhost:8081';
 
 /// Key điều hướng gốc — dùng để ApiClient.onUnauthorized quay về LoginScreen
 /// khi JWT hết hạn (401) từ bất kỳ màn nào.

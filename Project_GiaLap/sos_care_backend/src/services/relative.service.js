@@ -1,6 +1,11 @@
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
 const { EmergencyContact, Device, Location, DeviceStatus } = require('../models');
 const relativeRepository = require('../repositories/relative.repository');
 const contactRepository = require('../repositories/emergencyContact.repository');
+const { AVATAR_DIR, MIME_EXT, IMAGE_EXTENSIONS, normalizeMime } = require('../middleware/upload.middleware');
+const logger = require('../utils/logger.util');
 const AppError = require('../utils/appError.util');
 
 /**
@@ -101,8 +106,38 @@ class RelativeService {
     const relative = await relativeRepository.findByIdForUser(id, userId);
     if (!relative) throw new AppError('Không tìm thấy người thân', 404);
     await EmergencyContact.destroy({ where: { relativeId: relative.id } });
+    this._deleteAvatarFileIfUploaded(relative.avatar);
     await relative.destroy();
     return true;
+  }
+
+  // Best-effort delete an uploaded avatar file. Only files inside the avatar
+  // upload folder are removed (never external/URL avatars).
+  _deleteAvatarFileIfUploaded(avatarUrl) {
+    if (!avatarUrl || !avatarUrl.startsWith('/uploads/avatars/')) return;
+    const filePath = path.join(AVATAR_DIR, path.basename(avatarUrl));
+    fs.unlink(filePath, () => {});
+  }
+
+  async updateAvatarPhoto(id, userId, file) {
+    if (!file || !file.buffer || file.buffer.length === 0) {
+      throw new AppError('Vui lòng chọn một tệp ảnh', 400);
+    }
+    const relative = await relativeRepository.findByIdForUser(id, userId);
+    if (!relative) throw new AppError('Không tìm thấy người thân', 404);
+
+    const mime = normalizeMime(file.mimetype);
+    const originalExt = path.extname(file.originalname || '').toLowerCase();
+    const ext = MIME_EXT[mime] ||
+      (IMAGE_EXTENSIONS.has(originalExt) ? originalExt : '.jpg');
+    const filename = `${relative.userId}_${relative.id}_${Date.now()}${ext}`;
+    const absolutePath = path.join(AVATAR_DIR, filename);
+    fs.writeFileSync(absolutePath, file.buffer);
+
+    this._deleteAvatarFileIfUploaded(relative.avatar);
+    await relative.update({ avatar: `/uploads/avatars/${filename}` });
+    logger.info(`Đã cập nhật ảnh đại diện cho người thân #${relative.id}`);
+    return this.getById(id, userId);
   }
 
   async listContacts(id, userId) {

@@ -8,7 +8,7 @@ import '../utils/localization.dart';
 import 'main_shell.dart';
 import 'register_screen.dart';
 
-/// Trang đăng nhập cho ứng dụng SOS Care (REST/JWT tới backend :8080).
+/// Trang đăng nhập cho ứng dụng SOS Care (REST/JWT tới backend :8081).
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 

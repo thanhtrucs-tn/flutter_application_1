@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/elderly_model.dart';
+import '../services/api_client.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
 import 'add_relative_dialog.dart';
@@ -72,13 +73,20 @@ class ManageRelativesSection extends StatelessWidget {
             radius: 20,
             onTap: () => _showAvatarPicker(context, r),
           ),
-          Container(
-            padding: const EdgeInsets.all(2),
-            decoration: const BoxDecoration(
-              color: Color(0xFFE53935),
-              shape: BoxShape.circle,
+          // Biểu tượng camera — bấm vào cũng kích hoạt đổi ảnh đại diện.
+          GestureDetector(
+            onTap: () => _showAvatarPicker(context, r),
+            child: Tooltip(
+              message: Localization.translate('changeAvatar'),
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE53935),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.camera_alt, color: Colors.white, size: 10),
+              ),
             ),
-            child: const Icon(Icons.camera_alt, color: Colors.white, size: 10),
           ),
         ],
       ),
@@ -112,7 +120,8 @@ class ManageRelativesSection extends StatelessWidget {
     );
   }
 
-  /// Mở dialog cho phép chọn ảnh đại diện mới cho người thân.
+  /// Mở dialog cho phép chọn ảnh đại diện mới cho người thân, rồi upload lên
+  /// server. Người dùng bấm avatar hoặc biểu tượng camera để kích hoạt.
   Future<void> _showAvatarPicker(BuildContext context, ElderlyModel r) async {
     final newPath = await showDialog<String>(
       context: context,
@@ -143,8 +152,50 @@ class ManageRelativesSection extends StatelessWidget {
       ),
     );
 
-    if (newPath != null && newPath.isNotEmpty) {
-      await AppState().patchElderlyLocalAvatar(r.id, newPath);
+    if (newPath == null || newPath.isEmpty || !context.mounted) return;
+    await _uploadAvatar(context, r, newPath);
+  }
+
+  /// Upload ảnh đại diện mới lên server. Hiện dialog tiến trình khi upload,
+  /// khi xong cập nhật UI; lỗi mạng/server hiển thị snackbar và giữ ảnh cũ.
+  Future<void> _uploadAvatar(BuildContext context, ElderlyModel r, String path) async {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(width: 16),
+              Flexible(child: Text(Localization.translate('uploadingAvatar'))),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    var ok = false;
+    String? error;
+    try {
+      ok = await AppState().updateElderlyAvatar(r.id, path);
+    } on ApiException catch (e) {
+      error = e.message;
+    } catch (_) {
+      error = 'Không kết nối được tới máy chủ';
     }
+
+    if (!context.mounted) return;
+    Navigator.of(context, rootNavigator: true).pop(); // đóng dialog tiến trình
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? (ok
+            ? Localization.translate('avatarUpdated')
+            : Localization.translate('changeAvatar'))),
+        backgroundColor: error != null || !ok ? Colors.red : Colors.green,
+      ),
+    );
   }
 }

@@ -11,7 +11,7 @@ class ApiConfig {
   const ApiConfig._();
 
   /// Base URL for the real SOS Care backend.
-  static const String baseUrl = 'http://localhost:8080';
+  static const String baseUrl = 'http://localhost:8081';
 
   /// When `true`, the application uses the in-memory mock data source
   /// instead of performing real HTTP requests.
@@ -30,7 +30,7 @@ class ApiConfig {
   static const Duration receiveTimeout = Duration(seconds: 30);
 
   /// Socket.IO server URL.
-  static const String socketUrl = 'http://localhost:8080';
+  static const String socketUrl = 'http://localhost:8081';
 
   /// Endpoint for SOS emergency alerts.
   static const String sosEndpoint = '/api/sos';

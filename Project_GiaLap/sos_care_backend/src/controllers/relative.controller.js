@@ -38,6 +38,15 @@ class RelativeController {
     }
   }
 
+  async uploadAvatar(req, res, next) {
+    try {
+      const data = await relativeService.updateAvatarPhoto(req.params.id, req.user.id, req.file);
+      return response.success(res, data, 'Đã cập nhật ảnh đại diện');
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async remove(req, res, next) {
     try {
       await relativeService.remove(req.params.id, req.user.id);

@@ -113,7 +113,7 @@ npm run dev
 npm start
 ```
 
-Server sẽ chạy tại `http://localhost:8080`.
+Server sẽ chạy tại `http://localhost:8081`.
 
 ### 6. Chạy test
 
@@ -126,11 +126,11 @@ npm test
 Trong `sos_device_simulator/lib/core/config/api_config.dart`:
 
 ```dart
-static const String baseUrl = 'http://localhost:8080';
+static const String baseUrl = 'http://localhost:8081';
 static const bool useMock = false;
 ```
 
-Lưu ý: nếu chạy Android emulator, dùng `http://10.0.2.2:8080` thay vì `localhost`.
+Lưu ý: nếu chạy Android emulator, dùng `http://10.0.2.2:8081` thay vì `localhost`.
 
 ## Ghi chú bảo mật
 

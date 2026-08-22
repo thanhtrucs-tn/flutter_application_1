@@ -6,6 +6,7 @@ const env = require('./config/env.config');
 const routes = require('./routes');
 const errorMiddleware = require('./middleware/error.middleware');
 const loggerMiddleware = require('./middleware/logger.middleware');
+const { UPLOADS_DIR, ensureUploadDirs } = require('./middleware/upload.middleware');
 
 /**
  * Express application factory.
@@ -15,6 +16,9 @@ const loggerMiddleware = require('./middleware/logger.middleware');
  */
 const createApp = () => {
   const app = express();
+
+  ensureUploadDirs();
+  app.use('/uploads', express.static(UPLOADS_DIR));
 
   app.use(helmet());
   app.use(cors({

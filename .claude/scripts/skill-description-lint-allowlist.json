@@ -1,4 +1,0 @@
-{
-  "_comment": "Allowlist for skill metadata lint warnings. Each entry MUST list the portable skill name, the specific rule IDs to silence, and a written reason. Available rule IDs include: use-this-prefix, maintainer-marker, todo-marker, too-short, too-long, missing-description, frontmatter-parse-error, missing-user-invocable-visibility, missing-skill-listing-budget, low-skill-listing-budget, missing-skill-description-cap, high-skill-description-cap. Keep this list small — prefer fixing metadata over allowlisting.",
-  "allowed": []
-}

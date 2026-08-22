@@ -24,7 +24,7 @@ class SosBottomNav extends StatelessWidget {
       onTap: onTap,
       type: BottomNavigationBarType.fixed,
       backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
-      selectedItemColor: const Color(0xFFE53935),
+      selectedItemColor: const Color(0xFF10B981),
       unselectedItemColor: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
       selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
       unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),

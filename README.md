@@ -79,7 +79,7 @@ lib/
 
 ### 2.4 Xử lý URL backend
 
-Trên Android emulator, `localhost` tự động đổi thành `10.0.2.2` (xử lý trong `DeviceEventMapper.resolveBackendUrl`) để app trong emulator gọi được backend chạy trên máy host. Base URL mặc định: `http://localhost:8080`.
+Trên Android emulator, `localhost` tự động đổi thành `10.0.2.2` (xử lý trong `DeviceEventMapper.resolveBackendUrl`) để app trong emulator gọi được backend chạy trên máy host. Base URL mặc định: `http://localhost:8081`.
 
 ### 2.5 Lưu ý Decimal từ backend
 
@@ -200,11 +200,11 @@ sos_device_simulator/
 Trong `lib/core/config/api_config.dart`:
 
 ```dart
-static const String baseUrl = 'http://localhost:8080';
+static const String baseUrl = 'http://localhost:8081';
 static const bool useMock = false;
 ```
 
-Trên Android emulator dùng `http://10.0.2.2:8080` thay vì `localhost`.
+Trên Android emulator dùng `http://10.0.2.2:8081` thay vì `localhost`.
 
 ---
 
@@ -230,7 +230,7 @@ npm run migrate
 npm run dev                 # hoặc npm start (production)
 ```
 
-Backend chạy tại `http://localhost:8080`. Chạy test: `npm test`.
+Backend chạy tại `http://localhost:8081`. Chạy test: `npm test`.
 
 Biến môi trường `.env` chính (xem `.env.example`): `PORT`, `NODE_ENV`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `LOG_LEVEL`, `LOG_TO_FILE`, `DB_SYNC`, `CORS_ORIGIN`, `DEVICE_AUTH_MODE`, `DEVICE_TOKEN`.
 
@@ -241,7 +241,7 @@ flutter pub get
 flutter run
 ```
 
-Trên Android emulator, app tự động gọi backend qua `10.0.2.2:8080`. Trên thiết bị thật / Windows, chạy backend và app cùng máy thì dùng `localhost:8080` (đã được resolve tự động).
+Trên Android emulator, app tự động gọi backend qua `10.0.2.2:8081`. Trên thiết bị thật / Windows, chạy backend và app cùng máy thì dùng `localhost:8081` (đã được resolve tự động).
 
 ### 6.3 Trình giả lập
 
@@ -297,7 +297,7 @@ Trình giả lập: flutter_riverpod, dio, socket_io_client, geolocator, dartz, 
 
 ## 9. Các lưu ý quan trọng
 
-- Backend chạy port 8080; cả hai app Flutter đều kết nối đến đây.
+- Backend chạy port 8081; cả hai app Flutter đều kết nối đến đây.
 - Trên Android emulator bắt buộc dùng `10.0.2.2` thay `localhost` (đã tự resolve).
 - Sau login, JWT được gửi qua hai kênh Socket.IO (`auth` + `?token=`) để đảm bảo join room `user:<id>` và nhận event scoped; tránh tình trạng mất realtime phải re-login mới thấy.
 - DECIMAL từ backend trả về String -> parse kiểu nhường ở Flutter.

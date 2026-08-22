@@ -60,7 +60,7 @@ Danh sách đã có trong `pubspec.yaml`:
 Base URL và chế độ mock được cấu hình trong `lib/core/config/api_config.dart`:
 
 ```dart
-static const String baseUrl = 'http://localhost:8080';
+static const String baseUrl = 'http://localhost:8081';
 static const bool useMock = true;   // đặt false để dùng backend thật
 ```
 

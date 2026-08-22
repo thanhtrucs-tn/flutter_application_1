@@ -39,6 +39,15 @@ const startServer = async () => {
     socketService.setInstance(io);
     setupSocketHandlers(io);
 
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        logger.error(`Cổng ${env.port} đã bị chiếm (EADDRINUSE). Vui lòng đổi PORT trong .env hoặc dừng tiến trình đang dùng cổng này.`);
+      } else {
+        logger.error('Lỗi HTTP server:', err);
+      }
+      process.exit(1);
+    });
+
     server.listen(env.port, () => {
       logger.info(`SOS Care backend đang chạy tại http://localhost:${env.port}`);
     });
