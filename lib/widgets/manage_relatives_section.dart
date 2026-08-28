@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/elderly_model.dart';
+import '../screens/edit_relative_screen.dart';
 import '../services/api_client.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
@@ -101,6 +102,11 @@ class ManageRelativesSection extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: Color(0xFF475569)),
+            tooltip: Localization.translate('editInfo'),
+            onPressed: () => EditRelativeScreen.open(context, r.id),
+          ),
           Container(
             width: 12,
             height: 12,

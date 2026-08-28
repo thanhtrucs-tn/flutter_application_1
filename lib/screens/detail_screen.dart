@@ -9,6 +9,7 @@ import '../widgets/health_metrics_panel.dart';
 import '../widgets/safe_zone_slider.dart';
 import '../widgets/custom_map.dart';
 import '../widgets/big_button.dart';
+import 'edit_relative_screen.dart';
 import 'ringing_device_screen.dart';
 import 'ambient_listen_screen.dart';
 import 'send_sms_screen.dart';
@@ -76,6 +77,13 @@ class _DetailScreenState extends State<DetailScreen> {
           appBar: SosAppHeader(
             title: elderly.name,
             showBackButton: true,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                tooltip: Localization.translate('editInfo'),
+                onPressed: () => EditRelativeScreen.open(context, elderly.id),
+              ),
+            ],
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),

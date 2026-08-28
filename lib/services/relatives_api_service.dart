@@ -65,10 +65,11 @@ class RelativesApiService {
       'safeZoneLat': e.safeZoneLat,
       'safeZoneLng': e.safeZoneLng,
       'contacts': _parseContacts(e.emergencyContacts),
+      // Luôn gửi age/address: null khi trống để cho phép XÓA trường trên server.
+      'age': e.age,
+      'address': e.address.isEmpty ? null : e.address,
     };
     if (e.avatar.isNotEmpty) payload['avatar'] = e.avatar;
-    if (e.age != null) payload['age'] = e.age;
-    if (e.address.isNotEmpty) payload['address'] = e.address;
     // wearableDevice (UI) = deviceElderlyId (business key thiết bị emit, vd ELDERLY-001).
     if (e.wearableDevice.isNotEmpty) {
       payload['deviceElderlyId'] = e.wearableDevice;
