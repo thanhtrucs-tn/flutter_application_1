@@ -1,7 +1,7 @@
 const express = require('express');
 const sosController = require('../controllers/sos.controller');
 const validate = require('../middleware/validate.middleware');
-const deviceAuth = require('../middleware/deviceAuth.middleware');
+const deviceAuth = require('../middleware/device_auth.middleware');
 const sosSchema = require('../validations/sos.schema');
 
 const router = express.Router();

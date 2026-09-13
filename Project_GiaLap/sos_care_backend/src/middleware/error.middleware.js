@@ -1,4 +1,4 @@
-const AppError = require('../utils/appError.util');
+const AppError = require('../utils/app_error.util');
 const env = require('../config/env.config');
 const response = require('../utils/response.util');
 const logger = require('../utils/logger.util');

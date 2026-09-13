@@ -1,4 +1,4 @@
-const deviceStatusService = require('../services/deviceStatus.service');
+const deviceStatusService = require('../services/device_status.service');
 const response = require('../utils/response.util');
 
 class DeviceStatusController {

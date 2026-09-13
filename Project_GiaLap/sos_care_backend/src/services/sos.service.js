@@ -1,4 +1,4 @@
-const sosAlertRepository = require('../repositories/sosAlert.repository');
+const sosAlertRepository = require('../repositories/sos_alert.repository');
 const deviceRepository = require('../repositories/device.repository');
 const alertService = require('./alert.service');
 

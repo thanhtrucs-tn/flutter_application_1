@@ -10,7 +10,7 @@ const { SosAlert, Event, Location, Device } = require('../models');
  * the provided limit/offset.
  */
 class HistoryService {
-  async list(query) {
+  async list(query, userId) {
     const {
       deviceId,
       type,
@@ -32,8 +32,16 @@ class HistoryService {
     const parsedLimit = Math.max(1, parseInt(limit, 10));
     const offset = (parsedPage - 1) * parsedLimit;
 
+    // Chỉ lấy dữ liệu của các thiết bị thuộc người dùng hiện tại — chặn
+    // xem lịch sử (SOS/vị trí/sự kiện) của người khác qua deviceId.
     const include = [
-      { model: Device, as: 'device', attributes: ['id', 'elderlyId', 'elderlyName'] },
+      {
+        model: Device,
+        as: 'device',
+        attributes: ['id', 'elderlyId', 'elderlyName'],
+        where: { userId },
+        required: true,
+      },
     ];
 
     if (type) {
@@ -64,9 +72,9 @@ class HistoryService {
     ]);
 
     const [alertCount, eventCount, locationCount] = await Promise.all([
-      SosAlert.count({ where }),
-      Event.count({ where }),
-      Location.count({ where }),
+      SosAlert.count({ where, include }),
+      Event.count({ where, include }),
+      Location.count({ where, include }),
     ]);
 
     const merged = [

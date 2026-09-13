@@ -4,7 +4,7 @@ import '../utils/localization.dart';
 import '../widgets/sos_app_header.dart';
 import '../widgets/add_relative_dialog.dart';
 import '../widgets/relative_reorderable_list.dart';
-import 'detail_screen.dart';
+import 'elderly_detail_screen.dart';
 import 'alert_detail_screen.dart';
 
 /// Màn hình chính tổng quan an toàn của SOS Care.
@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: (id) {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => DetailScreen(elderlyId: id)),
+                MaterialPageRoute(builder: (_) => ElderlyDetailScreen(elderlyId: id)),
               );
             },
           ),

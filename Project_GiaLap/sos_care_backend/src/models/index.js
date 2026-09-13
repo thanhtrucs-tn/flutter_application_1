@@ -1,12 +1,12 @@
 const sequelize = require('../config/database');
 const User = require('./user.model');
 const Device = require('./device.model');
-const SosAlert = require('./sosAlert.model');
+const SosAlert = require('./sos_alert.model');
 const Event = require('./event.model');
 const Location = require('./location.model');
-const DeviceStatus = require('./deviceStatus.model');
+const DeviceStatus = require('./device_status.model');
 const Relative = require('./relative.model');
-const EmergencyContact = require('./emergencyContact.model');
+const EmergencyContact = require('./emergency_contact.model');
 const Alert = require('./alert.model');
 
 /**

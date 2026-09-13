@@ -3,10 +3,10 @@ const path = require('path');
 const crypto = require('crypto');
 const { EmergencyContact, Device, Location, DeviceStatus } = require('../models');
 const relativeRepository = require('../repositories/relative.repository');
-const contactRepository = require('../repositories/emergencyContact.repository');
+const contactRepository = require('../repositories/emergency_contact.repository');
 const { AVATAR_DIR, MIME_EXT, IMAGE_EXTENSIONS, normalizeMime } = require('../middleware/upload.middleware');
 const logger = require('../utils/logger.util');
-const AppError = require('../utils/appError.util');
+const AppError = require('../utils/app_error.util');
 
 /**
  * Caregiver-scoped CRUD for relatives. Returns fused DTOs (profile + contacts
@@ -82,9 +82,21 @@ class RelativeService {
     return this._toDto(relative, v.latestLocation, v.latestStatus);
   }
 
+  // Gắn thiết bị đeo vào hồ sơ người thân: set userId + relativeId cho device
+  // có elderlyId trùng mã ghép đôi. Từ đó API thiết bị/lịch sử chỉ truy vấn
+  // theo đúng tài khoản hiện tại.
+  async _attachDeviceToRelative(userId, relativeId, deviceElderlyId) {
+    if (!deviceElderlyId) return;
+    const device = await Device.findOne({ where: { elderlyId: deviceElderlyId } });
+    if (device && (device.userId !== userId || device.relativeId !== relativeId)) {
+      await device.update({ userId, relativeId });
+    }
+  }
+
   async create(userId, payload) {
     const { contacts, clean } = this._cleanProfile(payload);
     const relative = await relativeRepository.createForUser(userId, clean);
+    await this._attachDeviceToRelative(userId, relative.id, clean.deviceElderlyId);
     if (contacts && contacts.length) {
       await contactRepository.bulkReplaceForRelative(relative.id, contacts);
     }
@@ -96,6 +108,9 @@ class RelativeService {
     if (!relative) throw new AppError('Không tìm thấy người thân', 404);
     const { contacts, clean } = this._cleanProfile(payload);
     await relative.update(clean);
+    if (clean.deviceElderlyId !== undefined) {
+      await this._attachDeviceToRelative(userId, relative.id, clean.deviceElderlyId);
+    }
     if (contacts !== undefined) {
       await contactRepository.bulkReplaceForRelative(relative.id, contacts || []);
     }

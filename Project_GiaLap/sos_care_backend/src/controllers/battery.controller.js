@@ -1,14 +1,13 @@
-const deviceStatusService = require('../services/deviceStatus.service');
+const deviceStatusService = require('../services/device_status.service');
 const response = require('../utils/response.util');
 
 class BatteryController {
   async create(req, res, next) {
     try {
-      const status = await deviceStatusService.create({
-        ...req.body,
-        heartRateBpm: undefined,
-        isOnline: undefined,
-      });
+      // Endpoint pin chỉ nhận thông số pin; không ghi đè nhịp tim/trạng thái
+      // online do endpoint /api/device/status quản lý.
+      const { heartRateBpm, isOnline, ...batteryPayload } = req.body;
+      const status = await deviceStatusService.create(batteryPayload);
       return response.success(
         res,
         { id: status.id, timestamp: status.timestamp },

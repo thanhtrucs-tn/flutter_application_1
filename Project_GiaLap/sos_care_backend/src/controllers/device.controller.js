@@ -4,7 +4,7 @@ const response = require('../utils/response.util');
 class DeviceController {
   async getById(req, res, next) {
     try {
-      const device = await deviceService.getById(req.params.id);
+      const device = await deviceService.getById(req.params.id, req.user.id);
       return response.success(res, device, 'Thông tin thiết bị');
     } catch (err) {
       next(err);

@@ -1,5 +1,5 @@
 const { User, Relative, Device } = require('../models');
-const AppError = require('../utils/appError.util');
+const AppError = require('../utils/app_error.util');
 
 /**
  * Lấy thông tin tài khoản (user). Trả về public profile — không bao giờ
@@ -34,17 +34,6 @@ class UserService {
     const user = await User.findByPk(id);
     if (!user) throw new AppError('Không tìm thấy người dùng', 404);
     return this._public(user);
-  }
-
-  async findByEmail(email) {
-    const user = await User.findOne({ where: { email } });
-    if (!user) throw new AppError('Không tìm thấy người dùng', 404);
-    return this._public(user);
-  }
-
-  async list() {
-    const users = await User.findAll({ order: [['id', 'ASC']] });
-    return Promise.all(users.map((u) => this._public(u)));
   }
 }
 

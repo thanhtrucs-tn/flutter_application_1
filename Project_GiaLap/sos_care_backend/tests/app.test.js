@@ -44,6 +44,24 @@ describe('Auth middleware', () => {
     expect(res.statusCode).toBe(401);
     expect(res.body.success).toBe(false);
   });
+
+  it('GET /api/users (list) returns 401 without token', async () => {
+    const res = await request(app).get('/api/users');
+    expect(res.statusCode).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('GET /api/users/:id returns 401 without token', async () => {
+    const res = await request(app).get('/api/users/1');
+    expect(res.statusCode).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('GET /api/users?email= returns 401 without token', async () => {
+    const res = await request(app).get('/api/users?email=a@b.c');
+    expect(res.statusCode).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
 });
 
 describe('Protected routes require JWT', () => {

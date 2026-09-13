@@ -4,7 +4,7 @@ const response = require('../utils/response.util');
 class HistoryController {
   async list(req, res, next) {
     try {
-      const result = await historyService.list(req.query);
+      const result = await historyService.list(req.query, req.user.id);
       return response.success(res, result.data, 'Lịch sử hoạt động', 200, result.meta);
     } catch (err) {
       next(err);

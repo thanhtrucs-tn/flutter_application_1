@@ -20,21 +20,13 @@ class UserController {
 
   async getById(req, res, next) {
     try {
-      const data = await userService.getById(req.params.id);
-      return response.success(res, data, 'Thông tin người dùng');
-    } catch (err) {
-      next(err);
-    }
-  }
-
-  async list(req, res, next) {
-    try {
-      if (req.query.email) {
-        const data = await userService.findByEmail(req.query.email);
-        return response.success(res, data, 'Thông tin người dùng');
+      // Chỉ cho đọc hồ sơ của chính mình — trả 404 để không lộ sự tồn tại
+      // của tài khoản khác.
+      if (String(req.params.id) !== String(req.user.id)) {
+        return response.error(res, 'Không tìm thấy người dùng', 404);
       }
-      const data = await userService.list();
-      return response.success(res, data, 'Danh sách người dùng');
+      const data = await userService.getById(req.user.id);
+      return response.success(res, data, 'Thông tin người dùng');
     } catch (err) {
       next(err);
     }

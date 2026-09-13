@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const env = require('../config/env.config');
 const { User } = require('../models');
-const AppError = require('../utils/appError.util');
+const AppError = require('../utils/app_error.util');
 
 /**
  * Service for caregiver/admin authentication and profile management.

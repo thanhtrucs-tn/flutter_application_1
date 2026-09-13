@@ -4,7 +4,7 @@ const { Server } = require('socket.io');
 const env = require('./config/env.config');
 const sequelize = require('./config/database');
 const createApp = require('./app');
-const setupSocketHandlers = require('./socket/socket.handler');
+const setupSocketHandlers = require('./services/socket.handler');
 const socketService = require('./services/socket.service');
 const logger = require('./utils/logger.util');
 

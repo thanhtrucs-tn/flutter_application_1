@@ -8,7 +8,7 @@
 - JWT Authentication cho các route xem lịch sử / chi tiết thiết bị.
 - Socket.IO realtime: phát `sos:alert` khi nhận SOS, `event:fall` khi nhận FALL_DETECTED.
 - Validation Joi, error handling tập trung, response format thống nhất, logging Winston + Morgan.
-- Cấu trúc thư mục chuyên nghiệp: controllers, services, repositories, models, routes, middleware, config, socket.
+- Cấu trúc thư mục rõ ràng: controllers, services, repositories, models, routes, middleware, config, validations.
 
 ## Kiến trúc thư mục
 
@@ -17,21 +17,20 @@ sos_care_backend/
 ├── src/
 │   ├── config/             # Database, env, sequelize-cli config
 │   ├── controllers/        # HTTP request handlers
-│   ├── services/           # Business logic + Socket.IO emit
+│   ├── services/           # Business logic + Socket.IO emit/handler
 │   ├── repositories/       # Sequelize data access
 │   ├── models/             # Sequelize models
 │   ├── routes/             # Express routers
 │   ├── middleware/         # Auth, validation, logging, error handler
 │   ├── validations/        # Joi schemas
 │   ├── utils/              # Response, logger, AppError
-│   ├── socket/             # Socket.IO handlers
 │   ├── app.js              # Express app factory
 │   └── server.js           # HTTP server + Socket.IO bootstrap
 ├── migrations/             # Sequelize migrations
 ├── tests/                  # Unit/integration tests
 ├── logs/                   # Winston daily rotate logs
 ├── package.json
-├── .env.example
+├── .env.template
 └── .sequelizerc
 ```
 
@@ -91,7 +90,7 @@ npm install
 ### 3. Cấu hình môi trường
 
 ```bash
-cp .env.example .env
+cp .env.template .env
 ```
 
 Sửa `.env` với thông tin MySQL và JWT secret của bạn.

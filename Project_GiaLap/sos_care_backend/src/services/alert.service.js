@@ -1,7 +1,7 @@
 const alertRepository = require('../repositories/alert.repository');
 const relativeRepository = require('../repositories/relative.repository');
 const socketService = require('./socket.service');
-const AppError = require('../utils/appError.util');
+const AppError = require('../utils/app_error.util');
 
 /**
  * Caregiver-facing alerts. Device ingestion services call createFromDeviceEvent

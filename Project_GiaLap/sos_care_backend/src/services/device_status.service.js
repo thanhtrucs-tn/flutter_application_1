@@ -1,4 +1,4 @@
-const deviceStatusRepository = require('../repositories/deviceStatus.repository');
+const deviceStatusRepository = require('../repositories/device_status.repository');
 const deviceRepository = require('../repositories/device.repository');
 const relativeRepository = require('../repositories/relative.repository');
 const alertService = require('./alert.service');

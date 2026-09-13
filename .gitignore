@@ -46,3 +46,6 @@ app.*.map.json
 /android/app/release
 
 DACTA.md
+
+# MySQL data directory backup (không thuộc dự án)
+mysql_data_backup_20260901/

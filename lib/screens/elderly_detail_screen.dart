@@ -19,15 +19,15 @@ import 'health_tracking_screen.dart';
 import 'emergency_contacts_screen.dart';
 
 /// Màn hình chi tiết người cao tuổi với thông tin, sức khỏe, bản đồ và thao tác.
-class DetailScreen extends StatefulWidget {
+class ElderlyDetailScreen extends StatefulWidget {
   final int elderlyId;
-  const DetailScreen({super.key, required this.elderlyId});
+  const ElderlyDetailScreen({super.key, required this.elderlyId});
 
   @override
-  State<DetailScreen> createState() => _DetailScreenState();
+  State<ElderlyDetailScreen> createState() => _ElderlyDetailScreenState();
 }
 
-class _DetailScreenState extends State<DetailScreen> {
+class _ElderlyDetailScreenState extends State<ElderlyDetailScreen> {
   void _openRingingDevice(ElderlyModel e) => _push(RingingDeviceScreen(elderly: e));
   void _openAmbientListen(ElderlyModel e) => _push(AmbientListenScreen(elderly: e));
   void _openSendSms(ElderlyModel e) => _push(SendSmsScreen(elderly: e));

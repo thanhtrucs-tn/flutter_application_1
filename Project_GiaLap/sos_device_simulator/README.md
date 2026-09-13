@@ -55,13 +55,14 @@ Danh sách đã có trong `pubspec.yaml`:
 | POST | `/api/sos` | `{deviceId, elderlyId, timestamp, latitude, longitude, type="SOS"}` | Gửi cảnh báo SOS |
 | POST | `/api/events` | `{deviceId, elderlyId, timestamp, latitude, longitude, type}` | Gửi sự kiện (`FALL_DETECTED`, `HEART_RATE_ALERT`) |
 | POST | `/api/location` | `{deviceId, elderlyId, timestamp, latitude, longitude}` | Gửi vị trí hiện tại |
+| POST | `/api/device/status` | `{deviceId, elderlyId, timestamp, batteryPercent, heartRateBpm, isOnline}` | Cập nhật trạng thái (pin/nhịp tim/online) |
 | POST | `/api/device/battery` | `{deviceId, elderlyId, timestamp, batteryPercent}` | Cập nhật mức pin |
 
 Base URL và chế độ mock được cấu hình trong `lib/core/config/api_config.dart`:
 
 ```dart
 static const String baseUrl = 'http://localhost:8081';
-static const bool useMock = true;   // đặt false để dùng backend thật
+static const bool useMock = false;   // đặt true để chạy không cần backend thật
 ```
 
 ## Hướng dẫn chạy project
@@ -80,7 +81,7 @@ flutter doctor
 ### 2. Clone / mở project
 
 ```bash
-cd "D:\App Mobile\SOS Device Simulator\sos_device_simulator"
+cd "D:\App Mobile\flutter_application_1\Project_GiaLap\sos_device_simulator"
 ```
 
 ### 3. Cài đặt dependencies
@@ -136,7 +137,7 @@ flutter test
 
 ## Ghi chú
 
-- Mặc định ứng dụng chạy ở chế độ **mock**. Muốn kết nối backend thật, sửa `ApiConfig.useMock = false` và cập nhật `ApiConfig.baseUrl`.
+- Mặc định `useMock = false` — kết nối backend thật. Muốn chạy không cần backend, sửa `ApiConfig.useMock = true`.
 - `AndroidManifest.xml` đã bật `android:usesCleartextTraffic="true"` để test với backend local HTTP. Trước khi release production với HTTPS, hãy xóa/tắt thuộc tính này.
 - Nếu build Android báo lỗi `javaHome invalid`, kiểm tra biến môi trường `JAVA_HOME` và đảm bảo JDK được cài đặt đúng đường dẫn.
 - GPS trên máy ảo Android có thể yêu cầu bật location trong cài đặt máy ảo.

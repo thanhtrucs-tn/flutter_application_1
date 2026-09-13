@@ -4,7 +4,7 @@ const validate = require('../middleware/validate.middleware');
 const { upload } = require('../middleware/upload.middleware');
 const relativeController = require('../controllers/relative.controller');
 const { createRelativeSchema, updateRelativeSchema } = require('../validations/relative.schema');
-const { createContactSchema } = require('../validations/emergencyContact.schema');
+const { createContactSchema } = require('../validations/emergency_contact.schema');
 
 const router = express.Router();
 

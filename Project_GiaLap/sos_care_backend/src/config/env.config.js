@@ -32,8 +32,23 @@ const env = {
   deviceToken: process.env.DEVICE_TOKEN,
 };
 
-if (!env.jwt.secret) {
-  throw new Error('JWT_SECRET is required. Please set it in .env file.');
+// Kiểm tra biến môi trường bắt buộc khi khởi động. Chỉ in TÊN biến thiếu,
+// không bao giờ in giá trị secret.
+const requiredVars = ['JWT_SECRET'];
+if (env.deviceAuthMode === 'token') {
+  requiredVars.push('DEVICE_TOKEN');
+}
+
+const missingVars = requiredVars.filter((name) => !process.env[name]);
+if (missingVars.length > 0) {
+  throw new Error(
+    `Thiếu biến môi trường bắt buộc: ${missingVars.join(', ')}. Vui lòng khai báo trong file .env.`,
+  );
+}
+
+if (env.nodeEnv === 'production' && env.deviceAuthMode === 'none') {
+  // Cảnh báo không chặn server: một số demo chạy production cục bộ.
+  console.warn('[env] CẢNH BÁO: DEVICE_AUTH_MODE=none trong production — các API nhận dữ liệu thiết bị sẽ không được xác thực.');
 }
 
 module.exports = env;

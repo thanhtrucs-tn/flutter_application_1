@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const { createContactSchema } = require('./emergencyContact.schema');
+const { createContactSchema } = require('./emergency_contact.schema');
 
 /**
  * Relative profile create/update payloads. `contacts` is an optional array of
