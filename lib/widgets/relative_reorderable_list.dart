@@ -22,14 +22,14 @@ import '../widgets/sos_latest_alert_banner.dart';
 /// Card được nâng lên với hiệu ứng elevation/shadow trong khi kéo. Thứ tự mới
 /// được lưu qua [AppState] ngay sau khi thả.
 class RelativeReorderableList extends StatelessWidget {
+  /// Đã sắp xếp sẵn: người thân có cảnh báo luôn nằm trên cùng
+  /// (xem [AppState.relativesForDisplay]).
   final List<ElderlyModel> relatives;
-  final int selectedElderlyId;
   final ValueChanged<int> onTap;
 
   const RelativeReorderableList({
     super.key,
     required this.relatives,
-    required this.selectedElderlyId,
     required this.onTap,
   });
 
@@ -57,7 +57,7 @@ class RelativeReorderableList extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       buildDefaultDragHandles: false,
       onReorderItem: (oldIndex, newIndex) {
-        AppState().reorderRelatives(oldIndex, newIndex);
+        AppState().reorderDisplayedRelatives(oldIndex, newIndex);
       },
       proxyDecorator: (child, index, animation) {
         return AnimatedBuilder(
@@ -104,7 +104,6 @@ class RelativeReorderableList extends StatelessWidget {
         final card = ElderlyListCard(
           key: ValueKey(r.id),
           elderly: r,
-          isSelected: selectedElderlyId == r.id,
           onTap: () => onTap(r.id),
         );
 

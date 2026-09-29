@@ -10,21 +10,27 @@ import 'elderly_card_content.dart';
 ///
 /// Phần nội dung dùng [GestureDetector] với [HitTestBehavior.translucent] để
 /// tap mở chi tiết mà không cạnh tranh gesture nhấn giữ của listener cha.
+///
+/// Viền thẻ trung tính; chỉ khi người thân có dấu hiệu cảnh báo (Khẩn cấp hoặc
+/// Cảnh báo) thì viền đỏ để nổi bật.
 class ElderlyListCard extends StatelessWidget {
   final ElderlyModel elderly;
-  final bool isSelected;
   final VoidCallback onTap;
 
   const ElderlyListCard({
     super.key,
     required this.elderly,
-    required this.isSelected,
     required this.onTap,
   });
 
+  static const Color _alertBorder = Color(0xFFEF4444);
+
   @override
   Widget build(BuildContext context) {
-    final (cardBorderColor, statusDotColor, statusText) = _resolveStatus();
+    final (_, statusDotColor, statusText) = _resolveStatus();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasAlert = !elderly.isOffline &&
+        (elderly.status == 'critical' || elderly.status == 'warning');
 
     final content = Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -32,8 +38,10 @@ class ElderlyListCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: isSelected ? statusDotColor : cardBorderColor,
-          width: isSelected ? 2.5 : 1.0,
+          color: hasAlert
+              ? _alertBorder
+              : (isDark ? Colors.white12 : Colors.grey.shade300),
+          width: hasAlert ? 2 : 1,
         ),
       ),
       child: ClipRRect(

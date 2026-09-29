@@ -33,9 +33,12 @@ dependencies:
     sdk: flutter
   shared_preferences: ^2.3.2
   http: ^1.2.2
-  # Bản đồ MIỄN PHÍ - không cần API key (thay thế Google Maps)
+  # Bản đồ: flutter_map + tile MapTiler (key qua --dart-define=MAPTILER_KEY),
+  # chưa có key thì tự dùng nguồn miễn phí (xem lib/map/map_tiles.dart)
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
+  # Mở Google Maps để chỉ đường từ màn bản đồ
+  url_launcher: ^6.3.1
   # Reverse geocoding qua Nominatim (OpenStreetMap) + cache
   geocoding: ^3.0.0
   # Chọn ảnh từ thư viện / camera

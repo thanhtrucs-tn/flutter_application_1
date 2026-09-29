@@ -62,8 +62,10 @@ class RelativesApiService {
     final payload = <String, dynamic>{
       'name': e.name,
       'safeZoneRadius': e.safeZoneRadius,
-      'safeZoneLat': e.safeZoneLat,
-      'safeZoneLng': e.safeZoneLng,
+      // Vị trí nhà: null khi chưa ghim (không gửi 0,0 — backend sẽ lưu nhầm
+      // thành một điểm giữa biển).
+      'safeZoneLat': e.hasHome ? e.safeZoneLat : null,
+      'safeZoneLng': e.hasHome ? e.safeZoneLng : null,
       'contacts': _parseContacts(e.emergencyContacts),
       // Luôn gửi age/address: null khi trống để cho phép XÓA trường trên server.
       'age': e.age,
@@ -92,8 +94,12 @@ class RelativesApiService {
     // parse linh hoạt thay vì cast cứng `as num?`/`as num` (gây type cast crash).
     final safeLat = _doubleVal(d['safeZoneLat']);
     final safeLng = _doubleVal(d['safeZoneLng']);
-    final lat = loc != null ? _doubleVal(loc['latitude']) : safeLat;
-    final lng = loc != null ? _doubleVal(loc['longitude']) : safeLng;
+    // Chưa có vị trí từ thiết bị thì để (0, 0) = "chưa có GPS". Không lấy tọa
+    // độ nhà thay vào, vì bản đồ sẽ vẽ người thân đang ở nhà trong khi thực tế
+    // chưa biết họ ở đâu.
+    final lat = loc != null ? _doubleVal(loc['latitude']) : 0.0;
+    final lng = loc != null ? _doubleVal(loc['longitude']) : 0.0;
+    final accuracy = loc?['accuracy'] != null ? _doubleVal(loc!['accuracy']) : null;
     final battery = _intVal(status?['batteryPercent']);
     final heartRate = _intVal(status?['heartRateBpm']);
     final spo2 = _intVal(status?['spo2Percent']);
@@ -117,8 +123,11 @@ class RelativesApiService {
           (d['deviceElderlyId'] as String?) ?? (d['wearableDevice'] as String?) ?? '',
       isFallen: false, // recompute từ alerts trong AppState
       safeZoneRadius: _doubleVal(d['safeZoneRadius'], fallback: 500.0),
-      safeZoneLat: safeLat == 0.0 ? lat : safeLat,
-      safeZoneLng: safeLng == 0.0 ? lng : safeLng,
+      // 0 = chưa đặt nhà. Không thay bằng vị trí hiện tại nữa, vì làm map vẽ
+      // "Nhà" ngay chỗ người thân đang đứng.
+      safeZoneLat: safeLat,
+      safeZoneLng: safeLng,
+      accuracy: accuracy,
       emergencyContacts: contacts
           .map((c) => EmergencyContactModel.fromMap(c as Map<String, dynamic>)
               .toStorageString())

@@ -28,7 +28,7 @@ function postLocation(elderlyId, lat, lng) {
   });
 }
 
-describe('Geofence breach detection on location ingest', () => {
+describe('Location ingest does not raise leave-home (geofence) alerts', () => {
   let socket;
   beforeEach(async () => {
     await cleanDb();
@@ -38,27 +38,22 @@ describe('Geofence breach detection on location ingest', () => {
     socket.restore();
   });
 
-  it('location OUTSIDE the safe zone creates a geofence alert and emits geofence:alert', async () => {
-    const { token, userId } = await registerAndLogin(`out_${Date.now()}@test.com`);
-    const relative = await seedRelative(token, 'ELDERLY-GEO-OUT');
+  it('location OUTSIDE home no longer creates a geofence alert (leave-home alerts removed)', async () => {
+    const { token } = await registerAndLogin(`out_${Date.now()}@test.com`);
+    await seedRelative(token, 'ELDERLY-GEO-OUT');
 
-    // ~1km north of center — well beyond the 100m radius.
+    // ~1km north of home.
     const res = await postLocation('ELDERLY-GEO-OUT', 10.771622, 106.660172);
     expect(res.statusCode).toBe(201);
 
     const list = await request(app).get('/api/alerts').set(authHeader(token));
-    const geo = list.body.data.find((a) => a.type === 'geofence');
-    expect(geo).toBeTruthy();
-    expect(geo.relativeId).toBe(relative.id);
+    expect(list.body.data.find((a) => a.type === 'geofence')).toBeUndefined();
 
-    expect(socket.emitToRoomSpy).toHaveBeenCalledWith(
-      `user:${userId}`,
-      'geofence:alert',
-      expect.objectContaining({
-        alertId: expect.any(Number),
-        relativeId: relative.id,
-      }),
-    );
+    const geofenceCalls = socket.emitToRoomSpy.mock.calls.filter((c) => c[1] === 'geofence:alert');
+    expect(geofenceCalls).toHaveLength(0);
+    // Realtime location still reaches the caregiver.
+    const locationCalls = socket.emitToRoomSpy.mock.calls.filter((c) => c[1] === 'device:location');
+    expect(locationCalls.length).toBeGreaterThan(0);
   });
 
   it('location INSIDE the safe zone does not create a geofence alert', async () => {

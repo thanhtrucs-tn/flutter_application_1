@@ -259,6 +259,38 @@ class AppState extends ChangeNotifier {
     return true;
   }
 
+  /// Danh sách để hiển thị: người thân đang có dấu hiệu cảnh báo được đẩy lên
+  /// trên cùng (Khẩn cấp trước, rồi Cảnh báo); trong cùng nhóm giữ nguyên thứ
+  /// tự người dùng đã sắp xếp. Hết cảnh báo thì tự về lại vị trí cũ.
+  List<ElderlyModel> get relativesForDisplay {
+    int rank(ElderlyModel e) {
+      if (e.isOffline) return 2;
+      if (e.status == 'critical') return 0;
+      if (e.status == 'warning') return 1;
+      return 2;
+    }
+
+    final indexed = _relatives.asMap().entries.toList()
+      ..sort((a, b) {
+        final byRank = rank(a.value).compareTo(rank(b.value));
+        return byRank != 0 ? byRank : a.key.compareTo(b.key);
+      });
+    return [for (final e in indexed) e.value];
+  }
+
+  /// Kéo thả trên danh sách đang hiển thị ([relativesForDisplay]): lấy thứ tự
+  /// sau khi thả làm thứ tự người dùng mới.
+  void reorderDisplayedRelatives(int oldIndex, int newIndex) {
+    final display = relativesForDisplay;
+    if (oldIndex < 0 || oldIndex >= display.length) return;
+    if (newIndex < 0 || newIndex > display.length) return;
+    if (oldIndex == newIndex) return;
+    final moved = display.removeAt(oldIndex);
+    display.insert(newIndex.clamp(0, display.length), moved);
+    _relatives = display;
+    notifyListeners();
+  }
+
   /// Sắp xếp lại thứ tự người thân (in-memory; không có trường order trên server).
   void reorderRelatives(int oldIndex, int newIndex) {
     if (oldIndex < 0 || oldIndex >= _relatives.length) return;
@@ -395,9 +427,10 @@ class AppState extends ChangeNotifier {
     for (int i = 0; i < _relatives.length; i++) {
       final e = _relatives[i];
       final relAlerts = _alerts.where((a) => a.elderlyId == e.id).toList();
+      // Chỉ SOS và té ngã chưa xác nhận mới là "Khẩn cấp". Cảnh báo rời nhà
+      // (geofence) đã bỏ; các alert geofence cũ còn trong DB không tính nữa.
       final hasUnackedCritical = relAlerts.any((a) =>
-          !a.acknowledged &&
-          (a.type == 'sos' || a.type == 'fall' || a.type == 'geofence'));
+          !a.acknowledged && (a.type == 'sos' || a.type == 'fall'));
       final hasUnackedFall =
           relAlerts.any((a) => a.type == 'fall' && !a.acknowledged);
       String status;

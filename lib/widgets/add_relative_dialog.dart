@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:latlong2/latlong.dart';
+
 import '../models/elderly_model.dart';
+import '../screens/set_home_screen.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
 
@@ -30,6 +33,10 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
   DateTime? _birthDate;
   final TextEditingController _contactNameController = TextEditingController();  // Tên người liên hệ khẩn cấp
   final TextEditingController _contactController = TextEditingController();      //  Số điện thoại khẩn cấp
+  final TextEditingController _homeController = TextEditingController();
+
+  /// Vị trí nhà (bắt buộc): người chăm sóc ghim trên bản đồ trước khi lưu.
+  HomeLocation? _home;
 
   @override
   void dispose() {
@@ -38,6 +45,7 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
     _birthDateController.dispose();
     _contactNameController.dispose();
     _contactController.dispose();
+    _homeController.dispose();
     super.dispose();
   }
 
@@ -68,6 +76,24 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
     }
   }
 
+  /// Mở màn ghim vị trí nhà trên bản đồ.
+  Future<void> _pickHome() async {
+    final name = _nameController.text.trim();
+    final result = await SetHomeScreen.open(
+      context,
+      relativeName: name.isNotEmpty ? name : Localization.translate('homeField'),
+      initial: _home != null ? LatLng(_home!.lat, _home!.lng) : null,
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      _home = result;
+      _homeController.text = result.address.isNotEmpty
+          ? result.address
+          : '${result.lat.toStringAsFixed(6)}, ${result.lng.toStringAsFixed(6)}';
+    });
+    _formKey.currentState?.validate();
+  }
+
   /// Tính tuổi chính xác từ ngày sinh (trừ 1 nếu chưa qua sinh nhật năm nay).
   static int _calculateAge(DateTime birthDate) {
     final now = DateTime.now();
@@ -80,6 +106,7 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_home == null) return; // validator đã báo lỗi ở ô "Vị trí nhà"
     if (_birthDate == null) {
       // Validator đã xử lý, nhưng đề phòng state bị thay đổi
       ScaffoldMessenger.of(context).showSnackBar(
@@ -111,10 +138,11 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
     // Tính tuổi từ ngày sinh đã chọn
     final age = _calculateAge(_birthDate!);
 
-    // Thiết bị đeo ESP32 sẽ gửi GPS đầu tiên qua WebSocket/realtime.
-    // Đến lúc đó, app sẽ set isOffline=false và cập nhật lat/lng/safeZoneLat/Lng.
-    // Tạm thời: lat=0, lng=0, safeZoneLat=0, safeZoneLng=0, isOffline=true.
-    // Bản đồ sẽ hiển thị overlay "Chờ GPS" cho tới khi có tín hiệu.
+    final home = _home!;
+
+    // Vị trí hiện tại (lat/lng) chờ thiết bị ESP32 gửi GPS đầu tiên: tạm để
+    // (0, 0) = chưa có vị trí, bản đồ hiện "Chưa có vị trí" cho tới lúc đó.
+    // Vị trí NHÀ lấy từ điểm người chăm sóc đã ghim, không bao giờ tự đổi.
     final newElderly = ElderlyModel(
       id: 0, // placeholder — backend cấp id thật
       name: name,
@@ -130,9 +158,10 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
       wearableDevice: device,
       isFallen: false,
       safeZoneRadius: 300.0,
-      safeZoneLat: 0, // Cập nhật khi có GPS
-      safeZoneLng: 0,
+      safeZoneLat: home.lat,
+      safeZoneLng: home.lng,
       emergencyContacts: contactEntry,
+      address: home.address,
       age: age,
     );
 
@@ -230,6 +259,23 @@ class _AddRelativeDialogState extends State<AddRelativeDialog> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 12),
+              // Vị trí nhà: bắt buộc, ghim trên bản đồ.
+              TextFormField(
+                controller: _homeController,
+                readOnly: true,
+                onTap: _pickHome,
+                minLines: 1,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  labelText: Localization.translate('homeField'),
+                  hintText: Localization.translate('homeFieldHint'),
+                  prefixIcon: const Icon(Icons.home_outlined),
+                  suffixIcon: const Icon(Icons.map_outlined, size: 18),
+                ),
+                validator: (_) =>
+                    _home == null ? Localization.translate('homeRequired') : null,
               ),
               const SizedBox(height: 12),
               Row(

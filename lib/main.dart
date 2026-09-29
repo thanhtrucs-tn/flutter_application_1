@@ -18,6 +18,12 @@ Future<void> main() async {
   // Đảm bảo các dịch vụ Flutter đã được khởi tạo hoàn toàn trước khi chạy app
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Bản đồ vệ tinh dùng nhiều ảnh tile: nới bộ nhớ đệm ảnh (mặc định 100MB)
+  // để zoom ra/vào lại không phải tải lại tile vừa xem, đỡ khựng và chớp.
+  PaintingBinding.instance.imageCache
+    ..maximumSize = 2000
+    ..maximumSizeBytes = 300 << 20;
+
   // Khởi tạo thông báo nội bộ trước khi chạy UI.
   try {
     await NotificationService().initialize();

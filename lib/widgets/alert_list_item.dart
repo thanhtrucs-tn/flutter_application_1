@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/alert_model.dart';
 import '../utils/localization.dart';
+import '../utils/theme.dart';
 
 /// Một dòng cảnh báo trong danh sách lịch sử.
 ///
@@ -90,7 +91,8 @@ class AlertListItem extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: alert.acknowledged ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                    // Đã xử lý dùng teal chủ đạo của app (không thêm màu xanh lá thứ ba).
+                    color: alert.acknowledged ? AppTheme.primaryTeal.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -101,7 +103,9 @@ class AlertListItem extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: alert.acknowledged ? Colors.green : Colors.red,
+                      color: alert.acknowledged
+                          ? (isDark ? AppTheme.secondaryTeal : AppTheme.primaryTeal)
+                          : Colors.red,
                     ),
                   ),
                 ),

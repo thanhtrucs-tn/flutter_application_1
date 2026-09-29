@@ -17,7 +17,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String? _pushedAlertId;
-  static const int _defaultSelectedElderlyId = 1;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return AnimatedBuilder(
       animation: state,
       builder: (context, child) {
-        final relatives = state.relatives;
+        final relatives = state.relativesForDisplay;
         final activeAlert = state.activeAlert;
 
         // TỰ ĐỘNG BẬT MÀN HÌNH BÁO ĐỘNG SOS NẾU CÓ ACTIVE ALERT
@@ -82,7 +81,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           body: RelativeReorderableList(
             relatives: relatives,
-            selectedElderlyId: _defaultSelectedElderlyId,
             onTap: (id) {
               Navigator.push(
                 context,

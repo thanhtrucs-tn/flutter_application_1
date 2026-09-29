@@ -3,11 +3,11 @@ import '../models/elderly_model.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
 import '../widgets/sos_app_header.dart';
-import '../widgets/profile_header.dart';
-import '../widgets/action_button_grid.dart';
+import '../widgets/profile_avatar.dart';
 import '../widgets/health_metrics_panel.dart';
-import '../widgets/safe_zone_slider.dart';
-import '../widgets/custom_map.dart';
+import '../map/map_markers.dart';
+import '../map/map_preview_card.dart';
+import '../utils/theme.dart';
 import '../widgets/big_button.dart';
 import 'edit_relative_screen.dart';
 import 'ringing_device_screen.dart';
@@ -49,13 +49,6 @@ class _ElderlyDetailScreenState extends State<ElderlyDetailScreen> {
     );
   }
 
-  Color _statusColor(ElderlyModel e) {
-    if (e.isOffline) return Colors.grey;
-    if (e.status == 'safe') return Colors.green;
-    if (e.status == 'warning') return Colors.orange;
-    return Colors.red;
-  }
-
   String _statusText(ElderlyModel e) {
     if (e.isOffline) return Localization.translate('statusOffline');
     if (e.status == 'safe') return Localization.translate('statusSafeText');
@@ -70,7 +63,6 @@ class _ElderlyDetailScreenState extends State<ElderlyDetailScreen> {
       animation: state,
       builder: (context, child) {
         final elderly = state.relatives.firstWhere((e) => e.id == widget.elderlyId);
-        final color = _statusColor(elderly);
         final isDark = Theme.of(context).brightness == Brightness.dark;
 
         return Scaffold(
@@ -90,40 +82,23 @@ class _ElderlyDetailScreenState extends State<ElderlyDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ProfileHeader(
-                  avatarUrl: elderly.avatar,
-                  avatarLocalPath: elderly.avatarLocalPath,
-                  name: elderly.name,
-                  age: elderly.age != null
-                      ? '${elderly.age} ${Localization.translate('age')}'
-                      : null,
-                  address: 'TP. Hồ Chí Minh',
-                  statusColor: color,
+                _Identity(
+                  elderly: elderly,
                   statusText: _statusText(elderly),
                 ),
-                const SizedBox(height: 20),
-                InkWell(
-                  onTap: () => _openMap(elderly),
-                  borderRadius: BorderRadius.circular(12),
-                  child: CustomMap(
-                    lat: elderly.latitude,
-                    lng: elderly.longitude,
-                    safeZoneLat: elderly.safeZoneLat,
-                    safeZoneLng: elderly.safeZoneLng,
-                    safeZoneRadius: elderly.safeZoneRadius,
-                    safetyStatus: elderly.status,
-                    height: 320,
-                    relativeName: elderly.name,
-                    address: elderly.address,
-                  ),
+                const SizedBox(height: 16),
+                // Bản xem trước: không kéo được (tránh tranh cuộn với trang),
+                // chạm để mở bản đồ đầy đủ.
+                MapPreviewCard(
+                  elderly: elderly,
+                  onOpen: () => _openMap(elderly),
                 ),
                 const SizedBox(height: 16),
-                ActionButtonGrid(
+                _QuickActions(
                   onCall: () => _makeCall(elderly.emergencyContacts.first),
-                  onRing: () => _openRingingDevice(elderly),
                   onListen: () => _openAmbientListen(elderly),
+                  onRing: () => _openRingingDevice(elderly),
                   onSms: () => _openSendSms(elderly),
-                  compact: true,
                 ),
                 const SizedBox(height: 20),
                 HealthMetricsPanel(elderly: elderly),
@@ -170,22 +145,6 @@ class _ElderlyDetailScreenState extends State<ElderlyDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                SafeZoneSlider(
-                  value: elderly.safeZoneRadius,
-                  onChanged: (v) {
-                    // Cập nhật in-memory ngay để UI mượt (không gọi API mỗi tick).
-                    state.patchElderlyVitals(
-                      elderly.copyWith(safeZoneRadius: v, lastUpdated: DateTime.now()),
-                    );
-                  },
-                  onChangeEnd: (v) {
-                    // Persist lên server chỉ khi thả tay (tránh spam PUT).
-                    state.updateElderly(
-                      elderly.copyWith(safeZoneRadius: v, lastUpdated: DateTime.now()),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
                 BigButton(
                   label: 'BÁO ĐỘNG TỪ XA',
                   icon: Icons.gpp_maybe,
@@ -200,6 +159,146 @@ class _ElderlyDetailScreenState extends State<ElderlyDetailScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Dòng nhận diện gọn: avatar có vòng màu trạng thái, tên, tuổi · trạng thái.
+class _Identity extends StatelessWidget {
+  final ElderlyModel elderly;
+  final String statusText;
+  const _Identity({required this.elderly, required this.statusText});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = MapStatus.color(elderly);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+          child: ProfileAvatar(
+            avatarUrl: elderly.avatar,
+            avatarLocalPath: elderly.avatarLocalPath,
+            radius: 25,
+            backgroundColor: const Color(0xFFE6F2F0),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                elderly.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  if (elderly.age != null) ...[
+                    Text(
+                      '${elderly.age} ${Localization.translate('age').toLowerCase()}',
+                      style: TextStyle(fontSize: 13, color: muted),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    statusText,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Color.lerp(color, Colors.black, isDark ? 0 : 0.25),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 4 thao tác nhanh trên một hàng: biểu tượng trên, nhãn ngắn dưới.
+class _QuickActions extends StatelessWidget {
+  final VoidCallback onCall;
+  final VoidCallback onListen;
+  final VoidCallback onRing;
+  final VoidCallback onSms;
+
+  const _QuickActions({
+    required this.onCall,
+    required this.onListen,
+    required this.onRing,
+    required this.onSms,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [
+      (Icons.call_outlined, 'quickCall', onCall),
+      (Icons.headphones_outlined, 'quickListen', onListen),
+      (Icons.notifications_none_rounded, 'quickRing', onRing),
+      (Icons.chat_bubble_outline_rounded, 'quickSms', onSms),
+    ];
+    return Row(
+      children: [
+        for (int i = 0; i < items.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(child: _QuickButton(icon: items[i].$1, label: Localization.translate(items[i].$2), onTap: items[i].$3)),
+        ],
+      ],
+    );
+  }
+}
+
+class _QuickButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _QuickButton({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Material(
+      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          height: 72,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 22, color: isDark ? AppTheme.secondaryTeal : AppTheme.primaryTeal),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 12, color: isDark ? Colors.white : const Color(0xFF1E293B)),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

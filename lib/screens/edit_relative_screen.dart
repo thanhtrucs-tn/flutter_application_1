@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../models/elderly_model.dart';
 import '../models/emergency_contact_model.dart';
@@ -8,6 +9,11 @@ import '../utils/app_state.dart';
 import '../utils/localization.dart';
 import '../widgets/avatar_picker.dart';
 import '../widgets/sos_app_header.dart';
+import 'set_home_screen.dart';
+
+/// Màu nhấn cho nút, biểu tượng và số điện thoại trên màn này: teal chủ đạo
+/// của app (cùng màu nút "Lưu vị trí nhà").
+const Color _kAccent = Color(0xFF0F766E);
 
 /// Màn hình chỉnh sửa thông tin người thân (profile + vùng an toàn + danh bạ).
 ///
@@ -38,10 +44,12 @@ class _EditRelativeScreenState extends State<EditRelativeScreen> {
 
   late final TextEditingController _nameController;
   late final TextEditingController _ageController;
-  late final TextEditingController _addressController;
   late final TextEditingController _deviceController;
 
-  late double _safeRadius;
+  // Vị trí nhà (ghim trên bản đồ). (0, 0) = chưa đặt.
+  late double _homeLat;
+  late double _homeLng;
+  late String _homeAddress;
   late List<String> _contacts;
   bool _saving = false;
 
@@ -53,9 +61,10 @@ class _EditRelativeScreenState extends State<EditRelativeScreen> {
     _ageController = TextEditingController(
       text: _relative.age != null ? '${_relative.age}' : '',
     );
-    _addressController = TextEditingController(text: _relative.address);
     _deviceController = TextEditingController(text: _relative.wearableDevice);
-    _safeRadius = _relative.safeZoneRadius.clamp(100.0, 5000.0);
+    _homeLat = _relative.safeZoneLat;
+    _homeLng = _relative.safeZoneLng;
+    _homeAddress = _relative.address;
     _contacts = List<String>.from(_relative.emergencyContacts);
   }
 
@@ -63,7 +72,6 @@ class _EditRelativeScreenState extends State<EditRelativeScreen> {
   void dispose() {
     _nameController.dispose();
     _ageController.dispose();
-    _addressController.dispose();
     _deviceController.dispose();
     super.dispose();
   }
@@ -150,6 +158,7 @@ class _EditRelativeScreenState extends State<EditRelativeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(foregroundColor: _kAccent),
             child: Text(Localization.translate('cancel')),
           ),
           TextButton(
@@ -163,24 +172,56 @@ class _EditRelativeScreenState extends State<EditRelativeScreen> {
     setState(() => _contacts.removeAt(index));
   }
 
+  // --- Vị trí nhà ---
+
+  bool get _hasHome => !(_homeLat == 0 && _homeLng == 0);
+
+  Future<void> _pickHome() async {
+    final current = AppState().relatives.firstWhere((e) => e.id == widget.elderlyId);
+    final result = await SetHomeScreen.open(
+      context,
+      relativeName: _nameController.text.trim().isNotEmpty
+          ? _nameController.text.trim()
+          : _relative.name,
+      initial: _hasHome ? LatLng(_homeLat, _homeLng) : null,
+      currentLocation:
+          current.hasLocation ? LatLng(current.latitude, current.longitude) : null,
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      _homeLat = result.lat;
+      _homeLng = result.lng;
+      if (result.address.isNotEmpty) _homeAddress = result.address;
+    });
+  }
+
   // --- Lưu ---
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!_hasHome) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(Localization.translate('homeRequired')),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     final state = AppState();
     final base = state.relatives.firstWhere((e) => e.id == widget.elderlyId);
     final name = _nameController.text.trim().replaceAll(RegExp(r'\s+'), ' ');
     final device = _deviceController.text.trim();
-    final address = _addressController.text.trim();
     final age = int.tryParse(_ageController.text.trim());
 
     final updated = base.copyWith(
       name: name,
       age: age,
-      address: address,
+      address: _homeAddress,
       wearableDevice: device,
-      safeZoneRadius: _safeRadius,
+      safeZoneLat: _homeLat,
+      safeZoneLng: _homeLng,
       emergencyContacts: List<String>.from(_contacts),
     );
 
@@ -214,7 +255,17 @@ class _EditRelativeScreenState extends State<EditRelativeScreen> {
     final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
 
-    return Scaffold(
+    // Ô nhập đang chọn, con trỏ, nút mặc định cũng dùng màu nhấn.
+    final baseTheme = Theme.of(context);
+    return Theme(
+      data: baseTheme.copyWith(
+        colorScheme: baseTheme.colorScheme.copyWith(primary: _kAccent),
+        textSelectionTheme: baseTheme.textSelectionTheme.copyWith(
+          cursorColor: _kAccent,
+          selectionHandleColor: _kAccent,
+        ),
+      ),
+      child: Scaffold(
       appBar: SosAppHeader(
         title: _relative.name,
         subtitle: Localization.translate('editRelativeInfo'),
@@ -317,23 +368,13 @@ class _EditRelativeScreenState extends State<EditRelativeScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _addressController,
-                      maxLength: 255,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: InputDecoration(
-                        labelText: '${Localization.translate('address')} (tùy chọn)',
-                        prefixIcon: const Icon(Icons.home_outlined),
-                      ),
-                    ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 16),
 
-            // Vùng an toàn
+            // Vị trí nhà (bắt buộc)
             Card(
               elevation: 1,
               color: cardColor,
@@ -341,35 +382,49 @@ class _EditRelativeScreenState extends State<EditRelativeScreen> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.gpp_maybe, color: Color(0xFFE53935)),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            '${Localization.translate('safeZone')}: ${_safeRadius.round()}m',
+                    const Icon(Icons.home_outlined, color: _kAccent),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            Localization.translate('homeField'),
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
                               color: textColor,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 2),
+                          Text(
+                            !_hasHome
+                                ? Localization.translate('mapNoHome')
+                                : (_homeAddress.isNotEmpty
+                                    ? _homeAddress
+                                    : '${_homeLat.toStringAsFixed(6)}, ${_homeLng.toStringAsFixed(6)}'),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              height: 1.4,
+                              color: _hasHome
+                                  ? textColor.withValues(alpha: 0.75)
+                                  : const Color(0xFFB91C1C),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    Slider(
-                      value: _safeRadius,
-                      min: 100,
-                      max: 5000,
-                      divisions: 49,
-                      label: '${_safeRadius.round()}m',
-                      activeColor: const Color(0xFF10B981),
-                      inactiveColor: Colors.grey.shade300,
-                      onChanged: (v) => setState(() => _safeRadius = v),
+                    TextButton(
+                      onPressed: _saving ? null : _pickHome,
+                      style: TextButton.styleFrom(foregroundColor: _kAccent),
+                      child: Text(
+                        Localization.translate(_hasHome ? 'homeChange' : 'mapSetHomeNow'),
+                      ),
                     ),
                   ],
                 ),
@@ -394,7 +449,7 @@ class _EditRelativeScreenState extends State<EditRelativeScreen> {
                       child: Row(
                         children: [
                           const Icon(Icons.contact_phone,
-                              color: Colors.green, size: 20),
+                              color: _kAccent, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -408,6 +463,7 @@ class _EditRelativeScreenState extends State<EditRelativeScreen> {
                           ),
                           TextButton.icon(
                             onPressed: _addContact,
+                            style: TextButton.styleFrom(foregroundColor: _kAccent),
                             icon: const Icon(Icons.person_add, size: 18),
                             label: Text(Localization.translate('addContactHint')),
                           ),
@@ -462,9 +518,9 @@ class _EditRelativeScreenState extends State<EditRelativeScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 c.phone,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF10B981),
+                                  color: textColor,
                                 ),
                               ),
                             ],
@@ -483,7 +539,7 @@ class _EditRelativeScreenState extends State<EditRelativeScreen> {
               child: ElevatedButton.icon(
                 onPressed: _saving ? null : _save,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF10B981),
+                  backgroundColor: _kAccent,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -509,6 +565,7 @@ class _EditRelativeScreenState extends State<EditRelativeScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -626,6 +683,7 @@ class _ContactDialogState extends State<_ContactDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
+          style: TextButton.styleFrom(foregroundColor: _kAccent),
           child: Text(Localization.translate('cancel')),
         ),
         ElevatedButton.icon(
@@ -633,7 +691,7 @@ class _ContactDialogState extends State<_ContactDialog> {
           icon: const Icon(Icons.check, size: 18),
           label: Text(Localization.translate('save')),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.teal,
+            backgroundColor: _kAccent,
             foregroundColor: Colors.white,
           ),
         ),

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import '../models/alert_model.dart';
 import '../models/elderly_model.dart';
 import '../utils/app_state.dart';
 import '../utils/localization.dart';
 import '../widgets/big_button.dart';
-import '../widgets/custom_map.dart';
+import '../map/map_preview_card.dart';
+import 'map_view_screen.dart';
 
 /// Màn hình thông báo đẩy khẩn cấp khi xảy ra sự cố SOS
 class AlertDetailScreen extends StatefulWidget {
@@ -245,16 +247,18 @@ class _AlertDetailScreenState extends State<AlertDetailScreen> with SingleTicker
                         ),
                       ),
                       const SizedBox(height: 8),
-                      CustomMap(
-                        lat: widget.alert.latitude,
-                        lng: widget.alert.longitude,
-                        safeZoneLat: relative.safeZoneLat,
-                        safeZoneLng: relative.safeZoneLng,
-                        safeZoneRadius: relative.safeZoneRadius,
-                        safetyStatus: 'critical',
-                        isSOSMode: true,
-                        height: 280,
-                        relativeName: widget.alert.elderlyName,
+                      MapPreviewCard(
+                        elderly: relative,
+                        incident: (widget.alert.latitude == 0 && widget.alert.longitude == 0)
+                            ? null
+                            : LatLng(widget.alert.latitude, widget.alert.longitude),
+                        incidentTime: widget.alert.time,
+                        height: 260,
+                        onOpen: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => MapViewScreen(elderly: relative, alert: widget.alert),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 20),
 

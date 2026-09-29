@@ -15,9 +15,13 @@ class ElderlyModel {
   final bool isOffline; // Trạng thái kết nối của thiết bị ESP32 (true: Offline, false: Online)
   final String wearableDevice;
   final bool isFallen; // Phát hiện té ngã hay không
-  final double safeZoneRadius; // Bán kính vùng an toàn (mét)
-  final double safeZoneLat; // Vĩ độ tâm vùng an toàn
-  final double safeZoneLng; // Kinh độ tâm vùng an toàn
+  final double safeZoneRadius; // (Không còn dùng trên UI) bán kính vùng an toàn cũ
+  /// Tọa độ NHÀ do người chăm sóc ghim trên bản đồ (backend: safe_zone_lat/lng).
+  /// (0, 0) = chưa đặt. Không bao giờ tự lấy theo vị trí hiện tại.
+  final double safeZoneLat;
+  final double safeZoneLng;
+  /// Sai số GPS (mét) của vị trí mới nhất. Null khi thiết bị không gửi.
+  final double? accuracy;
   final List<String> emergencyContacts;
   final String address; // Địa chỉ chữ (ví dụ: "268 Lý Thường Kiệt, Q.10, TP.HCM")
   final int? age; // Tuổi (năm). Null nếu elderly cũ chưa cập nhật hoặc chưa nhập.
@@ -44,10 +48,17 @@ class ElderlyModel {
     required this.safeZoneLat,
     required this.safeZoneLng,
     required this.emergencyContacts,
+    this.accuracy,
     this.address = '',
     this.age,
     this.avatarLocalPath = '',
   });
+
+  /// Đã có tọa độ thật từ thiết bị chưa ((0, 0) = chưa có GPS).
+  bool get hasLocation => !(latitude == 0 && longitude == 0);
+
+  /// Người chăm sóc đã ghim vị trí nhà chưa.
+  bool get hasHome => !(safeZoneLat == 0 && safeZoneLng == 0);
 
   /// Tạo một bản sao mới với các trường thay đổi
   ElderlyModel copyWith({
@@ -67,6 +78,7 @@ class ElderlyModel {
     double? safeZoneRadius,
     double? safeZoneLat,
     double? safeZoneLng,
+    double? accuracy,
     List<String>? emergencyContacts,
     String? address,
     int? age,
@@ -89,6 +101,7 @@ class ElderlyModel {
       safeZoneRadius: safeZoneRadius ?? this.safeZoneRadius,
       safeZoneLat: safeZoneLat ?? this.safeZoneLat,
       safeZoneLng: safeZoneLng ?? this.safeZoneLng,
+      accuracy: accuracy ?? this.accuracy,
       emergencyContacts: emergencyContacts ?? this.emergencyContacts,
       address: address ?? this.address,
       age: age ?? this.age,
@@ -113,8 +126,10 @@ class ElderlyModel {
       wearableDevice: map['wearableDevice'] as String? ?? 'ESP32 Smart Band V1',
       isFallen: (map['isFallen'] as int? ?? 0) == 1,
       safeZoneRadius: (map['safeZoneRadius'] as num? ?? 500.0).toDouble(),
-      safeZoneLat: (map['safeZoneLat'] as num? ?? map['latitude'] ?? 10.762622).toDouble(),
-      safeZoneLng: (map['safeZoneLng'] as num? ?? map['longitude'] ?? 106.660172).toDouble(),
+      // Chưa có nhà thì để 0, không lấy vị trí hiện tại thay vào.
+      safeZoneLat: (map['safeZoneLat'] as num? ?? 0).toDouble(),
+      safeZoneLng: (map['safeZoneLng'] as num? ?? 0).toDouble(),
+      accuracy: (map['accuracy'] as num?)?.toDouble(),
       emergencyContacts: map['emergencyContacts'] is String
           ? List<String>.from(json.decode(map['emergencyContacts'] as String) as List)
           : List<String>.from(map['emergencyContacts'] as List? ?? []),
@@ -163,6 +178,7 @@ class ElderlyModel {
       'safeZoneRadius': safeZoneRadius,
       'safeZoneLat': safeZoneLat,
       'safeZoneLng': safeZoneLng,
+      'accuracy': accuracy,
       'emergencyContacts': json.encode(emergencyContacts),
       'address': address,
       'age': age,

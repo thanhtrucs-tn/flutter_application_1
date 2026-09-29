@@ -8,6 +8,19 @@ import '../widgets/user_profile_dialogs.dart';
 import 'settings_screen.dart';
 import 'login_screen.dart';
 
+/// Màu đơn sắc cho mọi biểu tượng trên màn Thông tin cá nhân (sáng hơn ở chế
+/// độ tối để vẫn nhìn rõ trên nền thẻ tối).
+Color _iconColorOf(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF64748B);
+
+/// Màu chữ chính: gần đen ở chế độ sáng, trắng ở chế độ tối.
+Color _textColorOf(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : const Color(0xFF1E293B);
+
 /// Màn hình Thông tin cá nhân của người giám sát.
 /// Mỗi mục (avatar / tên / email / SĐT) sửa riêng qua dialog single-field.
 class ProfileScreen extends StatelessWidget {
@@ -105,11 +118,15 @@ class ProfileScreen extends StatelessWidget {
                       child: Text(
                         profile.name,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: _textColorOf(context),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(Icons.edit, size: 18, color: Color(0xFFE53935)),
+                    Icon(Icons.edit, size: 18, color: _iconColorOf(context)),
                   ],
                 ),
               ),
@@ -126,15 +143,15 @@ class ProfileScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFFE53935).withValues(alpha: 0.1),
+                color: _iconColorOf(context).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Text(
+              child: Text(
                 'Người giám sát',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFE53935),
+                  color: _iconColorOf(context),
                 ),
               ),
             ),
@@ -162,7 +179,7 @@ class ProfileScreen extends StatelessWidget {
           // Email — khóa đăng nhập, không sửa được
           _ReadOnlyInfoTile(
             icon: Icons.email,
-            color: Colors.purple,
+            color: _iconColorOf(context),
             label: 'Email',
             value: profile.email,
           ),
@@ -170,7 +187,7 @@ class ProfileScreen extends StatelessWidget {
           // SĐT — bấm để sửa SĐT (hiển thị kèm tên tài khoản để biết SĐT này của ai)
           _EditableInfoTile(
             icon: Icons.phone,
-            color: Colors.green,
+            color: _iconColorOf(context),
             label: 'Số điện thoại',
             value: '${profile.name} • ${profile.phone}',
             onEdit: () => runEditPhone(context, state),
@@ -179,7 +196,7 @@ class ProfileScreen extends StatelessWidget {
           // Dòng cố định — không cho sửa
           _ReadOnlyInfoTile(
             icon: Icons.monitor_heart,
-            color: Colors.red,
+            color: _iconColorOf(context),
             label: 'Đang giám sát',
             value: '${state.relatives.length} người thân',
           ),
@@ -203,10 +220,10 @@ class ProfileScreen extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.1),
+                color: _iconColorOf(context).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.settings, color: Colors.blue, size: 22),
+              child: Icon(Icons.settings, color: _iconColorOf(context), size: 22),
             ),
             title: const Text(
               'Cài đặt',
@@ -226,10 +243,10 @@ class ProfileScreen extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
+                color: _iconColorOf(context).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.logout, color: Colors.red, size: 22),
+              child: Icon(Icons.logout, color: _iconColorOf(context), size: 22),
             ),
             title: Text(
               Localization.translate('logout'),
@@ -290,13 +307,13 @@ class _EditableInfoTile extends StatelessWidget {
         value,
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF1E293B),
+          color: _textColorOf(context),
         ),
       ),
-      trailing: const Icon(Icons.edit, size: 18, color: Color(0xFFE53935)),
+      trailing: Icon(Icons.edit, size: 18, color: _iconColorOf(context)),
     );
   }
 }
@@ -341,10 +358,10 @@ class _ReadOnlyInfoTile extends StatelessWidget {
         value,
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF1E293B),
+          color: _textColorOf(context),
         ),
       ),
     );

@@ -42,6 +42,20 @@ class Address {
     return suburb.isNotEmpty ? suburb : displayName;
   }
 
+  /// Địa chỉ một dòng kiểu Việt Nam: "268 Lý Thường Kiệt, Phường 14, Quận 10".
+  /// Thiếu số nhà/đường thì lấy 3 phần đầu của tên hiển thị.
+  String get line {
+    final first = [houseNumber, street].where((s) => s.isNotEmpty).join(' ');
+    final parts = [first, suburb, cityDistrict].where((s) => s.isNotEmpty).toList();
+    if (parts.isNotEmpty) return parts.join(', ');
+    return displayName
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .take(3)
+        .join(', ');
+  }
+
   /// Địa chỉ chi tiết nhiều dòng dùng cho modal
   List<AddressLine> get detailedLines {
     final lines = <AddressLine>[];
@@ -105,6 +119,51 @@ class Address {
       displayName: (json['display_name'] as String?) ?? '',
       lat: lat,
       lng: lng,
+    );
+  }
+
+  /// Từ một feature GeoJSON của Photon (komoot).
+  factory Address.fromPhoton(Map<String, dynamic> feature) {
+    final p = feature['properties'] as Map<String, dynamic>? ?? const {};
+    final coords = (feature['geometry'] as Map<String, dynamic>?)?['coordinates'] as List?;
+    String s(String k) => (p[k] as String?) ?? '';
+    final isRoad = s('osm_key') == 'highway';
+    final street = s('street').isNotEmpty ? s('street') : (isRoad ? s('name') : '');
+    var suburb = s('district').isNotEmpty ? s('district') : s('locality');
+    if (street.isEmpty && suburb.isEmpty) suburb = s('name');
+    final parts = [
+      s('name'),
+      if (s('street').isNotEmpty && s('street') != s('name')) s('street'),
+      s('district'),
+      s('county'),
+      s('city'),
+    ].where((e) => e.isNotEmpty).toSet().join(', ');
+    return Address(
+      houseNumber: s('housenumber'),
+      street: street,
+      suburb: suburb,
+      cityDistrict: s('county'),
+      province: s('city').isNotEmpty ? s('city') : s('state'),
+      country: s('country'),
+      displayName: parts,
+      lat: coords != null && coords.length > 1 ? (coords[1] as num).toDouble() : 0,
+      lng: coords != null && coords.isNotEmpty ? (coords[0] as num).toDouble() : 0,
+    );
+  }
+
+  /// Từ một feature của MapTiler Geocoding (chỉ có tên đầy đủ).
+  factory Address.fromMapTiler(Map<String, dynamic> feature) {
+    final center = feature['center'] as List?;
+    return Address(
+      houseNumber: '',
+      street: '',
+      suburb: '',
+      cityDistrict: '',
+      province: '',
+      country: '',
+      displayName: (feature['place_name'] as String?) ?? (feature['text'] as String?) ?? '',
+      lat: center != null && center.length > 1 ? (center[1] as num).toDouble() : 0,
+      lng: center != null && center.isNotEmpty ? (center[0] as num).toDouble() : 0,
     );
   }
 

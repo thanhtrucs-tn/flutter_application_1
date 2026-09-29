@@ -203,6 +203,10 @@ class DeviceEventService {
       elderly.copyWith(
         latitude: DeviceEventMapper.doubleVal(p['latitude']),
         longitude: DeviceEventMapper.doubleVal(p['longitude']),
+        // Sai số GPS (mét) nếu thiết bị/backend gửi kèm.
+        accuracy: p['accuracy'] != null
+            ? DeviceEventMapper.doubleVal(p['accuracy'])
+            : null,
         lastUpdated: _parseTime(p['timestamp']),
       ),
     );
